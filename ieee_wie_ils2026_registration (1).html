@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE WIE ILS 2026 — Team Registration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f7eeff;
+    min-height: 100vh;
+    color: #2c1a40;
+  }
+
+  /* HERO */
+  .hero-logo-bar {
+    background: white;
+    padding: 14px 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    border-bottom: 3px solid #6a1794;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #6a1794 0%, #b8005e 100%);
+    padding: 1.75rem 1.5rem 3rem;
+    text-align: center;
+    color: white;
+  }
+
+  .hero-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+
+  .logo-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 8px;
+    padding: 5px 13px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.3px;
+  }
+
+  .logo-badge.ieee { font-size: 16px; font-weight: 700; letter-spacing: 1.5px; }
+  .logo-badge.wie { background: rgba(255,255,255,0.25); font-size: 13px; }
+  .logo-badge.gujarat { font-size: 11px; }
+
+  .hero h1 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+  }
+
+  .hero .tagline {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    font-style: italic;
+    margin-bottom: 1rem;
+  }
+
+  .hero-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* LAYOUT */
+  .form-container {
+    max-width: 660px;
+    margin: -1.5rem auto 3rem;
+    padding: 0 1rem;
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 0.5px solid #e2c8f5;
+    box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #6a1794;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1.5px solid #f0d5fa;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-title svg { flex-shrink: 0; }
+
+  .member-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, #6a1794, #b8005e);
+    color: white;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .optional-tag {
+    background: #f3eaff;
+    color: #7c2ab0;
+    border: 1px solid #d9b8f5;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: auto;
+  }
+
+  /* FIELDS */
+  .field-row { margin-bottom: 1rem; }
+  .field-row:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a1b6e;
+    margin-bottom: 5px;
+  }
+
+  .req { color: #b8005e; margin-left: 2px; }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #ddc4f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #2c1a40;
+    background: #fdf8ff;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="tel"]:focus,
+  select:focus {
+    border-color: #8c3ec0;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(140,62,192,0.12);
+  }
+
+  input.error, select.error { border-color: #b8005e !important; background: #fff5f9 !important; }
+
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #8c3ec0;
+    pointer-events: none;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* FILE UPLOAD */
+  .file-zone {
+    border: 2px dashed #c9a0e8;
+    border-radius: 10px;
+    padding: 1.4rem 1rem;
+    text-align: center;
+    background: #faf4ff;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .file-zone:hover { border-color: #8c3ec0; background: #f3e8ff; }
+
+  .file-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .file-icon {
+    width: 36px; height: 36px;
+    margin: 0 auto 8px;
+    color: #8c3ec0;
+  }
+
+  .file-zone .upload-label { font-size: 13px; color: #5c2b8a; font-weight: 500; }
+  .file-zone .upload-hint { font-size: 11px; color: #9b7ab0; margin-top: 3px; }
+  .file-name-display {
+    display: none;
+    font-size: 12px;
+    color: #6a1794;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  /* SUBMIT */
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6a1794, #b8005e);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+
+  .submit-btn:hover:not(:disabled) { opacity: 0.9; }
+  .submit-btn:active:not(:disabled) { transform: scale(0.99); }
+  .submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+  /* SPINNER */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MESSAGES */
+  .msg-box {
+    display: none;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 1rem;
+  }
+
+  .msg-box.success {
+    background: #f0fff7;
+    border: 1px solid #6fcf97;
+    color: #1a6b3a;
+  }
+
+  .msg-box.error-msg {
+    background: #fff5f9;
+    border: 1px solid #f0a0c0;
+    color: #8b0038;
+  }
+
+  .msg-box .msg-icon { font-size: 22px; display: block; margin-bottom: 5px; }
+
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: #9b7ab0;
+    margin-top: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  /* NOTE BOX */
+  .note-box {
+    background: #fdf0ff;
+    border-left: 3px solid #b060e0;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #5c2b8a;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    .two-col { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-logo-bar">
+  <div class="hero-logos">
+    <img src="data:image/png;base64,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" alt="IEEE WIE Gujarat Section" style="height:70px; width:auto; background:white; border-radius:8px; padding:5px;">
+    <img src="data:image/png;base64,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" alt="IEEE Gujarat Section" style="height:70px; width:auto; background:white; border-radius:8px; padding:6px 10px;">
+  </div>
+</div>
+
+<div class="hero">
+  <h1>IEEE WIE International<br>Leadership Summit 2026</h1>
+  <p class="tagline">Empower to Inspire: Thriving Together for an Inclusive and Sustainable Future</p>
+  <div class="hero-date">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Surat, India &nbsp;·&nbsp; 24 – 25 October 2026
+  </div>
+</div>
+
+<div class="form-container">
+
+  <!-- TEAM INFO -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Team Information
+    </div>
+
+    <div class="field-row">
+      <label for="teamName">Team Name <span class="req">*</span></label>
+      <input type="text" id="teamName" placeholder="Enter your team name">
+    </div>
+
+    <div class="field-row">
+      <label for="college">College / Institution <span class="req">*</span></label>
+      <input type="text" id="college" placeholder="e.g. SVNIT, Surat">
+    </div>
+  </div>
+
+  <!-- TRACK & PROBLEM STATEMENT -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      Track &amp; Problem Statement
+    </div>
+
+    <a href="Problem_Statements_ILS2026.pdf" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:10px; background:#fdf0ff; border:1px solid #e2c8f5; border-radius:10px; padding:12px 14px; margin-bottom:1rem; text-decoration:none; color:#6a1794; transition: border-color 0.2s;" onmouseover="this.style.borderColor='#b060e0'" onmouseout="this.style.borderColor='#e2c8f5'">
+      <svg width="22" height="22" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      <span style="flex:1;">
+        <span style="display:block; font-size:13px; font-weight:600;">View Full Problem Statements (PDF)</span>
+        <span style="display:block; font-size:11.5px; color:#9b7ab0; margin-top:2px;">Read all tracks &amp; problems in detail before choosing</span>
+      </span>
+      <svg width="16" height="16" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+    </a>
+
+    <div class="note-box">
+      Read the problem statement carefully before choosing. Teams must select <strong>one track and one problem statement</strong> — switching tracks after Round&nbsp;1 submission is not allowed.
+    </div>
+
+    <div class="field-row">
+      <label for="track">Track <span class="req">*</span></label>
+      <div class="select-wrap">
+        <select id="track" onchange="handleTrackChange()">
+          <option value="">Select track</option>
+          <option value="Track 1: Bharat Rising (Rural India &amp; EdTech)">Track 1: Bharat Rising (Rural India &amp; EdTech)</option>
+          <option value="Track 2: HealthTech">Track 2: HealthTech</option>
+          <option value="Track 3: SheLeads (WIE Special Track)">Track 3: SheLeads (WIE Special Track)</option>
+          <option value="Track 4: Open Industry Problems">Track 4: Open Industry Problems</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Shown for Tracks 1-3: dropdown selection -->
+    <div id="problemSelectRow">
+      <div class="field-row">
+        <label for="problemStatement">Problem Statement <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="problemStatement" onchange="showProblemDesc()">
+            <option value="">Select track first</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="problemDescBox" style="display:none; background:#fdf0ff; border-left:3px solid #b060e0; border-radius:0 8px 8px 0; padding:12px 14px; font-size:12.5px; color:#4a1b6e; line-height:1.7; margin-bottom:1rem;">
+        <strong id="problemDescTitle" style="color:#6a1794; display:block; margin-bottom:6px; font-size:13px;"></strong>
+        <span id="problemDescText"></span>
+      </div>
+    </div>
+
+    <!-- Shown for Track 4 (Open Industry Problems): PDF upload -->
+    <div id="industryUploadRow" style="display:none;">
+      <div class="note-box">
+        For <strong>Track 4: Open Industry Problems</strong>, your team must upload the problem statement PDF provided by your industry partner.
+      </div>
+      <div class="field-row">
+        <label for="pdfFile">Industry Problem Statement (PDF) <span class="req">*</span></label>
+        <div class="file-zone" id="fileZone">
+          <input type="file" accept=".pdf" id="pdfFile" onchange="handleFile(this)">
+          <svg class="file-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="upload-label">Click to upload Problem Statement PDF</div>
+          <div class="upload-hint">PDF only · Max 5 MB</div>
+          <div class="file-name-display" id="fileNameDisplay"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- TEAM LEADER -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Team Leader
+    </div>
+    <div class="member-badge">
+      <svg width="12" height="12" fill="white" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Leader — All details required
+    </div>
+
+    <div class="two-col">
+      <div class="field-row">
+        <label for="leaderName">Full Name <span class="req">*</span></label>
+        <input type="text" id="leaderName" placeholder="First and last name">
+      </div>
+      <div class="field-row">
+        <label for="leaderEmail">Email Address <span class="req">*</span></label>
+        <input type="email" id="leaderEmail" placeholder="your@email.com">
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field-row">
+        <label for="leaderPhone">Contact Number <span class="req">*</span></label>
+        <input type="tel" id="leaderPhone" placeholder="+91 XXXXX XXXXX">
+      </div>
+      <div class="field-row">
+        <label for="leaderYear">Year of Study <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="leaderYear">
+            <option value="">Select year</option>
+            <option>1st Year</option>
+            <option>2nd Year</option>
+            <option>3rd Year</option>
+            <option>4th Year</option>
+            <option>Postgraduate</option>
+            <option>PhD / Research</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label for="leaderDept">Department / Branch <span class="req">*</span></label>
+      <input type="text" id="leaderDept" placeholder="e.g. Computer Engineering, Electronics">
+    </div>
+
+    <div class="field-row">
+      <label for="leaderIeee">IEEE Membership Number</label>
+      <input type="text" id="leaderIeee" placeholder="Optional — if applicable">
+    </div>
+  </div>
+
+  <!-- MEMBER 2 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Member 2
+      <span class="optional-tag">Optional</span>
+    </div>
+    <div class="note-box">Name and contact number only needed for Member 2.</div>
+    <div class="two-col">
+      <div class="field-row">
+        <label for="m2Name">Full Name</label>
+        <input type="text" id="m2Name" placeholder="First and last name">
+      </div>
+      <div class="field-row">
+        <label for="m2Phone">Contact Number</label>
+        <input type="tel" id="m2Phone" placeholder="+91 XXXXX XXXXX">
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER 3 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Member 3
+      <span class="optional-tag">Optional</span>
+    </div>
+    <div class="field-row">
+      <label for="m3Name">Full Name</label>
+      <input type="text" id="m3Name" placeholder="First and last name">
+    </div>
+  </div>
+
+  <!-- MEMBER 4 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Member 4
+      <span class="optional-tag">Optional</span>
+    </div>
+    <div class="field-row">
+      <label for="m4Name">Full Name</label>
+      <input type="text" id="m4Name" placeholder="First and last name">
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="submitForm()">
+    <svg id="sendIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <div class="spinner" id="spinner"></div>
+    <span id="btnText">Submit Registration</span>
+  </button>
+
+  <div class="msg-box success" id="successMsg">
+    <span class="msg-icon">✅</span>
+    Registration submitted successfully!<br>
+    <span style="font-weight:400; font-size:13px;">A confirmation will be sent to the team leader's email. See you at SVNIT, Surat!</span>
+  </div>
+
+  <div class="msg-box error-msg" id="errorMsg">
+    <span class="msg-icon">⚠️</span>
+    <span id="errorText">Something went wrong. Please try again.</span>
+  </div>
+
+  <p class="footer-note">IEEE WIE International Leadership Summit 2026 · ieeegujaratsection.org</p>
+</div>
+
+<script>
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzCE_5af5FMh3KpNwzGjewGPA0WJN6TA3Aj_7MDE2NJWQpE2SotltKJhYPBSve_bBKklg/exec";
+
+  const problemsByTrack = {
+    "Track 1: Bharat Rising (Rural India & EdTech)": [
+      { id: "P1", title: "The Middleman Killer", desc: "Farmers lose 20–30% of their income because mandi buyers form cartels and control price information. Build a real-time price discovery and direct-trade platform that works in low-connectivity areas, resists price manipulation, and is simple enough for a first-time smartphone user." },
+      { id: "P2", title: "Disaster Response Without Infrastructure", desc: "During floods, earthquakes, or cyclones, connectivity and power often fail completely, cutting off relief teams and victims. Build an offline mesh-network system (e.g. LoRa/Bluetooth) for location-tagged SOS signals, rescue coordination, and a shared, continuously updated resource map — with zero internet dependency." },
+      { id: "P3", title: "Gamified Vocational Learning for School Children", desc: "Many rural children drop out because classroom learning feels disconnected from their lives. Build a game-based learning platform with two age tiers (9–12 and 12–15) that teaches practical vocational skills — electrical repair, stitching, farming techniques, carpentry — through missions, characters, and rewards." }
+    ],
+    "Track 2: HealthTech": [
+      { id: "P4", title: "The Polypharmacy Crisis", desc: "Elderly patients often see multiple doctors who prescribe medicines independently, creating risky drug combinations. Build an AI system that reads prescriptions in any format (scanned, photographed, typed), flags dangerous interactions, explains the risk in plain language for both doctor and patient, and suggests safer alternatives." }
+    ],
+    "Track 3: SheLeads (WIE Special Track)": [
+      { id: "P5", title: "Safe Route Navigator", desc: "Standard navigation apps optimize for speed, not safety. Build an app that scores routes for women travelling alone based on crime data, crowd density, lighting, and community reports — recommending the safest route (not just the fastest) and updating scores dynamically as new incidents are reported." },
+      { id: "P6", title: "SheShield Wearable", desc: "A manual SOS button is too slow in an emergency. Build a wearable that passively detects distress (heart-rate spikes, abnormal movement, loud sounds), silently triggers an alert without tipping off an attacker, captures audio/video evidence, shares live location with emergency contacts and police, and keeps transmitting even if the phone is lost or switched off." },
+      { id: "P7", title: "Skill to Income Platform for Rural Women", desc: "Rural women with marketable skills (e.g. block-printing) often can't reach buyers. Build a platform where they can photograph their work, get help with listings and fair pricing, find buyers, arrange logistics, receive payments, and build a trusted seller reputation — usable on a basic smartphone in at least three Indian languages." },
+      { id: "P8", title: "Nutrition Tracker for Pregnant & Lactating Women", desc: "Generic nutrition apps suggest foods that aren't locally available or affordable. Build a diet planner that factors in local seasonal produce, household budget, regional cooking habits, and pregnancy/lactation stage — producing WHO-aligned weekly meal plans presented visually with icons in local languages for users with limited literacy." }
+    ]
+  };
+
+  const INDUSTRY_TRACK = "Track 4: Open Industry Problems";
+
+  function handleTrackChange() {
+    const track = document.getElementById('track').value;
+    const sel = document.getElementById('problemStatement');
+    const selectRow = document.getElementById('problemSelectRow');
+    const uploadRow = document.getElementById('industryUploadRow');
+    const descBox = document.getElementById('problemDescBox');
+
+    sel.innerHTML = '<option value="">Select problem statement</option>';
+    descBox.style.display = 'none';
+    document.getElementById('track').classList.remove('error');
+
+    if (track === INDUSTRY_TRACK) {
+      // Industry track: hide dropdown, show PDF upload
+      selectRow.style.display = 'none';
+      uploadRow.style.display = 'block';
+    } else if (problemsByTrack[track]) {
+      // Tracks 1-3: show dropdown, hide PDF upload
+      selectRow.style.display = 'block';
+      uploadRow.style.display = 'none';
+
+      problemsByTrack[track].forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id + ": " + p.title;
+        opt.textContent = p.id + ": " + p.title;
+        sel.appendChild(opt);
+      });
+
+      // Clear any previously uploaded industry PDF
+      pdfBase64 = "";
+      pdfFileName = "";
+      const display = document.getElementById("fileNameDisplay");
+      if (display) { display.style.display = 'none'; }
+    } else {
+      // No track selected yet
+      selectRow.style.display = 'block';
+      uploadRow.style.display = 'none';
+    }
+  }
+
+  function showProblemDesc() {
+    const track = document.getElementById('track').value;
+    const val = document.getElementById('problemStatement').value;
+    const id = val.split(":")[0].trim();
+    const list = problemsByTrack[track] || [];
+    const p = list.find(x => x.id === id);
+    const box = document.getElementById('problemDescBox');
+
+    if (p) {
+      document.getElementById('problemDescTitle').textContent = p.id + ": " + p.title;
+      document.getElementById('problemDescText').textContent = p.desc;
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
+    document.getElementById('problemStatement').classList.remove('error');
+  }
+
+  let pdfBase64 = "";
+  let pdfFileName = "";
+
+  function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showError("Only PDF files are accepted.");
+      input.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showError("PDF must be under 5 MB.");
+      input.value = "";
+      return;
+    }
+
+    pdfFileName = file.name;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      pdfBase64 = e.target.result.split(",")[1];
+      const display = document.getElementById("fileNameDisplay");
+      display.textContent = "✓ " + file.name;
+      display.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("errorMsg");
+    document.getElementById("errorText").textContent = msg;
+    el.style.display = "block";
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function clearMessages() {
+    document.getElementById("successMsg").style.display = "none";
+    document.getElementById("errorMsg").style.display = "none";
+  }
+
+  function val(id) {
+    return document.getElementById(id).value.trim();
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById("submitBtn");
+    const spinner = document.getElementById("spinner");
+    const icon = document.getElementById("sendIcon");
+    const txt = document.getElementById("btnText");
+    btn.disabled = on;
+    spinner.style.display = on ? "block" : "none";
+    icon.style.display = on ? "none" : "block";
+    txt.textContent = on ? "Submitting…" : "Submit Registration";
+  }
+
+  function markError(id) {
+    document.getElementById(id).classList.add("error");
+  }
+
+  function clearErrors() {
+    document.querySelectorAll("input.error, select.error").forEach(el => el.classList.remove("error"));
+  }
+
+  function submitForm() {
+    clearMessages();
+    clearErrors();
+
+    const required = [
+      { id: "teamName",    label: "Team Name" },
+      { id: "college",     label: "College / Institution" },
+      { id: "track",       label: "Track" },
+      { id: "leaderName",  label: "Leader Full Name" },
+      { id: "leaderEmail", label: "Leader Email" },
+      { id: "leaderPhone", label: "Leader Contact Number" },
+      { id: "leaderYear",  label: "Leader Year of Study" },
+      { id: "leaderDept",  label: "Leader Department" },
+    ];
+
+    let firstError = null;
+    required.forEach(f => {
+      if (!val(f.id)) {
+        markError(f.id);
+        if (!firstError) firstError = f.label;
+      }
+    });
+
+    const track = val("track");
+
+    if (track === INDUSTRY_TRACK) {
+      // Industry track requires the PDF upload
+      if (!pdfBase64) {
+        document.getElementById("fileZone").style.borderColor = "#b8005e";
+        if (!firstError) firstError = "Industry Problem Statement PDF";
+      }
+    } else if (track) {
+      // Tracks 1-3 require the problem statement dropdown
+      if (!val("problemStatement")) {
+        markError("problemStatement");
+        if (!firstError) firstError = "Problem Statement";
+      }
+    }
+
+    if (firstError) {
+      showError("Please fill in all required fields. Missing: " + firstError);
+      document.querySelector(".error, #fileZone")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    const payload = {
+      timestamp:    new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+      teamName:     val("teamName"),
+      college:      val("college"),
+      track:        val("track"),
+      problemStatement: val("problemStatement"),
+      leaderName:   val("leaderName"),
+      leaderEmail:  val("leaderEmail"),
+      leaderPhone:  val("leaderPhone"),
+      leaderYear:   val("leaderYear"),
+      leaderDept:   val("leaderDept"),
+      leaderIeee:   val("leaderIeee"),
+      m2Name:       val("m2Name"),
+      m2Phone:      val("m2Phone"),
+      m3Name:       val("m3Name"),
+      m4Name:       val("m4Name"),
+      pdfFileName:  pdfFileName,
+      pdfBase64:    pdfBase64
+    };
+
+    setLoading(true);
+
+    fetch(WEBAPP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(() => {
+      setLoading(false);
+      document.getElementById("successMsg").style.display = "block";
+      document.getElementById("successMsg").scrollIntoView({ behavior: "smooth" });
+      document.querySelector("form-container");
+      document.querySelectorAll("input, select").forEach(el => el.value = "");
+      pdfBase64 = "";
+      pdfFileName = "";
+      document.getElementById("fileNameDisplay").style.display = "none";
+      document.getElementById("fileZone").style.borderColor = "";
+    })
+    .catch(err => {
+      setLoading(false);
+      showError("Network error. Please check your connection and try again.");
+      console.error(err);
+    });
+  }
+</script>
+</body>
+</html>
