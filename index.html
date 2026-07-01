@@ -347,6 +347,39 @@
 
 <div class="form-container">
 
+  <!-- ILS PRE-REGISTRATION NOTICE -->
+  <div style="background:linear-gradient(135deg,#6a1794,#b8005e); border-radius:14px; padding:14px 16px; margin-bottom:1rem; display:flex; align-items:flex-start; gap:12px;">
+    <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+    <div>
+      <div style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">⚠️ Important: ILS Registration Required First</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.88); line-height:1.6;">It is <strong style="color:white;">compulsory to register for the IEEE WIE ILS 2026</strong> before filling this Hackathon registration form. Keep your <strong style="color:white;">ILS Registration ID</strong> and <strong style="color:white;">payment screenshot</strong> ready — both are required below.</div>
+    </div>
+  </div>
+
+  <!-- ILS REGISTRATION DETAILS -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="18" height="18" fill="none" stroke="#b8005e" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20L16 3z"/></svg>
+      ILS Registration Details
+    </div>
+
+    <div class="field-row">
+      <label for="ilsRegId">ILS Registration ID <span class="req">*</span></label>
+      <input type="text" id="ilsRegId" placeholder="e.g. ILS2026-XXXXX">
+    </div>
+
+    <div class="field-row">
+      <label for="paymentFile">Payment Screenshot (PDF/Image) <span class="req">*</span></label>
+      <div class="file-zone" id="paymentZone" onclick="document.getElementById('paymentFile').click()">
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" id="paymentFile" onchange="handlePaymentFile(this)" style="display:none;">
+        <svg class="file-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="upload-label">Click to upload Payment Screenshot</div>
+        <div class="upload-hint">PDF, JPG, or PNG · Max 5 MB</div>
+        <div class="file-name-display" id="paymentFileName"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- TEAM INFO -->
   <div class="card">
     <div class="card-title">
@@ -635,6 +668,34 @@
 
   let pdfBase64 = "";
   let pdfFileName = "";
+  let paymentBase64 = "";
+  let paymentFileName = "";
+  let paymentMimeType = "";
+
+  function handlePaymentFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const allowed = ["application/pdf","image/jpeg","image/png"];
+    if (!allowed.includes(file.type)) {
+      showError("Payment screenshot must be PDF, JPG, or PNG.");
+      input.value = ""; return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showError("Payment file must be under 5 MB.");
+      input.value = ""; return;
+    }
+    paymentFileName = file.name;
+    paymentMimeType = file.type;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      paymentBase64 = e.target.result.split(",")[1];
+      const display = document.getElementById("paymentFileName");
+      display.textContent = "✓ " + file.name;
+      display.style.display = "block";
+      document.getElementById("paymentZone").style.borderColor = "#c9a0e8";
+    };
+    reader.readAsDataURL(file);
+  }
 
   function handleFile(input) {
     const file = input.files[0];
@@ -703,6 +764,7 @@
     clearErrors();
 
     const required = [
+      { id: "ilsRegId",    label: "ILS Registration ID" },
       { id: "teamName",    label: "Team Name" },
       { id: "college",     label: "College / Institution" },
       { id: "track",       label: "Track" },
@@ -737,15 +799,24 @@
       }
     }
 
+    if (!paymentBase64) {
+      document.getElementById("paymentZone").style.borderColor = "#b8005e";
+      if (!firstError) firstError = "Payment Screenshot";
+    }
+
     if (firstError) {
       showError("Please fill in all required fields. Missing: " + firstError);
-      document.querySelector(".error, #fileZone")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.querySelector(".error, #paymentZone, #fileZone")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     const payload = {
-      timestamp:    new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
-      teamName:     val("teamName"),
+      timestamp:        new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+      ilsRegId:         val("ilsRegId"),
+      paymentFileName:  paymentFileName,
+      paymentMimeType:  paymentMimeType,
+      paymentBase64:    paymentBase64,
+      teamName:         val("teamName"),
       college:      val("college"),
       track:        val("track"),
       problemStatement: val("problemStatement"),
@@ -779,8 +850,13 @@
       document.querySelectorAll("input, select").forEach(el => el.value = "");
       pdfBase64 = "";
       pdfFileName = "";
+      paymentBase64 = "";
+      paymentFileName = "";
+      paymentMimeType = "";
       document.getElementById("fileNameDisplay").style.display = "none";
       document.getElementById("fileZone").style.borderColor = "";
+      document.getElementById("paymentFileName").style.display = "none";
+      document.getElementById("paymentZone").style.borderColor = "#c9a0e8";
     })
     .catch(err => {
       setLoading(false);
