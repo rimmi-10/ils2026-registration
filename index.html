@@ -55,6 +55,10 @@
     background: linear-gradient(135deg, #6a1794, #b8005e);
     color: white; border-color: transparent;
   }
+  .round-tab.disabled {
+    cursor: not-allowed; opacity: 0.5; background: #f2f2f2;
+    color: #9a9a9a; border-color: #ddd; pointer-events: none;
+  }
 
   .member-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -203,10 +207,10 @@
       <div class="round-tab active" id="tab-r1" onclick="setRound(1)">
         Round 1<br><span style="font-size:10px; font-weight:400; opacity:0.85;">1st Aug 2026</span>
       </div>
-      <div class="round-tab" id="tab-r2" onclick="setRound(2)">
+      <div class="round-tab disabled" id="tab-r2" title="Round 2 registration is not open yet">
         Round 2<br><span style="font-size:10px; font-weight:400; opacity:0.85;">27th Aug 2026</span>
       </div>
-      <div class="round-tab" id="tab-r3" onclick="setRound(3)">
+      <div class="round-tab disabled" id="tab-r3" title="Round 3 registration is not open yet">
         Round 3<br><span style="font-size:10px; font-weight:400; opacity:0.85;">Grand Finale · 25th Oct</span>
       </div>
     </div>
