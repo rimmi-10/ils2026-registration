@@ -413,6 +413,14 @@
     <div id="track4Row" style="display:none;">
       <label style="margin-bottom:10px; display:block;">Problem Statement <span class="req">*</span></label>
 
+      <div class="note-box">
+        If you choose <strong>"I have my own industry problem statement"</strong> below, you must upload a document that has both of these:
+        <ul style="margin:6px 0 0 18px; padding:0;">
+          <li>Your problem statement description.</li>
+          <li>At the end of the document, an endorsement from an industry professional to validate that it is genuine.</li>
+        </ul>
+      </div>
+
       <div class="track4-option" id="t4opt1" onclick="selectTrack4Option('P9')">
         <input type="radio" name="track4choice" id="t4r1" value="P9">
         <div>
@@ -433,7 +441,7 @@
         <input type="radio" name="track4choice" id="t4r3" value="SELF">
         <div>
           <div class="track4-option-label">I have my own industry problem statement</div>
-          <div class="track4-option-desc">Your team has identified a real-world industry problem. Describe it below and upload supporting documentation if available.</div>
+          <div class="track4-option-desc">Your team has identified a real-world industry problem. Describe it below and upload a document with your problem statement, endorsed by an industry professional (required).</div>
         </div>
       </div>
 
@@ -445,7 +453,13 @@
         </div>
         <div class="field-row">
           <label for="pdfFile">Endorsed Problem Statement Document (PDF) <span class="req">*</span></label>
-          <div class="note-box" style="margin-bottom:8px;">This document must contain your problem statement and be <strong>endorsed by an industry professional</strong> (e.g. a signed letter or email from the company), so we can verify it's genuine.</div>
+          <div class="note-box" style="margin-bottom:8px;">
+            This document must have both of the following, in this order:
+            <ul style="margin:6px 0 0 18px; padding:0;">
+              <li>Your problem statement description.</li>
+              <li>At the end of the document, an endorsement from an industry professional (for example, a signed letter or email from the company) to validate that it is genuine.</li>
+            </ul>
+          </div>
           <div class="file-zone" id="fileZone">
             <input type="file" accept=".pdf" id="pdfFile" onchange="handleFile(this)">
             <svg class="file-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
