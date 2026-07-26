@@ -434,7 +434,7 @@
             <input type="file" accept=".pdf" id="pdfFile" onchange="handleFile(this)">
             <svg class="file-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <div class="upload-label">Click to upload endorsed problem statement document (required)</div>
-            <div class="upload-hint">PDF only · Max 5 MB</div>
+            <div class="upload-hint">PDF only · Max 2 MB</div>
             <div class="file-name-display" id="fileNameDisplay"></div>
           </div>
         </div>
@@ -801,7 +801,7 @@
     const file = input.files[0];
     if (!file) return;
     if (file.type !== "application/pdf") { showError("Only PDF files are accepted."); input.value=""; return; }
-    if (file.size > 5*1024*1024) { showError("PDF must be under 5 MB."); input.value=""; return; }
+    if (file.size > 2*1024*1024) { showError("PDF must be under 2 MB."); input.value=""; return; }
     pdfFileName = file.name;
     const fr = new FileReader();
     fr.onload = function(e) {
