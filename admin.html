@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE WIE ILS 2026 — Admin Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f7eeff; min-height: 100vh; color: #2c1a40; }
+  .hero {
+    background: linear-gradient(135deg, #6a1794 0%, #b8005e 100%);
+    padding: 1.5rem; text-align: center; color: white;
+  }
+  .hero h1 { font-size: 1.4rem; font-weight: 700; }
+  .hero .tagline { font-size: 12.5px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+
+  /* ── LOGIN ── */
+  .login-wrap { max-width: 380px; margin: 3rem auto; padding: 0 1rem; }
+  .card {
+    background: white; border-radius: 16px; padding: 1.75rem;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  .card h2 { font-size: 17px; color: #6a1794; margin-bottom: 1.25rem; }
+  .field-row { margin-bottom: 1rem; }
+  label { display: block; font-size: 13px; font-weight: 500; color: #4a1b6e; margin-bottom: 5px; }
+  input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #ddc4f0;
+    border-radius: 8px; font-size: 14px; font-family: inherit;
+    background: #fdf8ff; outline: none;
+  }
+  input:focus { border-color: #8c3ec0; background: white; }
+  .btn {
+    width: 100%; padding: 11px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #6a1794, #b8005e); color: white;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn:hover { opacity: 0.92; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-secondary {
+    background: white; color: #6a1794; border: 1.5px solid #ddc4f0;
+  }
+  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+  .msg.error { background: #fff5f9; border: 1px solid #f0a0c0; color: #8b0038; }
+
+  /* ── DASHBOARD ── */
+  .dash { display: none; max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  .dash-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 12px; flex-wrap: wrap; }
+  .dash-top .btn { width: auto; padding: 9px 18px; }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .stat-box {
+    background: white; border-radius: 12px; padding: 14px 20px; flex: 1; min-width: 130px;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  .stat-box .num { font-size: 22px; font-weight: 700; color: #6a1794; }
+  .stat-box .lbl { font-size: 12px; color: #7c2ab0; margin-top: 2px; }
+  .controls { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .controls input, .controls select {
+    padding: 9px 12px; border: 1.5px solid #ddc4f0; border-radius: 8px;
+    font-size: 13px; font-family: inherit; background: white; outline: none;
+  }
+  .controls input { flex: 1; min-width: 200px; }
+  .table-wrap {
+    background: white; border-radius: 12px; overflow: auto; max-height: 70vh;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; white-space: nowrap; }
+  th {
+    background: #6a1794; color: white; text-align: left; padding: 10px 12px;
+    position: sticky; top: 0; font-weight: 600; z-index: 1;
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0d5fa; }
+  tr:hover td { background: #fdf8ff; }
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    background: #f3eaff; color: #7c2ab0;
+  }
+  a.filelink { color: #6a1794; font-weight: 600; text-decoration: none; }
+  a.filelink:hover { text-decoration: underline; }
+  .empty-cell { color: #c0a8d8; }
+  .loading, .empty-state { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>IEEE WIE ILS 2026 — Admin Portal</h1>
+  <div class="tagline">Registration data &amp; submitted files</div>
+</div>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="card">
+    <h2>Admin Login</h2>
+    <div class="msg error" id="loginError"></div>
+    <div class="field-row">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com">
+    </div>
+    <div class="field-row">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••">
+    </div>
+    <button class="btn" id="loginBtn" onclick="login()">Sign In</button>
+  </div>
+</div>
+
+<div class="dash" id="dash">
+  <div class="dash-top">
+    <div class="stats" id="stats"></div>
+    <button class="btn btn-secondary" style="width:auto;" onclick="logout()">Log Out</button>
+  </div>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search by team, leader, college, email..." oninput="renderTable()">
+    <select id="roundFilter" onchange="renderTable()">
+      <option value="">All Rounds</option>
+      <option value="Round 1">Round 1</option>
+      <option value="Round 2">Round 2</option>
+      <option value="Round 3">Round 3</option>
+    </select>
+    <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
+  </div>
+  <div class="table-wrap">
+    <div id="tableHost"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://gfoclvqlkylujopcvuht.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let allRows = [];
+
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    if (!email || !password) { errEl.textContent = 'Enter email and password.'; errEl.style.display = 'block'; return; }
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginBtn').textContent = 'Signing in…';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').textContent = 'Sign In';
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    showDashboard();
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    document.getElementById('dash').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+
+  async function showDashboard() {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    await loadData();
+  }
+
+  async function loadData() {
+    document.getElementById('tableHost').innerHTML = '<div class="loading">Loading…</div>';
+    const { data, error } = await sb.from('registrations').select('*').order('created_at', { ascending: false });
+    if (error) {
+      document.getElementById('tableHost').innerHTML = '<div class="empty-state">Failed to load: ' + error.message + '</div>';
+      return;
+    }
+    allRows = data || [];
+    renderStats();
+    renderTable();
+  }
+
+  function renderStats() {
+    const byRound = {};
+    allRows.forEach(r => { byRound[r.round] = (byRound[r.round]||0) + 1; });
+    let html = '<div class="stat-box"><div class="num">' + allRows.length + '</div><div class="lbl">Total Registrations</div></div>';
+    Object.keys(byRound).sort().forEach(round => {
+      html += '<div class="stat-box"><div class="num">' + byRound[round] + '</div><div class="lbl">' + escapeHtml(round) + '</div></div>';
+    });
+    document.getElementById('stats').innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function fileLink(url, label) {
+    if (!url) return '<span class="empty-cell">—</span>';
+    return '<a class="filelink" href="' + url + '" target="_blank" rel="noopener">' + label + '</a>';
+  }
+
+  function renderTable() {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const roundF = document.getElementById('roundFilter').value;
+    let rows = allRows;
+    if (roundF) rows = rows.filter(r => r.round === roundF);
+    if (q) {
+      rows = rows.filter(r => [r.team_name, r.leader_name, r.college, r.leader_email, r.leader_phone]
+        .some(v => (v||'').toLowerCase().includes(q)));
+    }
+    if (rows.length === 0) {
+      document.getElementById('tableHost').innerHTML = '<div class="empty-state">No registrations match.</div>';
+      return;
+    }
+    let html = '<table><thead><tr>' +
+      '<th>Submitted</th><th>Round</th><th>Entry</th><th>Team</th><th>College</th><th>Track</th><th>Problem Statement</th>' +
+      '<th>Leader Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Year</th><th>Dept</th><th>IEEE #</th>' +
+      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach(r => {
+      const members = Array.isArray(r.members) ? r.members : [];
+      const membersStr = members.length
+        ? members.map(m => escapeHtml(m.name) + (m.gender ? ' (' + escapeHtml(m.gender) + ')' : '')).join(', ')
+        : '<span class="empty-cell">—</span>';
+      html += '<tr>' +
+        '<td>' + escapeHtml(new Date(r.created_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) + '</td>' +
+        '<td><span class="pill">' + escapeHtml(r.round) + '</span></td>' +
+        '<td>' + escapeHtml(r.entry_type) + '</td>' +
+        '<td>' + escapeHtml(r.team_name) + '</td>' +
+        '<td>' + escapeHtml(r.college) + '</td>' +
+        '<td>' + escapeHtml(r.track) + '</td>' +
+        '<td>' + escapeHtml(r.problem_statement) + '</td>' +
+        '<td>' + escapeHtml(r.leader_name) + '</td>' +
+        '<td>' + escapeHtml(r.leader_gender) + '</td>' +
+        '<td>' + escapeHtml(r.leader_email) + '</td>' +
+        '<td>' + escapeHtml(r.leader_phone) + '</td>' +
+        '<td>' + escapeHtml(r.leader_year) + '</td>' +
+        '<td>' + escapeHtml(r.leader_dept) + '</td>' +
+        '<td>' + escapeHtml(r.leader_ieee) + '</td>' +
+        '<td>' + membersStr + '</td>' +
+        '<td>' + escapeHtml(r.ils_reg_id) + '</td>' +
+        '<td>' + fileLink(r.payment_screenshot_url, 'View') + '</td>' +
+        '<td>' + fileLink(r.supporting_doc_url, r.supporting_doc_name || 'View') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('tableHost').innerHTML = html;
+  }
+
+  function exportCsv() {
+    const cols = ['created_at','round','entry_type','team_name','college','track','problem_statement',
+      'leader_name','leader_gender','leader_email','leader_phone','leader_year','leader_dept','leader_ieee',
+      'ils_reg_id','payment_screenshot_url','supporting_doc_url'];
+    let csv = cols.join(',') + '\n';
+    allRows.forEach(r => {
+      csv += cols.map(c => '"' + String(r[c] ?? '').replace(/"/g,'""') + '"').join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ils2026-registrations-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    const { data } = await sb.auth.getSession();
+    if (data.session) showDashboard();
+  });
+</script>
+</body>
+</html>
