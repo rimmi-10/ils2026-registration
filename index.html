@@ -669,7 +669,37 @@
   </div>
 </div>
 <script>
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzCE_5af5FMh3KpNwzGjewGPA0WJN6TA3Aj_7MDE2NJWQpE2SotltKJhYPBSve_bBKklg/exec";
+  const SUPABASE_URL = "https://gfoclvqlkylujopcvuht.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
+  const SUPABASE_BUCKET = "registration-files";
+
+  function base64ToBlob(base64, mimeType) {
+    const byteChars = atob(base64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    return new Blob([new Uint8Array(byteNumbers)], { type: mimeType });
+  }
+
+  async function uploadToSupabaseStorage(base64, filename, mimeType, folder) {
+    const blob = base64ToBlob(base64, mimeType);
+    const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = folder + "/" + Date.now() + "-" + safeName;
+    const res = await fetch(SUPABASE_URL + "/storage/v1/object/" + SUPABASE_BUCKET + "/" + path, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+        "Content-Type": mimeType
+      },
+      body: blob
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error("File upload failed (" + res.status + "): " + errText);
+    }
+    return SUPABASE_URL + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/" + path;
+  }
+
   let currentRound = 1;
   let track4Choice = "";
   const roundNotes = {
@@ -855,7 +885,7 @@
   }
   function markError(id) { const el=document.getElementById(id); if(el) el.classList.add("error"); }
   function clearErrors() { document.querySelectorAll(".error").forEach(el=>el.classList.remove("error")); }
-  function submitForm() {
+  async function submitForm() {
     clearMessages(); clearErrors();
     let firstError = null;
     if (currentRound===3) {
@@ -917,35 +947,53 @@
     if (entryType==="team") {
       for(let i=2;i<=6;i++) { const n=gv("m"+i+"Name"); if(n) members.push({name:n,gender:gv("m"+i+"Gender"),phone:gv("m"+i+"Phone")}); }
     }
-    const payload={
-      round:"Round "+currentRound,
-      entryType: entryType==="solo" ? "Solo" : "Team",
-      timestamp:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"}),
-      ilsRegId:currentRound===3?gv("ilsRegId"):"",
-      paymentFileName:currentRound===3?paymentFileName:"",
-      paymentMimeType:currentRound===3?paymentMimeType:"",
-      paymentBase64:currentRound===3?paymentBase64:"",
-      teamName:gv("teamName"), college:gv("college"),
-      track, problemStatement:finalProblemStatement,
-      track4Choice: track===INDUSTRY_TRACK?track4Choice:"",
-      leaderName:gv("m1Name"), leaderGender:gv("m1Gender"),
-      leaderEmail:gv("m1Email"), leaderPhone:gv("m1Phone"),
-      leaderYear:gv("m1Year"), leaderDept:gv("m1Dept"), leaderIeee:gv("m1Ieee"),
-      members:JSON.stringify(members),
-      pdfFileName, pdfBase64
-    };
-    setLoading(true);
 
-    // ── FIX 2: Send as URLSearchParams to avoid CORS preflight ──
-    // (original used Content-Type:application/json which Google Apps Script blocks)
-    const params = new URLSearchParams();
-    params.append("payload", JSON.stringify(payload));
-    fetch(WEBAPP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: params
-    })
-    .then(()=>{
+    setLoading(true);
+    try {
+      // Files go straight into Supabase Storage; a Storage webhook on the
+      // backend forwards them to Google Drive and writes the Drive link
+      // back onto the row. We only need the Storage URL here.
+      let paymentUrl = "";
+      if (currentRound===3 && paymentBase64) {
+        paymentUrl = await uploadToSupabaseStorage(paymentBase64, paymentFileName, paymentMimeType || "image/jpeg", "payments");
+      }
+      let supportingDocUrl = "";
+      if (pdfBase64 && pdfFileName) {
+        supportingDocUrl = await uploadToSupabaseStorage(pdfBase64, pdfFileName, "application/pdf", "supporting-docs");
+      }
+
+      const row = {
+        round: "Round "+currentRound,
+        entry_type: entryType==="solo" ? "Solo" : "Team",
+        ils_reg_id: currentRound===3 ? gv("ilsRegId") : "",
+        payment_screenshot_url: paymentUrl,
+        team_name: gv("teamName"), college: gv("college"),
+        track, problem_statement: finalProblemStatement,
+        track4_choice: track===INDUSTRY_TRACK ? track4Choice : "",
+        leader_name: gv("m1Name"), leader_gender: gv("m1Gender"),
+        leader_email: gv("m1Email"), leader_phone: gv("m1Phone"),
+        leader_year: gv("m1Year"), leader_dept: gv("m1Dept"), leader_ieee: gv("m1Ieee"),
+        members,
+        supporting_doc_name: pdfFileName || "",
+        supporting_doc_url: supportingDocUrl
+      };
+
+      const res = await fetch(SUPABASE_URL + "/rest/v1/registrations", {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(row)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error("Server rejected the submission (" + res.status + "): " + errText);
+      }
+
       setLoading(false);
       document.getElementById("successMsg").style.display="block";
       launchConfetti();
@@ -957,8 +1005,11 @@
       document.getElementById("paymentZone").style.borderColor="";
       ['t4opt1','t4opt2','t4opt3'].forEach(id=>document.getElementById(id).classList.remove('selected'));
       document.getElementById('selfProblemRow').style.display='none';
-    })
-    .catch(err=>{setLoading(false);showError("Network error. Please check your connection and try again.");console.error(err);});
+    } catch (err) {
+      setLoading(false);
+      showError("Submission failed: " + err.message + " — your data was not saved. Please try again or contact us on WhatsApp.");
+      console.error(err);
+    }
   }
   function openGuidelines() { document.getElementById('guidelinesModal').classList.add('open'); }
   function closeGuidelines() {
