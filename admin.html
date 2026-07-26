@@ -104,6 +104,16 @@
   .modal-actions { display: flex; gap: 10px; margin-top: 1.25rem; }
   .modal-actions .btn { width: auto; flex: 1; }
   .msg.success { background: #f0fff7; border: 1px solid #6fcf97; color: #1a6b3a; }
+  .cleanup-item {
+    border: 1px solid #e2c8f5; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .cleanup-item .info { font-size: 12.5px; line-height: 1.6; }
+  .cleanup-item .info b { color: #6a1794; }
+  .cleanup-item .old-tag { color: #b8005e; font-weight: 600; }
+  .cleanup-item .new-tag { color: #1a6b3a; font-weight: 600; }
+  .btn-danger { background: #b8005e; color: white; }
+  .btn-small { padding: 7px 14px; font-size: 12.5px; width: auto; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -144,11 +154,27 @@
     </select>
     <span class="sel-count" id="selCount">0 selected</span>
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
   </div>
   <div class="table-wrap">
     <div id="tableHost"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<!-- LEGACY CLEANUP MODAL -->
+<div class="modal-overlay" id="cleanupModal">
+  <div class="modal-box" style="max-width:700px;">
+    <h3>🧹 Legacy Cleanup</h3>
+    <div class="msg error" id="cleanupError"></div>
+    <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
+      Matches a "PENDING RESUBMISSION" legacy row to a real completed row from the same person (matched by leader email), so you can delete the old placeholder once they've resubmitted.
+    </p>
+    <div id="cleanupList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeCleanup()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -423,6 +449,66 @@
     a.href = URL.createObjectURL(blob);
     a.download = 'ils2026-registrations-' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
+  }
+
+  // ── LEGACY CLEANUP ──
+  function computeCleanupMatches() {
+    const legacy = allRows.filter(r => r.track === 'PENDING RESUBMISSION' && r.leader_email);
+    const matches = [];
+    legacy.forEach(oldRow => {
+      const newRow = allRows.find(r =>
+        r.id !== oldRow.id &&
+        r.track !== 'PENDING RESUBMISSION' &&
+        (r.leader_email || '').trim().toLowerCase() === (oldRow.leader_email || '').trim().toLowerCase()
+      );
+      if (newRow) matches.push({ oldRow, newRow });
+    });
+    return matches;
+  }
+
+  function renderCleanupList() {
+    const matches = computeCleanupMatches();
+    const host = document.getElementById('cleanupList');
+    if (matches.length === 0) {
+      host.innerHTML = '<div class="empty-state">No matches found yet — nothing to clean up.</div>';
+      return;
+    }
+    host.innerHTML = matches.map(({ oldRow, newRow }) => (
+      '<div class="cleanup-item" id="cleanup-' + oldRow.id + '">' +
+        '<div class="info">' +
+          '<div><b>' + escapeHtml(oldRow.leader_name) + '</b> — ' + escapeHtml(oldRow.leader_email) + '</div>' +
+          '<div><span class="old-tag">OLD</span> ' + escapeHtml(oldRow.team_name) + ' · ' + escapeHtml(new Date(oldRow.created_at).toLocaleDateString('en-IN')) + ' · PENDING RESUBMISSION</div>' +
+          '<div><span class="new-tag">NEW</span> ' + escapeHtml(newRow.team_name) + ' · ' + escapeHtml(new Date(newRow.created_at).toLocaleDateString('en-IN')) + ' · ' + escapeHtml(newRow.track) + '</div>' +
+        '</div>' +
+        '<button class="btn btn-danger btn-small" onclick="deleteLegacyRow(\'' + oldRow.id + '\')">Delete Old Row</button>' +
+      '</div>'
+    )).join('');
+  }
+
+  function openCleanup() {
+    document.getElementById('cleanupError').style.display = 'none';
+    renderCleanupList();
+    document.getElementById('cleanupModal').classList.add('open');
+  }
+
+  function closeCleanup() {
+    document.getElementById('cleanupModal').classList.remove('open');
+  }
+
+  async function deleteLegacyRow(id) {
+    if (!confirm('Delete this old placeholder row permanently? This cannot be undone.')) return;
+    const errEl = document.getElementById('cleanupError');
+    errEl.style.display = 'none';
+    const { error } = await sb.from('registrations').delete().eq('id', id);
+    if (error) {
+      errEl.textContent = 'Failed to delete: ' + error.message;
+      errEl.style.display = 'block';
+      return;
+    }
+    allRows = allRows.filter(r => r.id !== id);
+    renderCleanupList();
+    renderStats();
+    renderTable();
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
