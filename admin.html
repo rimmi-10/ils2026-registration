@@ -162,6 +162,10 @@
       <label id="recipientLabel">Sending to 0 recipients</label>
     </div>
     <div class="field-row">
+      <label for="bcCc">CC <span style="font-weight:400; color:#9b7ab0;">— Optional, comma-separated</span></label>
+      <input type="text" id="bcCc" placeholder="e.g. wieils2026@gmail.com">
+    </div>
+    <div class="field-row">
       <label for="bcSubject">Subject</label>
       <input type="text" id="bcSubject" placeholder="e.g. Round 1 results — next steps">
     </div>
@@ -232,6 +236,8 @@
     });
     document.getElementById('stats').innerHTML = html;
   }
+
+  function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
 
   function escapeHtml(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -328,6 +334,7 @@
     if (selectedIds.size === 0) { alert('Select at least one team first (checkbox in the table).'); return; }
     const recipients = computeRecipients();
     document.getElementById('recipientLabel').textContent = 'Sending to ' + recipients.length + ' recipient(s) across ' + selectedIds.size + ' team(s)';
+    document.getElementById('bcCc').value = '';
     document.getElementById('bcSubject').value = '';
     document.getElementById('bcBody').value = '';
     document.getElementById('broadcastError').style.display = 'none';
@@ -339,13 +346,37 @@
     document.getElementById('broadcastModal').classList.remove('open');
   }
 
+  function buildEmailHtml(subject, bodyText) {
+    const paragraphs = bodyText.split(/\n\s*\n/).map(p =>
+      '<p style="margin:0 0 14px; line-height:1.7; color:#2c1a40; font-size:14px;">' +
+      escapeHtml(p).replace(/\n/g, '<br>') + '</p>'
+    ).join('');
+    return '<!DOCTYPE html><html><body style="margin:0; padding:0; background:#f7eeff; font-family:Arial,Helvetica,sans-serif;">' +
+      '<div style="max-width:600px; margin:0 auto; background:#f7eeff;">' +
+      '<div style="background:linear-gradient(135deg,#6a1794,#b8005e); padding:28px 24px; text-align:center; color:white;">' +
+      '<div style="font-size:19px; font-weight:700;">IEEE WIE ILS 2026</div>' +
+      '<div style="font-size:13px; opacity:0.9; margin-top:4px;">National Hackathon</div>' +
+      '</div>' +
+      '<div style="background:white; padding:28px 24px; border:1px solid #e2c8f5; border-top:none;">' +
+      '<h2 style="margin:0 0 16px; font-size:17px; color:#6a1794;">' + escapeHtml(subject) + '</h2>' +
+      paragraphs +
+      '</div>' +
+      '<div style="text-align:center; padding:18px 12px; font-size:11.5px; color:#7c2ab0;">' +
+      'IEEE WIE ILS 2026 National Hackathon &middot; Queries: Madhav Maheshwari, +91 95888 74415 &middot; ieeegujaratsection.org' +
+      '</div>' +
+      '</div></body></html>';
+  }
+
   async function sendBroadcast() {
     const subject = document.getElementById('bcSubject').value.trim();
     const body = document.getElementById('bcBody').value.trim();
+    const cc = document.getElementById('bcCc').value.split(',').map(s => s.trim()).filter(Boolean);
     const errEl = document.getElementById('broadcastError');
     const okEl = document.getElementById('broadcastSuccess');
     errEl.style.display = 'none'; okEl.style.display = 'none';
     if (!subject || !body) { errEl.textContent = 'Subject and message are both required.'; errEl.style.display = 'block'; return; }
+    const invalidCc = cc.filter(e => !isValidEmail(e));
+    if (invalidCc.length) { errEl.textContent = 'Invalid CC address: ' + invalidCc.join(', '); errEl.style.display = 'block'; return; }
     const recipients = computeRecipients();
     if (recipients.length === 0) { errEl.textContent = 'No valid email addresses found in the selected teams.'; errEl.style.display = 'block'; return; }
 
@@ -354,6 +385,7 @@
     try {
       const { data: sessionData } = await sb.auth.getSession();
       const token = sessionData?.session?.access_token;
+      const html = buildEmailHtml(subject, body);
       const res = await fetch(SUPABASE_URL + '/functions/v1/send-broadcast', {
         method: 'POST',
         headers: {
@@ -361,7 +393,7 @@
           'Authorization': 'Bearer ' + token,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ recipients, subject, body })
+        body: JSON.stringify({ recipients, cc, subject, body, html })
       });
       const result = await res.json().catch(() => null);
       if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
