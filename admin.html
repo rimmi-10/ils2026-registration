@@ -81,6 +81,29 @@
   a.filelink:hover { text-decoration: underline; }
   .empty-cell { color: #c0a8d8; }
   .loading, .empty-state { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
+
+  /* ── BROADCAST ── */
+  .sel-count { font-size: 13px; color: #4a1b6e; font-weight: 600; align-self: center; }
+  input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #6a1794; }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(44,26,64,0.55);
+    z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 16px; max-width: 520px; width: 100%;
+    max-height: 90vh; overflow-y: auto; padding: 1.5rem;
+  }
+  .modal-box h3 { font-size: 16px; color: #6a1794; margin-bottom: 1rem; }
+  textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #ddc4f0;
+    border-radius: 8px; font-size: 14px; font-family: inherit;
+    background: #fdf8ff; outline: none; min-height: 140px; resize: vertical;
+  }
+  textarea:focus { border-color: #8c3ec0; background: white; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.25rem; }
+  .modal-actions .btn { width: auto; flex: 1; }
+  .msg.success { background: #f0fff7; border: 1px solid #6fcf97; color: #1a6b3a; }
 </style>
 </head>
 <body>
@@ -119,11 +142,37 @@
       <option value="Round 2">Round 2</option>
       <option value="Round 3">Round 3</option>
     </select>
+    <span class="sel-count" id="selCount">0 selected</span>
+    <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
   </div>
   <div class="table-wrap">
     <div id="tableHost"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<!-- BROADCAST MODAL -->
+<div class="modal-overlay" id="broadcastModal">
+  <div class="modal-box">
+    <h3>✉ Broadcast Email</h3>
+    <div class="msg error" id="broadcastError"></div>
+    <div class="msg success" id="broadcastSuccess"></div>
+    <div class="field-row">
+      <label id="recipientLabel">Sending to 0 recipients</label>
+    </div>
+    <div class="field-row">
+      <label for="bcSubject">Subject</label>
+      <input type="text" id="bcSubject" placeholder="e.g. Round 1 results — next steps">
+    </div>
+    <div class="field-row">
+      <label for="bcBody">Message</label>
+      <textarea id="bcBody" placeholder="Write your message here..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeBroadcast()">Cancel</button>
+      <button class="btn" id="sendBtn" onclick="sendBroadcast()">Send</button>
+    </div>
   </div>
 </div>
 
@@ -133,6 +182,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let allRows = [];
+  let selectedIds = new Set();
 
   async function login() {
     const email = document.getElementById('email').value.trim();
@@ -206,6 +256,7 @@
       return;
     }
     let html = '<table><thead><tr>' +
+      '<th><input type="checkbox" id="selectAllBox" onclick="toggleSelectAll(this)"></th>' +
       '<th>Submitted</th><th>Round</th><th>Entry</th><th>Team</th><th>College</th><th>Track</th><th>Problem Statement</th>' +
       '<th>Leader Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Year</th><th>Dept</th><th>IEEE #</th>' +
       '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th>' +
@@ -216,6 +267,7 @@
         ? members.map(m => escapeHtml(m.name) + (m.gender ? ' (' + escapeHtml(m.gender) + ')' : '')).join(', ')
         : '<span class="empty-cell">—</span>';
       html += '<tr>' +
+        '<td><input type="checkbox" data-id="' + r.id + '" ' + (selectedIds.has(r.id) ? 'checked' : '') + ' onclick="toggleSelect(\'' + r.id + '\')"></td>' +
         '<td>' + escapeHtml(new Date(r.created_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) + '</td>' +
         '<td><span class="pill">' + escapeHtml(r.round) + '</span></td>' +
         '<td>' + escapeHtml(r.entry_type) + '</td>' +
@@ -238,6 +290,92 @@
     });
     html += '</tbody></table>';
     document.getElementById('tableHost').innerHTML = html;
+    const allVisible = rows.length > 0 && rows.every(r => selectedIds.has(r.id));
+    const selectAllBox = document.getElementById('selectAllBox');
+    if (selectAllBox) selectAllBox.checked = allVisible;
+    updateSelCount();
+  }
+
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+    updateSelCount();
+  }
+
+  function toggleSelectAll(box) {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const roundF = document.getElementById('roundFilter').value;
+    let rows = allRows;
+    if (roundF) rows = rows.filter(r => r.round === roundF);
+    if (q) rows = rows.filter(r => [r.team_name, r.leader_name, r.college, r.leader_email, r.leader_phone].some(v => (v||'').toLowerCase().includes(q)));
+    rows.forEach(r => { if (box.checked) selectedIds.add(r.id); else selectedIds.delete(r.id); });
+    renderTable();
+  }
+
+  function updateSelCount() {
+    document.getElementById('selCount').textContent = selectedIds.size + ' selected';
+  }
+
+  function computeRecipients() {
+    const emails = new Set();
+    allRows.filter(r => selectedIds.has(r.id)).forEach(r => {
+      if (r.leader_email) emails.add(r.leader_email.trim());
+      (Array.isArray(r.members) ? r.members : []).forEach(m => { if (m.email) emails.add(m.email.trim()); });
+    });
+    return Array.from(emails).filter(Boolean);
+  }
+
+  function openBroadcast() {
+    if (selectedIds.size === 0) { alert('Select at least one team first (checkbox in the table).'); return; }
+    const recipients = computeRecipients();
+    document.getElementById('recipientLabel').textContent = 'Sending to ' + recipients.length + ' recipient(s) across ' + selectedIds.size + ' team(s)';
+    document.getElementById('bcSubject').value = '';
+    document.getElementById('bcBody').value = '';
+    document.getElementById('broadcastError').style.display = 'none';
+    document.getElementById('broadcastSuccess').style.display = 'none';
+    document.getElementById('broadcastModal').classList.add('open');
+  }
+
+  function closeBroadcast() {
+    document.getElementById('broadcastModal').classList.remove('open');
+  }
+
+  async function sendBroadcast() {
+    const subject = document.getElementById('bcSubject').value.trim();
+    const body = document.getElementById('bcBody').value.trim();
+    const errEl = document.getElementById('broadcastError');
+    const okEl = document.getElementById('broadcastSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    if (!subject || !body) { errEl.textContent = 'Subject and message are both required.'; errEl.style.display = 'block'; return; }
+    const recipients = computeRecipients();
+    if (recipients.length === 0) { errEl.textContent = 'No valid email addresses found in the selected teams.'; errEl.style.display = 'block'; return; }
+
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(SUPABASE_URL + '/functions/v1/send-broadcast', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ recipients, subject, body })
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+      okEl.textContent = 'Sent to ' + recipients.length + ' recipient(s).';
+      okEl.style.display = 'block';
+      selectedIds.clear();
+      renderTable();
+      setTimeout(closeBroadcast, 1800);
+    } catch (err) {
+      errEl.textContent = 'Failed to send: ' + err.message;
+      errEl.style.display = 'block';
+    } finally {
+      sendBtn.disabled = false; sendBtn.textContent = 'Send';
+    }
   }
 
   function exportCsv() {

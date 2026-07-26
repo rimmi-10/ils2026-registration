@@ -511,7 +511,10 @@
         <div class="field-row"><label for="m2Name">Full Name</label><input type="text" id="m2Name" placeholder="First and last name"></div>
         <div class="field-row"><label for="m2Gender">Gender</label><div class="select-wrap"><select id="m2Gender"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other / Prefer not to say</option></select></div></div>
       </div>
-      <div class="field-row"><label for="m2Phone">Contact Number</label><input type="tel" id="m2Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      <div class="two-col">
+        <div class="field-row"><label for="m2Email">Email Address</label><input type="email" id="m2Email" placeholder="email@example.com"></div>
+        <div class="field-row"><label for="m2Phone">Contact Number</label><input type="tel" id="m2Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      </div>
     </div>
     <div class="card" id="memberCard3">
       <div class="card-title">
@@ -522,7 +525,10 @@
         <div class="field-row"><label for="m3Name">Full Name</label><input type="text" id="m3Name" placeholder="First and last name"></div>
         <div class="field-row"><label for="m3Gender">Gender</label><div class="select-wrap"><select id="m3Gender"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other / Prefer not to say</option></select></div></div>
       </div>
-      <div class="field-row"><label for="m3Phone">Contact Number</label><input type="tel" id="m3Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      <div class="two-col">
+        <div class="field-row"><label for="m3Email">Email Address</label><input type="email" id="m3Email" placeholder="email@example.com"></div>
+        <div class="field-row"><label for="m3Phone">Contact Number</label><input type="tel" id="m3Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      </div>
     </div>
     <div class="card" id="memberCard4">
       <div class="card-title">
@@ -533,7 +539,10 @@
         <div class="field-row"><label for="m4Name">Full Name</label><input type="text" id="m4Name" placeholder="First and last name"></div>
         <div class="field-row"><label for="m4Gender">Gender</label><div class="select-wrap"><select id="m4Gender"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other / Prefer not to say</option></select></div></div>
       </div>
-      <div class="field-row"><label for="m4Phone">Contact Number</label><input type="tel" id="m4Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      <div class="two-col">
+        <div class="field-row"><label for="m4Email">Email Address</label><input type="email" id="m4Email" placeholder="email@example.com"></div>
+        <div class="field-row"><label for="m4Phone">Contact Number</label><input type="tel" id="m4Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      </div>
     </div>
     <div class="card" id="memberCard5">
       <div class="card-title">
@@ -544,7 +553,10 @@
         <div class="field-row"><label for="m5Name">Full Name</label><input type="text" id="m5Name" placeholder="First and last name"></div>
         <div class="field-row"><label for="m5Gender">Gender</label><div class="select-wrap"><select id="m5Gender"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other / Prefer not to say</option></select></div></div>
       </div>
-      <div class="field-row"><label for="m5Phone">Contact Number</label><input type="tel" id="m5Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      <div class="two-col">
+        <div class="field-row"><label for="m5Email">Email Address</label><input type="email" id="m5Email" placeholder="email@example.com"></div>
+        <div class="field-row"><label for="m5Phone">Contact Number</label><input type="tel" id="m5Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      </div>
     </div>
     <div class="card" id="memberCard6">
       <div class="card-title">
@@ -555,7 +567,10 @@
         <div class="field-row"><label for="m6Name">Full Name</label><input type="text" id="m6Name" placeholder="First and last name"></div>
         <div class="field-row"><label for="m6Gender">Gender</label><div class="select-wrap"><select id="m6Gender"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other / Prefer not to say</option></select></div></div>
       </div>
-      <div class="field-row"><label for="m6Phone">Contact Number</label><input type="tel" id="m6Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      <div class="two-col">
+        <div class="field-row"><label for="m6Email">Email Address</label><input type="email" id="m6Email" placeholder="email@example.com"></div>
+        <div class="field-row"><label for="m6Phone">Contact Number</label><input type="tel" id="m6Phone" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" oninput="sanitizePhone(this)"></div>
+      </div>
     </div>
   </div>
   <!-- FAQ -->
@@ -926,6 +941,8 @@
       for (let i=2;i<=6;i++) {
         const p = gv("m"+i+"Phone");
         if (p && !isValidPhone(p)) { markError("m"+i+"Phone"); firstError=firstError||("a valid 10-digit Contact Number for Member "+i); }
+        const e = gv("m"+i+"Email");
+        if (e && !isValidEmail(e)) { markError("m"+i+"Email"); firstError=firstError||("a valid Email Address for Member "+i); }
       }
     }
     if (entryType==="team") {
@@ -945,7 +962,7 @@
     }
     const members=[];
     if (entryType==="team") {
-      for(let i=2;i<=6;i++) { const n=gv("m"+i+"Name"); if(n) members.push({name:n,gender:gv("m"+i+"Gender"),phone:gv("m"+i+"Phone")}); }
+      for(let i=2;i<=6;i++) { const n=gv("m"+i+"Name"); if(n) members.push({name:n,gender:gv("m"+i+"Gender"),phone:gv("m"+i+"Phone"),email:gv("m"+i+"Email")}); }
     }
 
     setLoading(true);
