@@ -153,6 +153,15 @@
   .info-banner-text { font-size: 12px; color: rgba(255,255,255,0.88); line-height: 1.6; }
   .info-banner-title { font-size: 13px; font-weight: 700; color: white; margin-bottom: 4px; }
   .footer-note { text-align: center; font-size: 12px; color: #9b7ab0; margin-top: 1.25rem; padding-bottom: 1rem; }
+  .extended-banner {
+    background: linear-gradient(135deg, #ffb703, #fb8500);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 1rem;
+    display: flex; align-items: flex-start; gap: 12px; color: #3a1d00;
+    box-shadow: 0 2px 14px rgba(251,133,0,0.28);
+  }
+  .extended-banner .eb-title { font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+  .extended-banner .eb-text { font-size: 12px; line-height: 1.55; }
+  .extended-banner .eb-text strong { color: #3a1d00; }
   .top-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 1rem; }
   .action-btn {
     flex: 1; min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -242,6 +251,13 @@
   </div>
 </div>
 <div class="form-container">
+  <div class="extended-banner">
+    <svg width="22" height="22" fill="none" stroke="#3a1d00" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <div>
+      <div class="eb-title">⏰ Registration Deadline Extended!</div>
+      <div class="eb-text">You can now register until <strong>10th August 2026</strong> (previously 31st July 2026). Don't wait — register today!</div>
+    </div>
+  </div>
   <div class="top-actions">
     <button type="button" class="action-btn" onclick="openGuidelines()">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -275,7 +291,7 @@
       </div>
     </div>
     <div class="note-box" id="roundNote" style="margin-bottom:0;">
-      <strong>Round 1</strong> (Registration Deadline: 31st July 2026). Right now, this is all you need to do:
+      <strong>Round 1</strong> (Registration Deadline: <strong>10th August 2026</strong>, extended from 31st July). Right now, this is all you need to do:
       <ul style="margin:6px 0 0 18px; padding:0;">
         <li>Select your track and problem statement.</li>
         <li>Fill in your team details.</li>
@@ -581,7 +597,7 @@
     </div>
     <div class="faq-item">
       <button type="button" class="faq-q" onclick="toggleFaq(this)">Do I need to submit a solution document right now? <span class="chev">▾</span></button>
-      <div class="faq-a">No. Before 31st July 2026, you only need to do two things: select your track and problem statement, and fill in your team details. After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. It's a good idea to start preparing it early.</div>
+      <div class="faq-a">No. Before <strong>10th August 2026</strong> (extended from 31st July), you only need to do two things: select your track and problem statement, and fill in your team details. After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. It's a good idea to start preparing it early.</div>
     </div>
     <div class="faq-item">
       <button type="button" class="faq-q" onclick="toggleFaq(this)">I'm registering for Track 4 with my own problem statement. What do I need to upload? <span class="chev">▾</span></button>
@@ -640,16 +656,23 @@
       <button class="modal-close" onclick="closeGuidelines()">✕</button>
     </div>
     <div class="modal-body">
+      <div class="extended-banner" style="margin-bottom:12px;">
+        <svg width="20" height="20" fill="none" stroke="#3a1d00" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <div>
+          <div class="eb-title">⏰ Registration Deadline Extended!</div>
+          <div class="eb-text">Registration now closes on <strong>10th August 2026</strong> (previously 31st July 2026).</div>
+        </div>
+      </div>
       <div class="note-box" style="margin-bottom:12px;"><strong>The dates mentioned in these Guidelines and in the registration form are the latest and final.</strong> Please follow these dates for all rounds.</div>
       <h4>What you need to do right now</h4>
       <ul>
-        <li>Before <strong>31st July 2026</strong>: select your track and problem statement, and fill in your team details. That's all this registration form requires.</li>
+        <li>Before <strong>10th August 2026</strong> (extended from 31st July): select your track and problem statement, and fill in your team details. That's all this registration form requires.</li>
         <li>After you register: you'll get an <strong>email asking you to submit your Idea/Solution Document by 25th August 2026</strong>. It is <strong>not needed at registration</strong>, but start preparing it early.</li>
         <li><strong>Exception for Track 4 (own industry problem statement):</strong> if your team is submitting its own problem statement, you must upload a document containing the problem statement, <strong>endorsed by an industry professional</strong>, at the time of registration so it can be verified as genuine.</li>
       </ul>
       <h4>Round 1 <span class="mode-tag online">ONLINE</span></h4>
       <ul>
-        <li>Registration Deadline: 31st July 2026.</li>
+        <li>Registration Deadline: <strong>10th August 2026</strong> (extended from 31st July 2026).</li>
         <li>Submit your team details and problem statement.</li>
         <li>Idea/Solution Document Submission Deadline: 25th August 2026.</li>
       </ul>
@@ -718,7 +741,7 @@
   let currentRound = 1;
   let track4Choice = "";
   const roundNotes = {
-    1: "<strong>Round 1</strong> (Registration Deadline: 31st July 2026). Right now, this is all you need to do: <ul style='margin:6px 0 0 18px; padding:0;'><li>Select your track and problem statement.</li><li>Fill in your team details.</li><li>That's it. No document upload is needed at this stage.</li><li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li><li>Exception: Track 4 teams submitting their own industry problem statement must also upload an endorsed document now. See the Track 4 section below.</li></ul>",
+    1: "<strong>Round 1</strong> (Registration Deadline: <strong>10th August 2026</strong>, extended from 31st July). Right now, this is all you need to do: <ul style='margin:6px 0 0 18px; padding:0;'><li>Select your track and problem statement.</li><li>Fill in your team details.</li><li>That's it. No document upload is needed at this stage.</li><li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li><li>Exception: Track 4 teams submitting their own industry problem statement must also upload an endorsed document now. See the Track 4 section below.</li></ul>",
     2: "<strong>Round 2</strong> (Submission Deadline: 15th September 2026, for selected teams only). Further details will be shared directly with shortlisted teams closer to the round.",
     3: "<strong>Round 3: Grand Finale</strong> (25th October 2026, SVNIT Surat, for selected teams only — selection communicated via email). ILS registration and payment confirmation are required below."
   };
