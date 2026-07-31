@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #f7eeff; min-height: 100vh; color: #2c1a40; }
@@ -114,6 +115,21 @@
   .cleanup-item .new-tag { color: #1a6b3a; font-weight: 600; }
   .btn-danger { background: #b8005e; color: white; }
   .btn-small { padding: 7px 14px; font-size: 12.5px; width: auto; flex-shrink: 0; }
+  .btn-icon-danger {
+    background: #fff0f5; color: #b8005e; border: 1.5px solid #f0a0c0;
+    border-radius: 8px; width: 30px; height: 30px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .btn-icon-danger:hover { background: #b8005e; color: white; border-color: #b8005e; }
+  .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .analytics-grid .chart-card.wide { grid-column: 1 / -1; }
+  @media (max-width: 720px) { .analytics-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: #fdf8ff; border: 1px solid #e2c8f5; border-radius: 12px;
+    padding: 14px; min-height: 260px;
+  }
+  .chart-card h4 { font-size: 13px; color: #6a1794; margin-bottom: 10px; }
+  .chart-card canvas { max-height: 260px; }
 </style>
 </head>
 <body>
@@ -155,6 +171,8 @@
     <span class="sel-count" id="selCount">0 selected</span>
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openDuplicates()">🔁 Duplicate Entries</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">📊 Analytics</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
   </div>
@@ -174,6 +192,53 @@
     <div id="cleanupList"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeCleanup()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- DUPLICATE ENTRIES MODAL -->
+<div class="modal-overlay" id="duplicatesModal">
+  <div class="modal-box" style="max-width:760px;">
+    <h3>🔁 Duplicate Entries</h3>
+    <div class="msg error" id="duplicatesError"></div>
+    <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
+      Groups of registrations that share the same leader email, or the same team name within the same round. Review each group and delete the extra row(s).
+    </p>
+    <div id="duplicatesList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeDuplicates()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS MODAL -->
+<div class="modal-overlay" id="analyticsModal">
+  <div class="modal-box" style="max-width:960px;">
+    <h3>📊 Registration Analytics</h3>
+    <div class="analytics-grid">
+      <div class="chart-card wide">
+        <h4>Registrations Over Time</h4>
+        <canvas id="chartOverTime"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>Top Colleges</h4>
+        <canvas id="chartCollege"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>By Track</h4>
+        <canvas id="chartTrack"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>By Round</h4>
+        <canvas id="chartRound"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>Gender Split (Leader)</h4>
+        <canvas id="chartGender"></canvas>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAnalytics()">Close</button>
     </div>
   </div>
 </div>
@@ -291,7 +356,7 @@
       '<th><input type="checkbox" id="selectAllBox" onclick="toggleSelectAll(this)"></th>' +
       '<th>Submitted</th><th>Round</th><th>Entry</th><th>Team</th><th>College</th><th>Track</th><th>Problem Statement</th>' +
       '<th>Leader Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Year</th><th>Dept</th><th>IEEE #</th>' +
-      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th>' +
+      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Actions</th>' +
       '</tr></thead><tbody>';
     rows.forEach(r => {
       const members = Array.isArray(r.members) ? r.members : [];
@@ -318,6 +383,9 @@
         '<td>' + escapeHtml(r.ils_reg_id) + '</td>' +
         '<td>' + fileLink(r.payment_screenshot_url, 'View') + '</td>' +
         '<td>' + fileLink(r.supporting_doc_url, r.supporting_doc_name || 'View') + '</td>' +
+        '<td><button class="btn-icon-danger" title="Delete registration" onclick="deleteRegistration(\'' + r.id + '\')">' +
+          '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+        '</button></td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -509,6 +577,233 @@
     renderCleanupList();
     renderStats();
     renderTable();
+  }
+
+  // ── DELETE (single registration) ──
+  async function deleteRegistration(id) {
+    const row = allRows.find(r => r.id === id);
+    if (!row) return;
+    const step1 = confirm(
+      'Delete this registration permanently?\n\n' +
+      'Team: ' + (row.team_name || '(no team name)') + '\n' +
+      'Leader: ' + (row.leader_name || '—') + ' (' + (row.leader_email || '—') + ')\n' +
+      'Round: ' + (row.round || '—') + '\n\n' +
+      'This cannot be undone.'
+    );
+    if (!step1) return;
+    const typed = prompt('To confirm, type the exact team name to delete it:\n\n"' + (row.team_name || '') + '"');
+    if (typed === null) return;
+    if (typed.trim() !== (row.team_name || '').trim()) {
+      alert('Team name did not match. Deletion cancelled.');
+      return;
+    }
+    const { error } = await sb.from('registrations').delete().eq('id', id);
+    if (error) { alert('Failed to delete: ' + error.message); return; }
+    allRows = allRows.filter(r => r.id !== id);
+    selectedIds.delete(id);
+    renderStats();
+    renderTable();
+    if (document.getElementById('duplicatesModal').classList.contains('open')) renderDuplicatesList();
+    if (document.getElementById('cleanupModal').classList.contains('open')) renderCleanupList();
+    if (document.getElementById('analyticsModal').classList.contains('open')) renderAnalytics();
+  }
+
+  // ── DUPLICATE ENTRIES ──
+  function computeDuplicateGroups() {
+    const groups = [];
+    const seenIdSets = new Set();
+
+    const byEmail = {};
+    allRows.forEach(r => {
+      const k = (r.leader_email || '').trim().toLowerCase();
+      if (!k) return;
+      (byEmail[k] = byEmail[k] || []).push(r);
+    });
+    Object.entries(byEmail).forEach(([email, rows]) => {
+      if (rows.length > 1) {
+        groups.push({ label: 'Same leader email: ' + email, rows });
+        seenIdSets.add(rows.map(r => r.id).sort().join(','));
+      }
+    });
+
+    const byTeam = {};
+    allRows.forEach(r => {
+      const name = (r.team_name || '').trim().toLowerCase();
+      if (!name) return;
+      const k = name + '::' + (r.round || '');
+      (byTeam[k] = byTeam[k] || []).push(r);
+    });
+    Object.entries(byTeam).forEach(([key, rows]) => {
+      if (rows.length > 1) {
+        const idSet = rows.map(r => r.id).sort().join(',');
+        if (!seenIdSets.has(idSet)) {
+          groups.push({ label: 'Same team name "' + rows[0].team_name + '" in ' + (rows[0].round || '—'), rows });
+          seenIdSets.add(idSet);
+        }
+      }
+    });
+
+    return groups;
+  }
+
+  function renderDuplicatesList() {
+    const groups = computeDuplicateGroups();
+    const host = document.getElementById('duplicatesList');
+    if (groups.length === 0) {
+      host.innerHTML = '<div class="empty-state">No duplicate entries found.</div>';
+      return;
+    }
+    host.innerHTML = groups.map(g => (
+      '<div class="cleanup-item" style="flex-direction:column; align-items:stretch;">' +
+        '<div class="info" style="margin-bottom:8px;"><b>' + escapeHtml(g.label) + '</b> — ' + g.rows.length + ' entries</div>' +
+        g.rows.map(r => (
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; border-top:1px solid #f0d5fa;">' +
+            '<div class="info">' +
+              escapeHtml(r.team_name || '(no team name)') + ' · ' + escapeHtml(r.leader_name || '—') + ' · ' +
+              escapeHtml(new Date(r.created_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) + ' · ' +
+              '<span class="pill">' + escapeHtml(r.round) + '</span>' +
+            '</div>' +
+            '<button class="btn btn-danger btn-small" onclick="deleteRegistration(\'' + r.id + '\')">Delete</button>' +
+          '</div>'
+        )).join('') +
+      '</div>'
+    )).join('');
+  }
+
+  function openDuplicates() {
+    document.getElementById('duplicatesError').style.display = 'none';
+    renderDuplicatesList();
+    document.getElementById('duplicatesModal').classList.add('open');
+  }
+
+  function closeDuplicates() {
+    document.getElementById('duplicatesModal').classList.remove('open');
+  }
+
+  // ── ANALYTICS ──
+  const CHART_COLORS = ['#8b2fc9', '#d6247e', '#0e9488', '#d97706'];
+  const charts = {};
+
+  function destroyChart(key) {
+    if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+  }
+
+  function renderAnalytics() {
+    // By college (top 15)
+    const collegeCounts = {};
+    allRows.forEach(r => {
+      const c = (r.college || '').trim() || 'Unknown';
+      collegeCounts[c] = (collegeCounts[c] || 0) + 1;
+    });
+    const topColleges = Object.entries(collegeCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+
+    // By track
+    const trackCounts = {};
+    allRows.forEach(r => {
+      const t = (r.track || '').trim() || 'Unknown';
+      trackCounts[t] = (trackCounts[t] || 0) + 1;
+    });
+    const topTracks = Object.entries(trackCounts).sort((a, b) => b[1] - a[1]);
+
+    // By round
+    const roundCounts = {};
+    allRows.forEach(r => {
+      const rd = (r.round || '').trim() || 'Unknown';
+      roundCounts[rd] = (roundCounts[rd] || 0) + 1;
+    });
+
+    // Gender split (leader)
+    const genderCounts = {};
+    allRows.forEach(r => {
+      const g = (r.leader_gender || '').trim() || 'Unknown';
+      genderCounts[g] = (genderCounts[g] || 0) + 1;
+    });
+
+    // Over time (by date)
+    const dateCounts = {};
+    allRows.forEach(r => {
+      const d = new Date(r.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+      dateCounts[d] = (dateCounts[d] || 0) + 1;
+    });
+    const sortedDates = Object.keys(dateCounts).sort();
+    let running = 0;
+    const cumulative = sortedDates.map(d => (running += dateCounts[d]));
+
+    Object.keys(charts).forEach(destroyChart);
+
+    charts.overTime = new Chart(document.getElementById('chartOverTime'), {
+      type: 'line',
+      data: {
+        labels: sortedDates,
+        datasets: [{
+          label: 'Cumulative Registrations',
+          data: cumulative,
+          borderColor: '#6a1794',
+          backgroundColor: 'rgba(106,23,148,0.1)',
+          borderWidth: 2,
+          pointRadius: 2,
+          tension: 0.15,
+          fill: true
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    charts.college = new Chart(document.getElementById('chartCollege'), {
+      type: 'bar',
+      data: {
+        labels: topColleges.map(c => c[0]),
+        datasets: [{ label: 'Registrations', data: topColleges.map(c => c[1]), backgroundColor: '#8b2fc9', borderRadius: 4 }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    charts.track = new Chart(document.getElementById('chartTrack'), {
+      type: 'bar',
+      data: {
+        labels: topTracks.map(t => t[0]),
+        datasets: [{ label: 'Registrations', data: topTracks.map(t => t[1]), backgroundColor: '#0e9488', borderRadius: 4 }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    charts.round = new Chart(document.getElementById('chartRound'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(roundCounts),
+        datasets: [{ data: Object.values(roundCounts), backgroundColor: CHART_COLORS }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    charts.gender = new Chart(document.getElementById('chartGender'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(genderCounts),
+        datasets: [{ data: Object.values(genderCounts), backgroundColor: CHART_COLORS }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function openAnalytics() {
+    document.getElementById('analyticsModal').classList.add('open');
+    renderAnalytics();
+  }
+
+  function closeAnalytics() {
+    document.getElementById('analyticsModal').classList.remove('open');
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
