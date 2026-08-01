@@ -215,6 +215,7 @@
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openDuplicates()">🔁 Duplicate Entries</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Sent Log</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">📊 Analytics</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
@@ -254,6 +255,21 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeDuplicates()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- SENT LOG MODAL -->
+<div class="modal-overlay" id="sentLogModal">
+  <div class="modal-box" style="max-width:760px;">
+    <h3>📨 Sent Log</h3>
+    <div class="msg error" id="sentLogError"></div>
+    <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
+      Every broadcast email sent from this portal, with the exact recipient list.
+    </p>
+    <div id="sentLogList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeSentLog()">Close</button>
     </div>
   </div>
 </div>
@@ -636,6 +652,13 @@
       });
       const result = await res.json().catch(() => null);
       if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+
+      const sentBy = sessionData?.session?.user?.email || null;
+      const { error: logError } = await sb.from('broadcast_log').insert({
+        subject, body, recipients, cc, recipient_count: recipients.length, sent_by: sentBy
+      });
+      if (logError) console.error('Failed to record broadcast log:', logError.message);
+
       okEl.textContent = 'Sent to ' + recipients.length + ' recipient(s).';
       okEl.style.display = 'block';
       selectedIds.clear();
@@ -981,6 +1004,49 @@
 
   function closeDuplicates() {
     document.getElementById('duplicatesModal').classList.remove('open');
+  }
+
+  // ── SENT LOG ──
+  async function openSentLog() {
+    const errEl = document.getElementById('sentLogError');
+    const host = document.getElementById('sentLogList');
+    errEl.style.display = 'none';
+    host.innerHTML = '<div class="loading">Loading…</div>';
+    document.getElementById('sentLogModal').classList.add('open');
+
+    const { data, error } = await sb.from('broadcast_log').select('*').order('sent_at', { ascending: false });
+    if (error) {
+      errEl.textContent = 'Failed to load sent log: ' + error.message;
+      errEl.style.display = 'block';
+      host.innerHTML = '';
+      return;
+    }
+    if (!data || data.length === 0) {
+      host.innerHTML = '<div class="empty-state">No broadcasts sent yet.</div>';
+      return;
+    }
+    host.innerHTML = data.map(entry => {
+      const recipients = Array.isArray(entry.recipients) ? entry.recipients : [];
+      const cc = Array.isArray(entry.cc) ? entry.cc : [];
+      return (
+        '<div class="cleanup-item" style="flex-direction:column; align-items:stretch;">' +
+          '<div class="info" style="margin-bottom:6px;">' +
+            '<b>' + escapeHtml(entry.subject) + '</b><br>' +
+            escapeHtml(new Date(entry.sent_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) +
+            (entry.sent_by ? ' · by ' + escapeHtml(entry.sent_by) : '') +
+            ' · ' + (entry.recipient_count ?? recipients.length) + ' recipient(s)' +
+            (cc.length ? ' · CC: ' + escapeHtml(cc.join(', ')) : '') +
+          '</div>' +
+          '<details><summary style="cursor:pointer; font-size:12.5px; color:#6a1794; font-weight:600;">View recipients</summary>' +
+            '<div style="font-size:12px; color:#4a1b6e; margin-top:6px; line-height:1.7; word-break:break-word;">' + escapeHtml(recipients.join(', ')) + '</div>' +
+          '</details>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function closeSentLog() {
+    document.getElementById('sentLogModal').classList.remove('open');
   }
 
   // ── ANALYTICS ──
