@@ -87,6 +87,8 @@
     cursor: pointer; transition: all 0.18s; font-family: inherit; margin-bottom: 1rem;
   }
   .action-btn:hover { border-color: #9b3ec4; background: #f5ecff; }
+  .point-hand { display: inline-block; animation: point-bounce 1.1s ease-in-out infinite; }
+  @keyframes point-bounce { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(44,26,64,0.55);
     z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
@@ -127,7 +129,7 @@
 <div class="wrap">
   <button type="button" class="action-btn" onclick="openGuide()">
     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-    📖 Read the Submission Guide
+    📖 Read the Submission Guide <span class="point-hand">👉</span>
   </button>
   <div class="window-banner">
     <div class="wb-title">Submission Window</div>
