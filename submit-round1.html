@@ -80,6 +80,43 @@
   .msg-box.error-msg { background: #fff5f9; border: 1px solid #f0a0c0; color: #8b0038; }
   .msg-box .msg-icon { font-size: 22px; display: block; margin-bottom: 5px; }
   .footer-note { text-align: center; font-size: 12px; color: #9b7ab0; margin-top: 1.25rem; padding-bottom: 1rem; }
+  .action-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: white; border: 1.5px solid #ddc4f0; color: #6a1794;
+    border-radius: 10px; padding: 10px 12px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; transition: all 0.18s; font-family: inherit; margin-bottom: 1rem;
+  }
+  .action-btn:hover { border-color: #9b3ec4; background: #f5ecff; }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(44,26,64,0.55);
+    z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 16px; max-width: 620px; width: 100%;
+    max-height: 85vh; overflow-y: auto; padding: 1.5rem;
+    box-shadow: 0 10px 40px rgba(44,26,64,0.35);
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem; padding-bottom: 10px; border-bottom: 1.5px solid #f0d5fa;
+  }
+  .modal-header h3 { font-size: 16px; color: #6a1794; }
+  .modal-body { font-size: 13px; color: #4a1b6e; line-height: 1.7; }
+  .modal-body h4 { font-size: 13.5px; color: #6a1794; margin: 16px 0 4px; }
+  .modal-body h4:first-child { margin-top: 0; }
+  .modal-body .tag { font-size: 11px; color: #9b7ab0; font-weight: 500; }
+  .modal-body ul, .modal-body ol { margin: 4px 0 8px 18px; }
+  .modal-body blockquote {
+    background: #fdf0ff; border-left: 3px solid #b060e0; border-radius: 0 8px 8px 0;
+    padding: 8px 12px; margin: 8px 0; font-size: 12.5px;
+  }
+  .modal-footer { margin-top: 1.25rem; padding-top: 12px; border-top: 1.5px solid #f0d5fa; text-align: center; }
+  .modal-footer button {
+    background: linear-gradient(135deg, #6a1794, #b8005e); color: white;
+    border: none; border-radius: 10px; padding: 10px 24px; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+  }
 </style>
 </head>
 <body>
@@ -88,6 +125,10 @@
   <div class="tagline">Submit the PDF for the team you registered</div>
 </div>
 <div class="wrap">
+  <button type="button" class="action-btn" onclick="openGuide()">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    📖 Read the Submission Guide
+  </button>
   <div class="window-banner">
     <div class="wb-title">Submission Window</div>
     <div class="wb-text">Open <strong>1st August 2026</strong> to <strong>25th August 2026</strong>. Submissions outside this window will not be accepted, so don't leave it for the last minute.</div>
@@ -142,6 +183,49 @@
   </div>
   <p class="footer-note">Trouble submitting or need a correction after locking? Contact Madhav Maheshwari — <a href="tel:+919588874415" style="color:#6a1794; font-weight:600;">+91 95888 74415</a> (WhatsApp)</p>
 </div>
+
+<!-- SUBMISSION GUIDE MODAL -->
+<div class="modal-overlay" id="guideModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>📖 Round 1 Submission Guide</h3>
+    </div>
+    <div class="modal-body">
+      <p>Every submission gets pulled toward one of two mistakes. Most teams don't realize which one they're making until it's too late to fix. This guide is here so you don't make either.</p>
+
+      <h4>Part 1 — Don't Under-Think <span class="tag">(scored under Solution &amp; Innovation — 25%)</span></h4>
+      <p>The problem statement tells you what gap exists — not the solution. If a judge could predict your entire idea just by reading the problem statement, you haven't added anything.</p>
+      <blockquote><strong>Example — "The Middleman Killer" (Track 1, P1):</strong> "An app where farmers list crops and buyers bid" is just the problem statement rephrased. The real question is why this hasn't already worked — trust, literacy, or logistics. A team that picks one of those and designs around it has something. A team that draws a bidding UI does not.</blockquote>
+      <p><strong>Ask before submitting:</strong> "So what?" If a judge asked what makes this different from what already exists, do you have a real answer?</p>
+
+      <h4>Part 2 — Don't Over-Claim <span class="tag">(scored under Feasibility &amp; Implementation — 20%, Expected Impact — 20%)</span></h4>
+      <p>The opposite failure is just as common — and it's just as scored down.</p>
+      <ul>
+        <li><strong>Buzzword stacking.</strong> "AI, blockchain, IoT, ML" is a red flag unless you can explain exactly what each does and why a simpler approach wouldn't work.</li>
+        <li><strong>Unfounded impact numbers.</strong> "We will help 10 million farmers" is not a projection, it's a claim with no basis. A specific, defensible number beats a made-up national-scale one.</li>
+        <li><strong>Trying to solve everything at once.</strong> Pick one clear, narrow, defensible core your team could realistically build by Round 3 — not every user type and edge case at once.</li>
+        <li><strong>Hand-waving the hard part.</strong> "We will use AI to detect X" without saying what data or approach is a placeholder, not an answer.</li>
+        <li><strong>Claiming novelty you haven't checked.</strong> "No one has solved this before" is a strong claim — if a judge knows of something similar, it costs you credibility.</li>
+      </ul>
+
+      <h4>Part 3 — Show Your Thinking, Not Just Describe It <span class="tag">(optional, not required for Round 1)</span></h4>
+      <p>You are <strong>not required</strong> to build anything working for Round 1 — that's Round 3. But a rough mockup, flow diagram, small interactive prototype, simple simulation, or short demo video often exposes gaps a text description hides.</p>
+      <p><strong>This is not a race to build the most stuff.</strong> One well-thought-out mockup beats five polished screens for an idea you haven't fully reasoned through. If you only have time for one thing, make your core idea concrete — don't spread that time across a website AND an app AND a simulation. That's the overscoping mistake from Part 2, wearing a different costume.</p>
+
+      <h4>Final self-check before you submit</h4>
+      <ol>
+        <li>Could a judge predict your whole idea just from the problem statement? <em>(If yes, you under-thought it.)</em></li>
+        <li>Could you defend every technology, number, and claim if a judge asked "how do you know that"? <em>(If not, you over-claimed.)</em></li>
+        <li>Could your team actually build the core of this in the time you have? <em>(If not, you overscoped it.)</em></li>
+        <li>Is there one sentence describing your idea that isn't just the problem statement with "we will" in front of it?</li>
+      </ol>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeGuide()">I Understand — Let's Go</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = "https://gfoclvqlkylujopcvuht.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
@@ -233,6 +317,15 @@
       showError(err.message);
     }
   }
+
+  function openGuide() { document.getElementById('guideModal').classList.add('open'); }
+  function closeGuide() {
+    document.getElementById('guideModal').classList.remove('open');
+    sessionStorage.setItem('ils2026_round1_guide_seen', '1');
+  }
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!sessionStorage.getItem('ils2026_round1_guide_seen')) openGuide();
+  });
 </script>
 </body>
 </html>
