@@ -130,6 +130,43 @@
   }
   .chart-card h4 { font-size: 13px; color: #6a1794; margin-bottom: 10px; }
   .chart-card canvas { max-height: 260px; }
+
+  /* ── STATUS PILLS ── */
+  .pill-submitted { background: #eafaf0; color: #1a6b3a; }
+  .pill-pending { background: #f2f2f2; color: #7a7a7a; }
+  .pill-late { background: #fff0f0; color: #b8005e; }
+
+  /* ── SORTABLE HEADERS ── */
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { background: #7c2ab0; }
+  th.sortable .sort-arrow { opacity: 0.6; margin-left: 3px; font-size: 10px; }
+
+  /* ── ICON BUTTONS ── */
+  .btn-icon {
+    background: #f3eaff; color: #6a1794; border: 1.5px solid #ddc4f0;
+    border-radius: 8px; width: 30px; height: 30px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .btn-icon:hover { background: #6a1794; color: white; border-color: #6a1794; }
+  .row-actions { display: flex; gap: 6px; }
+
+  /* ── DETAIL MODAL ── */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 1rem; }
+  @media (max-width: 560px) { .detail-grid { grid-template-columns: 1fr; } }
+  .detail-field .dl { font-size: 11px; color: #9b7ab0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .detail-field .dv { font-size: 13.5px; color: #2c1a40; margin-top: 2px; word-break: break-word; }
+  .detail-section {
+    border-top: 1.5px solid #f0d5fa; padding-top: 14px; margin-top: 14px;
+  }
+  .detail-section h4 { font-size: 13px; color: #6a1794; margin-bottom: 10px; }
+  .notes-box {
+    width: 100%; min-height: 70px; padding: 9px 12px; border: 1.5px solid #ddc4f0;
+    border-radius: 8px; font-size: 13px; font-family: inherit; background: #fdf8ff; resize: vertical;
+  }
+  .duplicate-hash-flag {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600;
+    color: #b8005e; background: #fff0f0; border-radius: 20px; padding: 2px 9px; margin-top: 6px;
+  }
 </style>
 </head>
 <body>
@@ -168,6 +205,12 @@
       <option value="Round 2">Round 2</option>
       <option value="Round 3">Round 3</option>
     </select>
+    <select id="docStatusFilter" onchange="renderTable()">
+      <option value="">Round 1 Doc: All</option>
+      <option value="submitted">Submitted</option>
+      <option value="pending">Pending</option>
+      <option value="late">Late</option>
+    </select>
     <span class="sel-count" id="selCount">0 selected</span>
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
@@ -205,6 +248,10 @@
       Groups of registrations that share the same leader email, or the same team name within the same round. Review each group and delete the extra row(s).
     </p>
     <div id="duplicatesList"></div>
+    <div class="detail-section">
+      <h4>⚠ Identical Round 1 File Content <span style="font-weight:400; color:#9b7ab0;">— same file uploaded by more than one team</span></h4>
+      <div id="duplicateHashList"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeDuplicates()">Close</button>
     </div>
@@ -239,6 +286,42 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeAnalytics()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box" style="max-width:640px;">
+    <h3 id="detailTitle">Registration Details</h3>
+    <div class="msg error" id="detailError"></div>
+    <div class="msg success" id="detailSuccess"></div>
+    <div class="detail-grid" id="detailGrid"></div>
+
+    <div class="detail-section">
+      <h4>Round 1 Idea/Solution Document</h4>
+      <div id="detailRound1Status" style="font-size:13px; margin-bottom:10px;"></div>
+      <div class="row-actions" style="margin-bottom:6px;">
+        <button class="btn btn-secondary btn-small" id="detailUnlockBtn" onclick="unlockRound1()">🔓 Unlock for Resubmission</button>
+        <label class="btn btn-secondary btn-small" style="cursor:pointer; display:inline-flex; align-items:center;">
+          📤 Upload on Behalf
+          <input type="file" accept="application/pdf,.pdf" id="detailUploadFile" style="display:none;" onchange="uploadRound1OnBehalf(this)">
+        </label>
+      </div>
+      <div style="font-size:11.5px; color:#9b7ab0;">Upload on Behalf bypasses the submission window and lock — use for teams who couldn't submit themselves.</div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Admin Notes <span style="font-weight:400; color:#9b7ab0;">— visible only here, not to teams</span></h4>
+      <textarea class="notes-box" id="detailNotes" placeholder="e.g. confirmed via WhatsApp, payment pending..."></textarea>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button class="btn btn-secondary btn-small" onclick="saveNotes()">Save Notes</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="deleteRegistration(detailRowId)">Delete Registration</button>
+      <button class="btn btn-secondary" onclick="closeDetail()">Close</button>
     </div>
   </div>
 </div>
@@ -278,6 +361,29 @@
 
   let allRows = [];
   let selectedIds = new Set();
+  let sortKey = 'created_at';
+  let sortDir = 'desc';
+  let detailRowId = null;
+
+  const ROUND1_DEADLINE = new Date('2026-08-25T23:59:59+05:30');
+
+  // status: 'submitted' | 'pending' | 'late' | null (null = not applicable — not a live Round 1 entry)
+  function round1StatusOf(r) {
+    if (r.round !== 'Round 1' || r.track === 'PENDING RESUBMISSION') return null;
+    if (r.round1_doc_url) return 'submitted';
+    return new Date() > ROUND1_DEADLINE ? 'late' : 'pending';
+  }
+
+  function round1Pill(r) {
+    const status = round1StatusOf(r);
+    if (status === null) return '<span class="empty-cell">—</span>';
+    if (status === 'submitted') {
+      const submittedLate = r.round1_submitted_at && new Date(r.round1_submitted_at) > ROUND1_DEADLINE;
+      return '<span class="pill pill-submitted">✅ Submitted' + (submittedLate ? ' (late)' : '') + '</span>';
+    }
+    if (status === 'late') return '<span class="pill pill-late">⚠ Late — not submitted</span>';
+    return '<span class="pill pill-pending">⏳ Pending</span>';
+  }
 
   async function login() {
     const email = document.getElementById('email').value.trim();
@@ -325,6 +431,11 @@
     Object.keys(byRound).sort().forEach(round => {
       html += '<div class="stat-box"><div class="num">' + byRound[round] + '</div><div class="lbl">' + escapeHtml(round) + '</div></div>';
     });
+    const round1Eligible = allRows.filter(r => round1StatusOf(r) !== null);
+    const round1Submitted = round1Eligible.filter(r => round1StatusOf(r) === 'submitted');
+    if (round1Eligible.length > 0) {
+      html += '<div class="stat-box"><div class="num">' + round1Submitted.length + ' / ' + round1Eligible.length + '</div><div class="lbl">Round 1 Docs Submitted</div></div>';
+    }
     document.getElementById('stats').innerHTML = html;
   }
 
@@ -339,24 +450,54 @@
     return '<a class="filelink" href="' + url + '" target="_blank" rel="noopener">' + label + '</a>';
   }
 
-  function renderTable() {
+  function filteredRows() {
     const q = document.getElementById('search').value.trim().toLowerCase();
     const roundF = document.getElementById('roundFilter').value;
+    const docF = document.getElementById('docStatusFilter').value;
     let rows = allRows;
     if (roundF) rows = rows.filter(r => r.round === roundF);
+    if (docF) rows = rows.filter(r => round1StatusOf(r) === docF);
     if (q) {
       rows = rows.filter(r => [r.team_name, r.leader_name, r.college, r.leader_email, r.leader_phone]
         .some(v => (v||'').toLowerCase().includes(q)));
     }
+    rows = rows.slice().sort((a, b) => {
+      let av = a[sortKey], bv = b[sortKey];
+      if (sortKey === 'created_at') { av = new Date(av).getTime(); bv = new Date(bv).getTime(); }
+      else { av = (av || '').toString().toLowerCase(); bv = (bv || '').toString().toLowerCase(); }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return rows;
+  }
+
+  function toggleSort(key) {
+    if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortKey = key; sortDir = key === 'created_at' ? 'desc' : 'asc'; }
+    renderTable();
+  }
+
+  function sortArrow(key) {
+    if (sortKey !== key) return '';
+    return '<span class="sort-arrow">' + (sortDir === 'asc' ? '▲' : '▼') + '</span>';
+  }
+
+  function renderTable() {
+    const rows = filteredRows();
     if (rows.length === 0) {
       document.getElementById('tableHost').innerHTML = '<div class="empty-state">No registrations match.</div>';
       return;
     }
     let html = '<table><thead><tr>' +
       '<th><input type="checkbox" id="selectAllBox" onclick="toggleSelectAll(this)"></th>' +
-      '<th>Submitted</th><th>Round</th><th>Entry</th><th>Team</th><th>College</th><th>Track</th><th>Problem Statement</th>' +
+      '<th class="sortable" onclick="toggleSort(\'created_at\')">Submitted' + sortArrow('created_at') + '</th>' +
+      '<th>Round</th><th>Entry</th>' +
+      '<th class="sortable" onclick="toggleSort(\'team_name\')">Team' + sortArrow('team_name') + '</th>' +
+      '<th class="sortable" onclick="toggleSort(\'college\')">College' + sortArrow('college') + '</th>' +
+      '<th>Track</th><th>Problem Statement</th>' +
       '<th>Leader Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Year</th><th>Dept</th><th>IEEE #</th>' +
-      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Actions</th>' +
+      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Round 1 Doc</th><th>Actions</th>' +
       '</tr></thead><tbody>';
     rows.forEach(r => {
       const members = Array.isArray(r.members) ? r.members : [];
@@ -383,9 +524,15 @@
         '<td>' + escapeHtml(r.ils_reg_id) + '</td>' +
         '<td>' + fileLink(r.payment_screenshot_url, 'View') + '</td>' +
         '<td>' + fileLink(r.supporting_doc_url, r.supporting_doc_name || 'View') + '</td>' +
-        '<td><button class="btn-icon-danger" title="Delete registration" onclick="deleteRegistration(\'' + r.id + '\')">' +
-          '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
-        '</button></td>' +
+        '<td>' + round1Pill(r) + '</td>' +
+        '<td><div class="row-actions">' +
+          '<button class="btn-icon" title="View details" onclick="openDetail(\'' + r.id + '\')">' +
+            '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+          '</button>' +
+          '<button class="btn-icon-danger" title="Delete registration" onclick="deleteRegistration(\'' + r.id + '\')">' +
+            '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</div></td>' +
         '</tr>';
     });
     html += '</tbody></table>';
@@ -402,12 +549,7 @@
   }
 
   function toggleSelectAll(box) {
-    const q = document.getElementById('search').value.trim().toLowerCase();
-    const roundF = document.getElementById('roundFilter').value;
-    let rows = allRows;
-    if (roundF) rows = rows.filter(r => r.round === roundF);
-    if (q) rows = rows.filter(r => [r.team_name, r.leader_name, r.college, r.leader_email, r.leader_phone].some(v => (v||'').toLowerCase().includes(q)));
-    rows.forEach(r => { if (box.checked) selectedIds.add(r.id); else selectedIds.delete(r.id); });
+    filteredRows().forEach(r => { if (box.checked) selectedIds.add(r.id); else selectedIds.delete(r.id); });
     renderTable();
   }
 
@@ -507,9 +649,10 @@
   function exportCsv() {
     const cols = ['created_at','round','entry_type','team_name','college','track','problem_statement',
       'leader_name','leader_gender','leader_email','leader_phone','leader_year','leader_dept','leader_ieee',
-      'ils_reg_id','payment_screenshot_url','supporting_doc_url'];
+      'ils_reg_id','payment_screenshot_url','supporting_doc_url',
+      'round1_doc_url','round1_submitted_at','admin_notes'];
     let csv = cols.join(',') + '\n';
-    allRows.forEach(r => {
+    filteredRows().forEach(r => {
       csv += cols.map(c => '"' + String(r[c] ?? '').replace(/"/g,'""') + '"').join(',') + '\n';
     });
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -603,9 +746,149 @@
     selectedIds.delete(id);
     renderStats();
     renderTable();
-    if (document.getElementById('duplicatesModal').classList.contains('open')) renderDuplicatesList();
+    if (document.getElementById('duplicatesModal').classList.contains('open')) { renderDuplicatesList(); renderDuplicateHashList(); }
     if (document.getElementById('cleanupModal').classList.contains('open')) renderCleanupList();
     if (document.getElementById('analyticsModal').classList.contains('open')) renderAnalytics();
+    if (detailRowId === id) closeDetail();
+  }
+
+  // ── DETAIL MODAL ──
+  async function uploadToSupabaseStorageAdmin(bytes, filename, mimeType, folder) {
+    const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = folder + '/' + Date.now() + '-' + safeName;
+    const res = await fetch(SUPABASE_URL + '/storage/v1/object/registration-files/' + path, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': mimeType },
+      body: bytes
+    });
+    if (!res.ok) throw new Error('Upload failed (' + res.status + '): ' + await res.text());
+    return SUPABASE_URL + '/storage/v1/object/public/registration-files/' + path;
+  }
+
+  function detailField(label, value) {
+    return '<div class="detail-field"><div class="dl">' + escapeHtml(label) + '</div><div class="dv">' + (value || '<span class="empty-cell">—</span>') + '</div></div>';
+  }
+
+  function openDetail(id) {
+    const r = allRows.find(x => x.id === id);
+    if (!r) return;
+    detailRowId = id;
+    document.getElementById('detailError').style.display = 'none';
+    document.getElementById('detailSuccess').style.display = 'none';
+    document.getElementById('detailTitle').textContent = r.team_name || '(no team name)';
+
+    const members = Array.isArray(r.members) ? r.members : [];
+    const membersStr = members.length
+      ? members.map(m => escapeHtml(m.name) + (m.gender ? ' (' + escapeHtml(m.gender) + ')' : '') + (m.email ? ' — ' + escapeHtml(m.email) : '')).join('<br>')
+      : null;
+
+    document.getElementById('detailGrid').innerHTML =
+      detailField('Round', escapeHtml(r.round)) +
+      detailField('Entry Type', escapeHtml(r.entry_type)) +
+      detailField('Team Name', escapeHtml(r.team_name)) +
+      detailField('College', escapeHtml(r.college)) +
+      detailField('Track', escapeHtml(r.track)) +
+      detailField('Problem Statement', escapeHtml(r.problem_statement)) +
+      detailField('Leader Name', escapeHtml(r.leader_name)) +
+      detailField('Leader Gender', escapeHtml(r.leader_gender)) +
+      detailField('Leader Email', escapeHtml(r.leader_email)) +
+      detailField('Leader Phone', escapeHtml(r.leader_phone)) +
+      detailField('Year', escapeHtml(r.leader_year)) +
+      detailField('Department', escapeHtml(r.leader_dept)) +
+      detailField('IEEE #', escapeHtml(r.leader_ieee)) +
+      detailField('ILS Reg ID', escapeHtml(r.ils_reg_id)) +
+      detailField('Payment Screenshot', fileLink(r.payment_screenshot_url, 'View')) +
+      detailField('Supporting Doc', fileLink(r.supporting_doc_url, r.supporting_doc_name || 'View')) +
+      detailField('Members', membersStr) +
+      detailField('Submitted At', escapeHtml(new Date(r.created_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})));
+
+    const status = round1StatusOf(r);
+    let statusHtml = round1Pill(r);
+    if (status === 'submitted') {
+      statusHtml += '<div style="margin-top:8px;">' + fileLink(r.round1_doc_url, r.round1_doc_name || 'View submitted PDF') + '</div>';
+      statusHtml += '<div style="color:#9b7ab0; font-size:12px; margin-top:4px;">Submitted ' + escapeHtml(new Date(r.round1_submitted_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) + '</div>';
+      const dupCount = computeDuplicateHashGroups().find(g => g.some(x => x.id === r.id));
+      if (dupCount) statusHtml += '<div class="duplicate-hash-flag">⚠ Identical file as ' + (dupCount.length - 1) + ' other team(s)</div>';
+    }
+    document.getElementById('detailRound1Status').innerHTML = statusHtml;
+    document.getElementById('detailUnlockBtn').style.display = r.round1_locked ? 'inline-flex' : 'none';
+    document.getElementById('detailNotes').value = r.admin_notes || '';
+
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  function closeDetail() {
+    document.getElementById('detailModal').classList.remove('open');
+    detailRowId = null;
+  }
+
+  async function saveNotes() {
+    if (!detailRowId) return;
+    const notes = document.getElementById('detailNotes').value;
+    const errEl = document.getElementById('detailError');
+    const okEl = document.getElementById('detailSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    const { error } = await sb.from('registrations').update({ admin_notes: notes }).eq('id', detailRowId);
+    if (error) { errEl.textContent = 'Failed to save notes: ' + error.message; errEl.style.display = 'block'; return; }
+    const row = allRows.find(r => r.id === detailRowId);
+    if (row) row.admin_notes = notes;
+    okEl.textContent = 'Notes saved.';
+    okEl.style.display = 'block';
+  }
+
+  async function unlockRound1() {
+    if (!detailRowId) return;
+    if (!confirm('Unlock this team for resubmission? They will be able to upload a new Round 1 document again.')) return;
+    const errEl = document.getElementById('detailError');
+    errEl.style.display = 'none';
+    const { error } = await sb.from('registrations').update({ round1_locked: false }).eq('id', detailRowId);
+    if (error) { errEl.textContent = 'Failed to unlock: ' + error.message; errEl.style.display = 'block'; return; }
+    const row = allRows.find(r => r.id === detailRowId);
+    if (row) row.round1_locked = false;
+    renderTable(); renderStats();
+    openDetail(detailRowId);
+  }
+
+  async function uploadRound1OnBehalf(input) {
+    const file = input.files[0];
+    if (!file || !detailRowId) return;
+    const errEl = document.getElementById('detailError');
+    const okEl = document.getElementById('detailSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      errEl.textContent = 'Only PDF files are accepted.'; errEl.style.display = 'block'; input.value = ''; return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      errEl.textContent = 'File must be under 10 MB.'; errEl.style.display = 'block'; input.value = ''; return;
+    }
+    try {
+      const buf = await file.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', buf);
+      const hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+      const url = await uploadToSupabaseStorageAdmin(new Uint8Array(buf), file.name, 'application/pdf', 'round1-submissions');
+      const { error } = await sb.from('registrations').update({
+        round1_doc_url: url,
+        round1_doc_name: file.name,
+        round1_doc_hash: hash,
+        round1_submitted_at: new Date().toISOString(),
+        round1_locked: true
+      }).eq('id', detailRowId);
+      if (error) throw error;
+      const row = allRows.find(r => r.id === detailRowId);
+      if (row) {
+        row.round1_doc_url = url; row.round1_doc_name = file.name; row.round1_doc_hash = hash;
+        row.round1_submitted_at = new Date().toISOString(); row.round1_locked = true;
+      }
+      okEl.textContent = 'Uploaded on behalf of the team.';
+      okEl.style.display = 'block';
+      renderTable(); renderStats();
+      openDetail(detailRowId);
+    } catch (err) {
+      errEl.textContent = 'Upload failed: ' + err.message;
+      errEl.style.display = 'block';
+    } finally {
+      input.value = '';
+    }
   }
 
   // ── DUPLICATE ENTRIES ──
@@ -670,9 +953,41 @@
     )).join('');
   }
 
+  function computeDuplicateHashGroups() {
+    const byHash = {};
+    allRows.forEach(r => {
+      if (!r.round1_doc_hash) return;
+      (byHash[r.round1_doc_hash] = byHash[r.round1_doc_hash] || []).push(r);
+    });
+    return Object.values(byHash).filter(g => g.length > 1);
+  }
+
+  function renderDuplicateHashList() {
+    const groups = computeDuplicateHashGroups();
+    const host = document.getElementById('duplicateHashList');
+    if (groups.length === 0) {
+      host.innerHTML = '<div class="empty-state" style="padding:1rem;">No identical file content detected.</div>';
+      return;
+    }
+    host.innerHTML = groups.map(rows => (
+      '<div class="cleanup-item" style="flex-direction:column; align-items:stretch;">' +
+        '<div class="info" style="margin-bottom:8px;"><b>' + rows.length + ' teams uploaded byte-identical PDFs</b></div>' +
+        rows.map(r => (
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; border-top:1px solid #f0d5fa;">' +
+            '<div class="info">' + escapeHtml(r.team_name || '(no team name)') + ' · ' + escapeHtml(r.leader_name || '—') +
+              ' · ' + fileLink(r.round1_doc_url, 'View PDF') +
+            '</div>' +
+            '<button class="btn btn-secondary btn-small" onclick="openDetail(\'' + r.id + '\')">Review</button>' +
+          '</div>'
+        )).join('') +
+      '</div>'
+    )).join('');
+  }
+
   function openDuplicates() {
     document.getElementById('duplicatesError').style.display = 'none';
     renderDuplicatesList();
+    renderDuplicateHashList();
     document.getElementById('duplicatesModal').classList.add('open');
   }
 

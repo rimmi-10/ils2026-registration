@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE WIE ILS 2026 — Round 1 Document Submission</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f7eeff; min-height: 100vh; color: #2c1a40; }
+  .hero {
+    background: linear-gradient(135deg, #6a1794 0%, #b8005e 100%);
+    padding: 1.75rem 1.5rem 3rem; text-align: center; color: white;
+  }
+  .hero h1 { font-size: 1.4rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.4rem; }
+  .hero .tagline { font-size: 12.5px; color: rgba(255,255,255,0.85); }
+  .wrap { max-width: 520px; margin: -1.5rem auto 3rem; padding: 0 1rem; }
+  .card {
+    background: white; border-radius: 16px; padding: 1.5rem;
+    margin-bottom: 1rem; border: 0.5px solid #e2c8f5;
+    box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  .card-title { font-size: 15px; font-weight: 600; color: #6a1794; margin-bottom: 1rem; }
+  .note-box {
+    background: #fdf0ff; border-left: 3px solid #b060e0;
+    border-radius: 0 8px 8px 0; padding: 10px 14px;
+    font-size: 12px; color: #5c2b8a; margin-bottom: 1rem; line-height: 1.6;
+  }
+  .window-banner {
+    background: linear-gradient(135deg, #6a1794, #b8005e);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 1rem; color: white;
+  }
+  .window-banner .wb-title { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+  .window-banner .wb-text { font-size: 12px; line-height: 1.55; color: rgba(255,255,255,0.9); }
+  .field-row { margin-bottom: 1rem; }
+  .field-row:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; font-weight: 500; color: #4a1b6e; margin-bottom: 5px; }
+  .req { color: #b8005e; margin-left: 2px; }
+  input[type="text"], input[type="email"] {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid #ddc4f0; border-radius: 8px;
+    font-size: 14px; font-family: inherit; color: #2c1a40;
+    background: #fdf8ff; outline: none;
+  }
+  input:focus { border-color: #8c3ec0; background: white; box-shadow: 0 0 0 3px rgba(140,62,192,0.12); }
+  input.error { border-color: #b8005e !important; background: #fff5f9 !important; }
+  .file-zone {
+    border: 2px dashed #c9a0e8; border-radius: 10px;
+    padding: 1.4rem 1rem; text-align: center;
+    background: #faf4ff; cursor: pointer; position: relative;
+  }
+  .file-zone:hover { border-color: #8c3ec0; background: #f3e8ff; }
+  .file-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .file-icon { width: 34px; height: 34px; margin: 0 auto 8px; color: #8c3ec0; }
+  .file-zone .upload-label { font-size: 13px; color: #5c2b8a; font-weight: 500; }
+  .file-zone .upload-hint { font-size: 11px; color: #9b7ab0; margin-top: 3px; }
+  .file-name-display { display: none; font-size: 12px; color: #6a1794; font-weight: 600; margin-top: 6px; }
+  .submit-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #6a1794, #b8005e);
+    color: white; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    font-family: inherit; display: flex; align-items: center;
+    justify-content: center; gap: 8px; margin-top: 0.5rem;
+  }
+  .submit-btn:hover:not(:disabled) { opacity: 0.9; }
+  .submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .msg-box {
+    display: none; border-radius: 10px; padding: 1rem 1.25rem;
+    text-align: center; font-size: 14px; font-weight: 500; margin-top: 1rem;
+  }
+  .msg-box.success { background: #f0fff7; border: 1px solid #6fcf97; color: #1a6b3a; }
+  .msg-box.error-msg { background: #fff5f9; border: 1px solid #f0a0c0; color: #8b0038; }
+  .msg-box .msg-icon { font-size: 22px; display: block; margin-bottom: 5px; }
+  .footer-note { text-align: center; font-size: 12px; color: #9b7ab0; margin-top: 1.25rem; padding-bottom: 1rem; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>IEEE WIE ILS 2026<br>Round 1 — Idea/Solution Document</h1>
+  <div class="tagline">Submit the PDF for the team you registered</div>
+</div>
+<div class="wrap">
+  <div class="window-banner">
+    <div class="wb-title">Submission Window</div>
+    <div class="wb-text">Open <strong>1st August 2026</strong> to <strong>25th August 2026</strong>. Submissions outside this window will not be accepted, so don't leave it for the last minute.</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Step 1 — Use the Official Template</div>
+    <div class="note-box">Fill in the official template exactly as structured — do not change section order or formatting. Max <strong>12 pages</strong> including all tables and the declaration page. Save as PDF before uploading below.</div>
+    <a href="https://gfoclvqlkylujopcvuht.supabase.co/storage/v1/object/public/registration-files/templates/IEEE_WIE_ILS2026_Round1_Template.docx" class="submit-btn" style="text-decoration:none; background:linear-gradient(135deg,#ffb703,#fb8500); color:#3a1d00;">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Template (.docx)
+    </a>
+  </div>
+  <div class="card">
+    <div class="card-title">Step 2 — Find Your Registration</div>
+    <div class="note-box">Enter your <strong>Team Name</strong> and <strong>Leader Email</strong> exactly as used at registration — this is how we match your submission to the correct team. Each team can submit <strong>only once</strong>, so double-check your file before submitting.</div>
+    <div class="field-row">
+      <label for="teamName">Team Name <span class="req">*</span></label>
+      <input type="text" id="teamName" placeholder="Exactly as entered at registration">
+    </div>
+    <div class="field-row">
+      <label for="leaderEmail">Leader Email <span class="req">*</span></label>
+      <input type="email" id="leaderEmail" placeholder="Exactly as entered at registration">
+    </div>
+    <div class="field-row">
+      <label for="docFile">Idea/Solution Document (PDF only) <span class="req">*</span></label>
+      <div class="file-zone" id="fileZone">
+        <input type="file" accept="application/pdf,.pdf" id="docFile" onchange="handleFile(this)">
+        <svg class="file-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="upload-label">Click to upload your PDF</div>
+        <div class="upload-hint">PDF only · Max 500 KB — compress before uploading</div>
+        <div class="file-name-display" id="fileNameDisplay"></div>
+      </div>
+    </div>
+  </div>
+  <button class="submit-btn" id="submitBtn" onclick="submitDoc()">
+    <svg id="sendIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <div class="spinner" id="spinner"></div>
+    <span id="btnText">Submit Document</span>
+  </button>
+  <div class="msg-box success" id="successMsg">
+    <span class="msg-icon">✅</span>
+    Document submitted successfully!<br>
+    <span style="font-weight:400; font-size:13px;">A confirmation email is on its way to your registered email address.</span>
+  </div>
+  <div class="msg-box error-msg" id="errorMsg">
+    <span class="msg-icon">⚠️</span>
+    <span id="errorText">Something went wrong. Please try again.</span>
+  </div>
+  <p class="footer-note">Trouble submitting or need a correction after locking? Contact Madhav Maheshwari — <a href="tel:+919588874415" style="color:#6a1794; font-weight:600;">+91 95888 74415</a> (WhatsApp)</p>
+</div>
+<script>
+  const SUPABASE_URL = "https://gfoclvqlkylujopcvuht.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
+  const MAX_BYTES = 500 * 1024;
+
+  let docBase64 = "", docFileName = "";
+
+  function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+
+  function showError(msg) {
+    document.getElementById("successMsg").style.display = "none";
+    const el = document.getElementById("errorMsg");
+    document.getElementById("errorText").textContent = msg;
+    el.style.display = "block";
+    el.scrollIntoView({behavior:"smooth", block:"center"});
+  }
+  function clearError() { document.getElementById("errorMsg").style.display = "none"; }
+
+  function handleFile(input) {
+    clearError();
+    const file = input.files[0];
+    const display = document.getElementById("fileNameDisplay");
+    if (!file) { display.style.display = "none"; docBase64 = ""; docFileName = ""; return; }
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      showError("Only PDF files are accepted."); input.value = ""; display.style.display = "none"; return;
+    }
+    if (file.size > MAX_BYTES) {
+      showError("File is " + Math.round(file.size/1024) + " KB — must be under 500 KB. Please compress the PDF and try again.");
+      input.value = ""; display.style.display = "none"; return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      docBase64 = reader.result.split(",")[1];
+      docFileName = file.name;
+      display.textContent = "✓ " + file.name + " (" + Math.round(file.size/1024) + " KB)";
+      display.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setLoading(loading) {
+    document.getElementById("submitBtn").disabled = loading;
+    document.getElementById("sendIcon").style.display = loading ? "none" : "block";
+    document.getElementById("spinner").style.display = loading ? "block" : "none";
+    document.getElementById("btnText").textContent = loading ? "Submitting…" : "Submit Document";
+  }
+
+  async function submitDoc() {
+    clearError();
+    document.getElementById("successMsg").style.display = "none";
+    const teamName = document.getElementById("teamName").value.trim();
+    const leaderEmail = document.getElementById("leaderEmail").value.trim();
+
+    document.getElementById("teamName").classList.remove("error");
+    document.getElementById("leaderEmail").classList.remove("error");
+
+    if (!teamName) { showError("Enter your team name."); document.getElementById("teamName").classList.add("error"); return; }
+    if (!leaderEmail || !isValidEmail(leaderEmail)) { showError("Enter a valid leader email."); document.getElementById("leaderEmail").classList.add("error"); return; }
+    if (!docBase64) { showError("Upload your Idea/Solution Document (PDF, under 500 KB)."); return; }
+
+    setLoading(true);
+    try {
+      const res = await fetch(SUPABASE_URL + "/functions/v1/submit-round1-doc", {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ teamName, leaderEmail, fileBase64: docBase64, fileName: docFileName })
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ("Request failed (" + res.status + ")"));
+
+      setLoading(false);
+      document.getElementById("successMsg").style.display = "block";
+      document.getElementById("successMsg").scrollIntoView({behavior:"smooth"});
+      document.getElementById("teamName").value = "";
+      document.getElementById("leaderEmail").value = "";
+      document.getElementById("docFile").value = "";
+      document.getElementById("fileNameDisplay").style.display = "none";
+      docBase64 = ""; docFileName = "";
+    } catch (err) {
+      setLoading(false);
+      showError(err.message);
+    }
+  }
+</script>
+</body>
+</html>

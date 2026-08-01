@@ -173,6 +173,8 @@
   a.action-btn { text-decoration: none; }
   .whatsapp-btn { background: #25D366; border-color: #25D366; color: white; }
   .whatsapp-btn:hover { background: #1ebe57; border-color: #1ebe57; }
+  .submit-round1-btn { background: linear-gradient(135deg, #ffb703, #fb8500); border-color: transparent; color: #3a1d00; }
+  .submit-round1-btn:hover { opacity: 0.92; background: linear-gradient(135deg, #ffb703, #fb8500); }
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(44,26,64,0.55);
     z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
@@ -263,6 +265,10 @@
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       Guidelines &amp; FAQ
     </button>
+    <a href="submit-round1.html" class="action-btn submit-round1-btn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Submit Round 1 Document
+    </a>
     <button type="button" class="action-btn" onclick="copyRegLink()">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       <span id="copyLinkText">Copy Registration Link</span>
@@ -1031,6 +1037,11 @@
 
       if (!res.ok) {
         const errText = await res.text();
+        let errJson = null;
+        try { errJson = JSON.parse(errText); } catch (e) {}
+        if (res.status === 409 || (errJson && errJson.code === "23505")) {
+          throw new Error("DUPLICATE_ENTRY");
+        }
         throw new Error("Server rejected the submission (" + res.status + "): " + errText);
       }
 
@@ -1047,7 +1058,11 @@
       document.getElementById('selfProblemRow').style.display='none';
     } catch (err) {
       setLoading(false);
-      showError("Submission failed: " + err.message + " — your data was not saved. Please try again or contact us on WhatsApp.");
+      if (err.message === "DUPLICATE_ENTRY") {
+        showError("A team with this exact name and leader email is already registered for this round. If this is a mistake or you need to correct something, please contact us on WhatsApp instead of submitting again.");
+      } else {
+        showError("Submission failed: " + err.message + " — your data was not saved. Please try again or contact us on WhatsApp.");
+      }
       console.error(err);
     }
   }
