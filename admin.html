@@ -215,7 +215,7 @@
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openDuplicates()">🔁 Duplicate Entries</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Sent Log</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Email Log</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">📊 Analytics</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
@@ -262,11 +262,17 @@
 <!-- SENT LOG MODAL -->
 <div class="modal-overlay" id="sentLogModal">
   <div class="modal-box" style="max-width:760px;">
-    <h3>📨 Sent Log</h3>
+    <h3>📨 Email Log</h3>
     <div class="msg error" id="sentLogError"></div>
     <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
-      Every broadcast email sent from this portal, with the exact recipient list.
+      Every email the system has sent — manual broadcasts, registration confirmations, and Round 1 submission confirmations — with the exact recipient list for each.
     </p>
+    <select id="sentLogTypeFilter" onchange="renderSentLog()" style="margin-bottom:10px; padding:8px 10px; border:1.5px solid #ddc4f0; border-radius:8px; font-size:12.5px; font-family:inherit;">
+      <option value="">All Types</option>
+      <option value="broadcast">Broadcast</option>
+      <option value="registration_confirmation">Registration Confirmation</option>
+      <option value="round1_confirmation">Round 1 Confirmation</option>
+    </select>
     <div id="sentLogList"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeSentLog()">Close</button>
@@ -655,7 +661,7 @@
 
       const sentBy = sessionData?.session?.user?.email || null;
       const { error: logError } = await sb.from('broadcast_log').insert({
-        subject, body, recipients, cc, recipient_count: recipients.length, sent_by: sentBy
+        type: 'broadcast', subject, body, recipients, cc, recipient_count: recipients.length, sent_by: sentBy
       });
       if (logError) console.error('Failed to record broadcast log:', logError.message);
 
@@ -1007,6 +1013,13 @@
   }
 
   // ── SENT LOG ──
+  let emailLogRows = [];
+  const EMAIL_TYPE_LABELS = {
+    broadcast: 'Broadcast',
+    registration_confirmation: 'Registration Confirmation',
+    round1_confirmation: 'Round 1 Confirmation'
+  };
+
   async function openSentLog() {
     const errEl = document.getElementById('sentLogError');
     const host = document.getElementById('sentLogList');
@@ -1016,21 +1029,31 @@
 
     const { data, error } = await sb.from('broadcast_log').select('*').order('sent_at', { ascending: false });
     if (error) {
-      errEl.textContent = 'Failed to load sent log: ' + error.message;
+      errEl.textContent = 'Failed to load email log: ' + error.message;
       errEl.style.display = 'block';
       host.innerHTML = '';
       return;
     }
-    if (!data || data.length === 0) {
-      host.innerHTML = '<div class="empty-state">No broadcasts sent yet.</div>';
+    emailLogRows = data || [];
+    renderSentLog();
+  }
+
+  function renderSentLog() {
+    const host = document.getElementById('sentLogList');
+    const typeF = document.getElementById('sentLogTypeFilter').value;
+    const rows = typeF ? emailLogRows.filter(r => r.type === typeF) : emailLogRows;
+    if (rows.length === 0) {
+      host.innerHTML = '<div class="empty-state">No emails match.</div>';
       return;
     }
-    host.innerHTML = data.map(entry => {
+    host.innerHTML = rows.map(entry => {
       const recipients = Array.isArray(entry.recipients) ? entry.recipients : [];
       const cc = Array.isArray(entry.cc) ? entry.cc : [];
+      const typeLabel = EMAIL_TYPE_LABELS[entry.type] || entry.type || 'Broadcast';
       return (
         '<div class="cleanup-item" style="flex-direction:column; align-items:stretch;">' +
           '<div class="info" style="margin-bottom:6px;">' +
+            '<span class="pill">' + escapeHtml(typeLabel) + '</span> ' +
             '<b>' + escapeHtml(entry.subject) + '</b><br>' +
             escapeHtml(new Date(entry.sent_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) +
             (entry.sent_by ? ' · by ' + escapeHtml(entry.sent_by) : '') +
