@@ -715,26 +715,33 @@
       const sentRecipients = Array.isArray(result?.sentRecipients) ? result.sentRecipients : recipients;
       const failedRecipients = Array.isArray(result?.failedRecipients) ? result.failedRecipients : [];
       const totalSent = typeof result?.totalSent === 'number' ? result.totalSent : sentRecipients.length;
+      const batches = Array.isArray(result?.batches) ? result.batches : [];
 
       const sentBy = sessionData?.session?.user?.email || null;
       const { error: logError } = await sb.from('broadcast_log').insert({
-        type: 'broadcast', subject, body, recipients: sentRecipients, cc, recipient_count: totalSent, sent_by: sentBy
+        type: 'broadcast', subject, body, recipients: sentRecipients, cc, recipient_count: totalSent, sent_by: sentBy, batch_summary: batches
       });
       if (logError) console.error('Failed to record broadcast log:', logError.message);
 
+      const batchHtml = batches.length
+        ? '<div style="margin-top:8px; font-size:11.5px; text-align:left;">' +
+          batches.map(b => 'Batch ' + b.batch + ': ' + b.count + ' recipient(s) — ' +
+            (b.status === 'sent' ? '✅ sent' : b.status === 'partial' ? '⚠ partially failed' : '❌ failed')
+          ).join('<br>') + '</div>'
+        : '';
+
       if (failedRecipients.length > 0) {
         okEl.style.display = 'none';
-        errEl.innerHTML = 'Sent to ' + totalSent + ' of ' + recipients.length + '. <strong>' + failedRecipients.length + ' failed</strong> and were NOT logged as sent — retry these separately:<br>' + escapeHtml(failedRecipients.join(', '));
+        errEl.innerHTML = 'Sent to ' + totalSent + ' of ' + recipients.length + '. <strong>' + failedRecipients.length + ' failed</strong> and were NOT logged as sent — retry these separately:<br>' + escapeHtml(failedRecipients.join(', ')) + batchHtml;
         errEl.style.display = 'block';
         selectedIds.clear();
         renderTable();
         // Don't auto-close — host needs to see/copy the failed list.
       } else {
-        okEl.textContent = 'Sent to ' + totalSent + ' recipient(s).';
+        okEl.innerHTML = 'Sent to ' + totalSent + ' recipient(s) in ' + batches.length + ' batch(es).' + batchHtml;
         okEl.style.display = 'block';
         selectedIds.clear();
         renderTable();
-        setTimeout(closeBroadcast, 1800);
       }
     } catch (err) {
       errEl.textContent = 'Failed to send: ' + err.message;
@@ -1116,7 +1123,17 @@
     host.innerHTML = rows.map(entry => {
       const recipients = Array.isArray(entry.recipients) ? entry.recipients : [];
       const cc = Array.isArray(entry.cc) ? entry.cc : [];
+      const batches = Array.isArray(entry.batch_summary) ? entry.batch_summary : [];
       const typeLabel = EMAIL_TYPE_LABELS[entry.type] || entry.type || 'Broadcast';
+      const batchDetails = batches.length
+        ? '<details><summary style="cursor:pointer; font-size:12.5px; color:#6a1794; font-weight:600; margin-top:6px;">View batches (' + batches.length + ')</summary>' +
+            '<div style="font-size:12px; color:#4a1b6e; margin-top:6px; line-height:1.8;">' +
+              batches.map(b => 'Batch ' + b.batch + ': ' + b.count + ' recipient(s) — ' +
+                (b.status === 'sent' ? '✅ sent' : b.status === 'partial' ? '⚠ partially failed' : '❌ failed')
+              ).join('<br>') +
+            '</div>' +
+          '</details>'
+        : '';
       return (
         '<div class="cleanup-item" style="flex-direction:column; align-items:stretch;">' +
           '<div class="info" style="margin-bottom:6px;">' +
@@ -1130,6 +1147,7 @@
           '<details><summary style="cursor:pointer; font-size:12.5px; color:#6a1794; font-weight:600;">View recipients</summary>' +
             '<div style="font-size:12px; color:#4a1b6e; margin-top:6px; line-height:1.7; word-break:break-word;">' + escapeHtml(recipients.join(', ')) + '</div>' +
           '</details>' +
+          batchDetails +
         '</div>'
       );
     }).join('');
