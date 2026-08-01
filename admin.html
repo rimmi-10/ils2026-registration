@@ -358,6 +358,23 @@
     <div class="detail-grid" id="detailGrid"></div>
 
     <div class="detail-section">
+      <h4>Contact Info
+        <button class="btn-icon" style="width:auto; padding:4px 10px; font-size:11px; vertical-align:middle;" onclick="toggleEditContact()" id="editContactToggleBtn">✏️ Fix a typo</button>
+      </h4>
+      <div id="editContactForm" style="display:none;">
+        <div class="field-row"><label for="editTeamName">Team Name</label><input type="text" id="editTeamName"></div>
+        <div class="field-row"><label for="editCollege">College</label><input type="text" id="editCollege"></div>
+        <div class="field-row"><label for="editLeaderName">Leader Name</label><input type="text" id="editLeaderName"></div>
+        <div class="field-row"><label for="editLeaderEmail">Leader Email</label><input type="email" id="editLeaderEmail"></div>
+        <div class="field-row"><label for="editLeaderPhone">Leader Phone</label><input type="tel" id="editLeaderPhone" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"></div>
+        <div class="modal-actions" style="margin-top:6px;">
+          <button class="btn btn-secondary btn-small" onclick="toggleEditContact()">Cancel</button>
+          <button class="btn btn-small" onclick="saveContactInfo()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
       <h4>Round 1 Idea/Solution Document</h4>
       <div id="detailRound1Status" style="font-size:13px; margin-bottom:10px;"></div>
       <div class="row-actions" style="margin-bottom:6px;">
@@ -920,6 +937,14 @@
     document.getElementById('detailUnlockBtn').style.display = r.round1_locked ? 'inline-flex' : 'none';
     document.getElementById('detailNotes').value = r.admin_notes || '';
 
+    document.getElementById('editTeamName').value = r.team_name || '';
+    document.getElementById('editCollege').value = r.college || '';
+    document.getElementById('editLeaderName').value = r.leader_name || '';
+    document.getElementById('editLeaderEmail').value = r.leader_email || '';
+    document.getElementById('editLeaderPhone').value = r.leader_phone || '';
+    document.getElementById('editContactForm').style.display = 'none';
+    document.getElementById('editContactToggleBtn').textContent = '✏️ Fix a typo';
+
     document.getElementById('detailModal').classList.add('open');
   }
 
@@ -940,6 +965,62 @@
     if (row) row.admin_notes = notes;
     okEl.textContent = 'Notes saved.';
     okEl.style.display = 'block';
+  }
+
+  function toggleEditContact() {
+    const form = document.getElementById('editContactForm');
+    const btn = document.getElementById('editContactToggleBtn');
+    const opening = form.style.display === 'none';
+    form.style.display = opening ? 'block' : 'none';
+    btn.textContent = opening ? 'Hide' : '✏️ Fix a typo';
+    if (!opening) {
+      // Cancel: reset fields back to the saved values.
+      const row = allRows.find(r => r.id === detailRowId);
+      if (row) {
+        document.getElementById('editTeamName').value = row.team_name || '';
+        document.getElementById('editCollege').value = row.college || '';
+        document.getElementById('editLeaderName').value = row.leader_name || '';
+        document.getElementById('editLeaderEmail').value = row.leader_email || '';
+        document.getElementById('editLeaderPhone').value = row.leader_phone || '';
+      }
+    }
+  }
+
+  async function saveContactInfo() {
+    if (!detailRowId) return;
+    const errEl = document.getElementById('detailError');
+    const okEl = document.getElementById('detailSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+
+    const teamName = document.getElementById('editTeamName').value.trim();
+    const college = document.getElementById('editCollege').value.trim();
+    const leaderName = document.getElementById('editLeaderName').value.trim();
+    const leaderEmail = document.getElementById('editLeaderEmail').value.trim();
+    const leaderPhone = document.getElementById('editLeaderPhone').value.trim();
+
+    if (!teamName || !leaderName) { errEl.textContent = 'Team name and leader name cannot be empty.'; errEl.style.display = 'block'; return; }
+    if (!isValidEmail(leaderEmail)) { errEl.textContent = 'Enter a valid leader email.'; errEl.style.display = 'block'; return; }
+    if (!/^[0-9]{10}$/.test(leaderPhone)) { errEl.textContent = 'Leader phone must be exactly 10 digits.'; errEl.style.display = 'block'; return; }
+
+    const { error } = await sb.from('registrations').update({
+      team_name: teamName, college, leader_name: leaderName, leader_email: leaderEmail, leader_phone: leaderPhone
+    }).eq('id', detailRowId);
+
+    if (error) {
+      errEl.textContent = 'Failed to save: ' + (error.message.includes('duplicate') || error.code === '23505'
+        ? 'That email is already used by another registration in this round.'
+        : error.message);
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const row = allRows.find(r => r.id === detailRowId);
+    if (row) { row.team_name = teamName; row.college = college; row.leader_name = leaderName; row.leader_email = leaderEmail; row.leader_phone = leaderPhone; }
+    okEl.textContent = 'Contact info updated.';
+    okEl.style.display = 'block';
+    toggleEditContact();
+    document.getElementById('detailTitle').textContent = teamName || '(no team name)';
+    renderTable();
   }
 
   async function unlockRound1() {
