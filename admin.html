@@ -211,8 +211,15 @@
       <option value="pending">Pending</option>
       <option value="late">Late</option>
     </select>
+    <select id="selectionFilter" onchange="renderTable()">
+      <option value="">Selection: All</option>
+      <option value="round2">Round 2 Selected</option>
+      <option value="round3">Grand Finale Selected</option>
+      <option value="none">Not Selected</option>
+    </select>
     <span class="sel-count" id="selCount">0 selected</span>
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openSelection()">🎯 Selection</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openDuplicates()">🔁 Duplicate Entries</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Email Log</button>
@@ -276,6 +283,36 @@
     <div id="sentLogList"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeSentLog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- SELECTION MODAL -->
+<div class="modal-overlay" id="selectionModal">
+  <div class="modal-box" style="max-width:600px;">
+    <h3>🎯 Round 2 / Grand Finale Selection</h3>
+    <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:6px;" id="selectionSummary"></p>
+    <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
+      Check the teams you want in the table first (checkbox column), then use the buttons below.
+    </p>
+    <div class="detail-section" style="margin-top:0; border-top:none; padding-top:0;">
+      <h4>Round 2</h4>
+      <div class="row-actions" style="margin-bottom:6px;">
+        <button class="btn btn-secondary btn-small" onclick="markSelection(2, true)">Mark checked as Selected</button>
+        <button class="btn btn-secondary btn-small" onclick="markSelection(2, false)">Remove Selection</button>
+      </div>
+      <button class="btn btn-small" style="width:auto;" onclick="emailSelectedTeams(2)">📣 Email all Round 2 Selected teams</button>
+    </div>
+    <div class="detail-section">
+      <h4>Grand Finale</h4>
+      <div class="row-actions" style="margin-bottom:6px;">
+        <button class="btn btn-secondary btn-small" onclick="markSelection(3, true)">Mark checked as Selected</button>
+        <button class="btn btn-secondary btn-small" onclick="markSelection(3, false)">Remove Selection</button>
+      </div>
+      <button class="btn btn-small" style="width:auto;" onclick="emailSelectedTeams(3)">📣 Email all Grand Finale Selected teams</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeSelection()">Close</button>
     </div>
   </div>
 </div>
@@ -407,6 +444,13 @@
     return '<span class="pill pill-pending">⏳ Pending</span>';
   }
 
+  function selectionPill(r) {
+    const tags = [];
+    if (r.round2_selected) tags.push('<span class="pill pill-submitted">🎯 Round 2</span>');
+    if (r.round3_selected) tags.push('<span class="pill pill-submitted">🏆 Finale</span>');
+    return tags.length ? tags.join(' ') : '<span class="empty-cell">—</span>';
+  }
+
   async function login() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -458,6 +502,10 @@
     if (round1Eligible.length > 0) {
       html += '<div class="stat-box"><div class="num">' + round1Submitted.length + ' / ' + round1Eligible.length + '</div><div class="lbl">Round 1 Docs Submitted</div></div>';
     }
+    const round2Count = allRows.filter(r => r.round2_selected).length;
+    const round3Count = allRows.filter(r => r.round3_selected).length;
+    html += '<div class="stat-box"><div class="num">' + round2Count + '</div><div class="lbl">Round 2 Selected</div></div>';
+    html += '<div class="stat-box"><div class="num">' + round3Count + '</div><div class="lbl">Grand Finale Selected</div></div>';
     document.getElementById('stats').innerHTML = html;
   }
 
@@ -476,9 +524,13 @@
     const q = document.getElementById('search').value.trim().toLowerCase();
     const roundF = document.getElementById('roundFilter').value;
     const docF = document.getElementById('docStatusFilter').value;
+    const selF = document.getElementById('selectionFilter').value;
     let rows = allRows;
     if (roundF) rows = rows.filter(r => r.round === roundF);
     if (docF) rows = rows.filter(r => round1StatusOf(r) === docF);
+    if (selF === 'round2') rows = rows.filter(r => r.round2_selected);
+    else if (selF === 'round3') rows = rows.filter(r => r.round3_selected);
+    else if (selF === 'none') rows = rows.filter(r => !r.round2_selected && !r.round3_selected);
     if (q) {
       rows = rows.filter(r => [r.team_name, r.leader_name, r.college, r.leader_email, r.leader_phone]
         .some(v => (v||'').toLowerCase().includes(q)));
@@ -519,7 +571,7 @@
       '<th class="sortable" onclick="toggleSort(\'college\')">College' + sortArrow('college') + '</th>' +
       '<th>Track</th><th>Problem Statement</th>' +
       '<th>Leader Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Year</th><th>Dept</th><th>IEEE #</th>' +
-      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Round 1 Doc</th><th>Actions</th>' +
+      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Round 1 Doc</th><th>Selection</th><th>Actions</th>' +
       '</tr></thead><tbody>';
     rows.forEach(r => {
       const members = Array.isArray(r.members) ? r.members : [];
@@ -547,6 +599,7 @@
         '<td>' + fileLink(r.payment_screenshot_url, 'View') + '</td>' +
         '<td>' + fileLink(r.supporting_doc_url, r.supporting_doc_name || 'View') + '</td>' +
         '<td>' + round1Pill(r) + '</td>' +
+        '<td>' + selectionPill(r) + '</td>' +
         '<td><div class="row-actions">' +
           '<button class="btn-icon" title="View details" onclick="openDetail(\'' + r.id + '\')">' +
             '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
@@ -682,7 +735,8 @@
     const cols = ['created_at','round','entry_type','team_name','college','track','problem_statement',
       'leader_name','leader_gender','leader_email','leader_phone','leader_year','leader_dept','leader_ieee',
       'ils_reg_id','payment_screenshot_url','supporting_doc_url',
-      'round1_doc_url','round1_submitted_at','admin_notes'];
+      'round1_doc_url','round1_submitted_at','admin_notes',
+      'round2_selected','round3_selected'];
     let csv = cols.join(',') + '\n';
     filteredRows().forEach(r => {
       csv += cols.map(c => '"' + String(r[c] ?? '').replace(/"/g,'""') + '"').join(',') + '\n';
@@ -1196,6 +1250,53 @@
 
   function closeAnalytics() {
     document.getElementById('analyticsModal').classList.remove('open');
+  }
+
+  // ── ROUND 2 / GRAND FINALE SELECTION ──
+  function renderSelectionSummary() {
+    const r2 = allRows.filter(r => r.round2_selected).length;
+    const r3 = allRows.filter(r => r.round3_selected).length;
+    document.getElementById('selectionSummary').textContent =
+      'Currently: ' + r2 + ' selected for Round 2 · ' + r3 + ' selected for Grand Finale';
+  }
+
+  function openSelection() {
+    renderSelectionSummary();
+    document.getElementById('selectionModal').classList.add('open');
+  }
+
+  function closeSelection() {
+    document.getElementById('selectionModal').classList.remove('open');
+  }
+
+  async function markSelection(round, value) {
+    if (selectedIds.size === 0) { alert('Check at least one team in the table first.'); return; }
+    const field = round === 2 ? 'round2_selected' : 'round3_selected';
+    const atField = round === 2 ? 'round2_selected_at' : 'round3_selected_at';
+    const nowIso = value ? new Date().toISOString() : null;
+    const ids = Array.from(selectedIds);
+    const { error } = await sb.from('registrations').update({ [field]: value, [atField]: nowIso }).in('id', ids);
+    if (error) { alert('Failed to update: ' + error.message); return; }
+    allRows.forEach(r => { if (ids.includes(r.id)) { r[field] = value; r[atField] = nowIso; } });
+    renderTable();
+    renderStats();
+    renderSelectionSummary();
+  }
+
+  function emailSelectedTeams(round) {
+    const field = round === 2 ? 'round2_selected' : 'round3_selected';
+    const ids = allRows.filter(r => r[field]).map(r => r.id);
+    if (ids.length === 0) { alert('No teams are currently marked selected for this round.'); return; }
+    selectedIds = new Set(ids);
+    renderTable();
+    closeSelection();
+    openBroadcast();
+    document.getElementById('bcSubject').value = round === 2
+      ? "You're Selected for Round 2 — IEEE WIE ILS 2026"
+      : "You're Selected for the Grand Finale — IEEE WIE ILS 2026";
+    document.getElementById('bcBody').value = round === 2
+      ? "Congratulations! Your team has been selected to advance to Round 2 of IEEE WIE ILS 2026.\n\nFurther details and submission instructions will follow separately. Please keep an eye on your email and the WhatsApp group.\n\n— IEEE WIE ILS 2026 Team"
+      : "Congratulations! Your team has been selected for the Grand Finale of IEEE WIE ILS 2026, to be held on 24-25 October 2026 at SVNIT, Surat.\n\nPlease complete your ILS registration and keep your payment confirmation ready. Further details will follow.\n\n— IEEE WIE ILS 2026 Team";
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
