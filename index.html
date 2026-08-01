@@ -1059,7 +1059,7 @@
     } catch (err) {
       setLoading(false);
       if (err.message === "DUPLICATE_ENTRY") {
-        showError("A team with this exact name and leader email is already registered for this round. If this is a mistake or you need to correct something, please contact us on WhatsApp instead of submitting again.");
+        showError("This email has already registered for this round. Each person can register only once per round, regardless of team name. If this is a mistake or you need to correct something, please contact us on WhatsApp instead of submitting again.");
       } else {
         showError("Submission failed: " + err.message + " — your data was not saved. Please try again or contact us on WhatsApp.");
       }
