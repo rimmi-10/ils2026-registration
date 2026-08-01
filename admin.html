@@ -632,11 +632,11 @@
     document.getElementById('selCount').textContent = selectedIds.size + ' selected';
   }
 
+  // Broadcasts go to team leaders only, never team members.
   function computeRecipients() {
     const emails = new Set();
     allRows.filter(r => selectedIds.has(r.id)).forEach(r => {
       if (r.leader_email) emails.add(r.leader_email.trim());
-      (Array.isArray(r.members) ? r.members : []).forEach(m => { if (m.email) emails.add(m.email.trim()); });
     });
     return Array.from(emails).filter(Boolean);
   }
@@ -644,7 +644,7 @@
   function openBroadcast() {
     if (selectedIds.size === 0) { alert('Select at least one team first (checkbox in the table).'); return; }
     const recipients = computeRecipients();
-    document.getElementById('recipientLabel').textContent = 'Sending to ' + recipients.length + ' recipient(s) across ' + selectedIds.size + ' team(s)';
+    document.getElementById('recipientLabel').textContent = 'Sending to ' + recipients.length + ' team leader(s) — ' + selectedIds.size + ' team(s) selected';
     document.getElementById('bcCc').value = '';
     document.getElementById('bcSubject').value = '';
     document.getElementById('bcBody').value = '';
