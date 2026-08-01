@@ -245,7 +245,7 @@
     <h3>🔁 Duplicate Entries</h3>
     <div class="msg error" id="duplicatesError"></div>
     <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
-      Groups of registrations that share the exact same team name AND leader email within the same round — a genuine accidental double-submission. Review each group and delete the extra row(s). (Two different teams sharing just a similar name is normal and not shown here.)
+      Groups of registrations where the same leader email was used more than once in the same round, regardless of team name. Review each group and delete the extra row(s).
     </p>
     <div id="duplicatesList"></div>
     <div class="detail-section">
@@ -898,19 +898,20 @@
   // A duplicate = same team name AND same leader email in the same round (matches the
   // DB unique constraint). Team name alone is NOT a duplicate signal — different teams
   // legitimately reuse common names ("CodeX", "Team Alpha", etc).
+  // A duplicate = same leader email registered more than once in the same round,
+  // regardless of team name (one person, one entry per round).
   function computeDuplicateGroups() {
     const groups = [];
     const byKey = {};
     allRows.forEach(r => {
-      const name = (r.team_name || '').trim().toLowerCase();
       const email = (r.leader_email || '').trim().toLowerCase();
-      if (!name || !email) return;
-      const k = name + '::' + email + '::' + (r.round || '');
+      if (!email) return;
+      const k = email + '::' + (r.round || '');
       (byKey[k] = byKey[k] || []).push(r);
     });
     Object.values(byKey).forEach(rows => {
       if (rows.length > 1) {
-        groups.push({ label: 'Same team name "' + rows[0].team_name + '" + same leader email in ' + (rows[0].round || '—'), rows });
+        groups.push({ label: 'Same leader email "' + rows[0].leader_email + '" registered ' + rows.length + '× in ' + (rows[0].round || '—'), rows });
       }
     });
     return groups;
