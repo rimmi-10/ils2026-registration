@@ -245,7 +245,7 @@
     <h3>🔁 Duplicate Entries</h3>
     <div class="msg error" id="duplicatesError"></div>
     <p style="font-size:12.5px; color:#7c2ab0; margin-bottom:12px;">
-      Groups of registrations that share the same leader email, or the same team name within the same round. Review each group and delete the extra row(s).
+      Groups of registrations that share the exact same team name AND leader email within the same round — a genuine accidental double-submission. Review each group and delete the extra row(s). (Two different teams sharing just a similar name is normal and not shown here.)
     </p>
     <div id="duplicatesList"></div>
     <div class="detail-section">
@@ -892,40 +892,24 @@
   }
 
   // ── DUPLICATE ENTRIES ──
+  // A duplicate = same team name AND same leader email in the same round (matches the
+  // DB unique constraint). Team name alone is NOT a duplicate signal — different teams
+  // legitimately reuse common names ("CodeX", "Team Alpha", etc).
   function computeDuplicateGroups() {
     const groups = [];
-    const seenIdSets = new Set();
-
-    const byEmail = {};
-    allRows.forEach(r => {
-      const k = (r.leader_email || '').trim().toLowerCase();
-      if (!k) return;
-      (byEmail[k] = byEmail[k] || []).push(r);
-    });
-    Object.entries(byEmail).forEach(([email, rows]) => {
-      if (rows.length > 1) {
-        groups.push({ label: 'Same leader email: ' + email, rows });
-        seenIdSets.add(rows.map(r => r.id).sort().join(','));
-      }
-    });
-
-    const byTeam = {};
+    const byKey = {};
     allRows.forEach(r => {
       const name = (r.team_name || '').trim().toLowerCase();
-      if (!name) return;
-      const k = name + '::' + (r.round || '');
-      (byTeam[k] = byTeam[k] || []).push(r);
+      const email = (r.leader_email || '').trim().toLowerCase();
+      if (!name || !email) return;
+      const k = name + '::' + email + '::' + (r.round || '');
+      (byKey[k] = byKey[k] || []).push(r);
     });
-    Object.entries(byTeam).forEach(([key, rows]) => {
+    Object.values(byKey).forEach(rows => {
       if (rows.length > 1) {
-        const idSet = rows.map(r => r.id).sort().join(',');
-        if (!seenIdSets.has(idSet)) {
-          groups.push({ label: 'Same team name "' + rows[0].team_name + '" in ' + (rows[0].round || '—'), rows });
-          seenIdSets.add(idSet);
-        }
+        groups.push({ label: 'Same team name "' + rows[0].team_name + '" + same leader email in ' + (rows[0].round || '—'), rows });
       }
     });
-
     return groups;
   }
 
