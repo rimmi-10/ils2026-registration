@@ -102,7 +102,7 @@
   </div>
   <div class="card">
     <div class="card-title">Step 2 — Find Your Registration</div>
-    <div class="note-box">Enter your <strong>Team Name</strong> and <strong>Leader Email</strong> exactly as used at registration — this is how we match your submission to the correct team. Each team can submit <strong>only once</strong>, so double-check your file before submitting.</div>
+    <div class="note-box">Enter your <strong>Team Name</strong>, <strong>Leader Email</strong>, and <strong>Leader Phone</strong> exactly as used at registration — this is how we match your submission to the correct team. Each team can submit <strong>only once</strong>, so double-check your file before submitting.</div>
     <div class="field-row">
       <label for="teamName">Team Name <span class="req">*</span></label>
       <input type="text" id="teamName" placeholder="Exactly as entered at registration">
@@ -110,6 +110,10 @@
     <div class="field-row">
       <label for="leaderEmail">Leader Email <span class="req">*</span></label>
       <input type="email" id="leaderEmail" placeholder="Exactly as entered at registration">
+    </div>
+    <div class="field-row">
+      <label for="leaderPhone">Leader Phone <span class="req">*</span></label>
+      <input type="tel" id="leaderPhone" placeholder="10-digit number used at registration" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
     </div>
     <div class="field-row">
       <label for="docFile">Idea/Solution Document (PDF only) <span class="req">*</span></label>
@@ -190,12 +194,15 @@
     document.getElementById("successMsg").style.display = "none";
     const teamName = document.getElementById("teamName").value.trim();
     const leaderEmail = document.getElementById("leaderEmail").value.trim();
+    const leaderPhone = document.getElementById("leaderPhone").value.trim();
 
     document.getElementById("teamName").classList.remove("error");
     document.getElementById("leaderEmail").classList.remove("error");
+    document.getElementById("leaderPhone").classList.remove("error");
 
     if (!teamName) { showError("Enter your team name."); document.getElementById("teamName").classList.add("error"); return; }
     if (!leaderEmail || !isValidEmail(leaderEmail)) { showError("Enter a valid leader email."); document.getElementById("leaderEmail").classList.add("error"); return; }
+    if (!/^[0-9]{10}$/.test(leaderPhone)) { showError("Enter the 10-digit leader phone number used at registration."); document.getElementById("leaderPhone").classList.add("error"); return; }
     if (!docBase64) { showError("Upload your Idea/Solution Document (PDF, under 500 KB)."); return; }
 
     setLoading(true);
@@ -207,7 +214,7 @@
           "Authorization": "Bearer " + SUPABASE_ANON_KEY,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ teamName, leaderEmail, fileBase64: docBase64, fileName: docFileName })
+        body: JSON.stringify({ teamName, leaderEmail, leaderPhone, fileBase64: docBase64, fileName: docFileName })
       });
       const result = await res.json().catch(() => null);
       if (!res.ok) throw new Error((result && result.error) || ("Request failed (" + res.status + ")"));
@@ -217,6 +224,7 @@
       document.getElementById("successMsg").scrollIntoView({behavior:"smooth"});
       document.getElementById("teamName").value = "";
       document.getElementById("leaderEmail").value = "";
+      document.getElementById("leaderPhone").value = "";
       document.getElementById("docFile").value = "";
       document.getElementById("fileNameDisplay").style.display = "none";
       docBase64 = ""; docFileName = "";
