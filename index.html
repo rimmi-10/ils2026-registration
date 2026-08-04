@@ -303,7 +303,6 @@
         <li>Fill in your team details.</li>
         <li>That's it. No document upload is needed at this stage.</li>
         <li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li>
-        <li>Exception: Track 4 teams submitting their own industry problem statement must also upload an endorsed document now. See the Track 4 section below.</li>
       </ul>
     </div>
   </div>
@@ -377,7 +376,6 @@
         <li>Switching tracks after submission is not allowed.</li>
         <li>Original ideas and solutions only.</li>
         <li>Selecting your track and problem statement here is all that's required for now. Your Idea/Solution Document will be requested separately by email after registration.</li>
-        <li>Exception: Track 4 teams with their own problem statement must upload an endorsed document below.</li>
       </ul>
     </div>
     <div class="field-row">
@@ -407,16 +405,9 @@
         <span id="problemDescText"></span>
       </div>
     </div>
-    <!-- Track 4: 3 radio options -->
+    <!-- Track 4: 2 fixed problem statements (self-submission option removed) -->
     <div id="track4Row" style="display:none;">
       <label style="margin-bottom:10px; display:block;">Problem Statement <span class="req">*</span></label>
-      <div class="note-box">
-        If you choose <strong>"I have my own industry problem statement"</strong> below, you must upload a document that has both of these:
-        <ul style="margin:6px 0 0 18px; padding:0;">
-          <li>Your problem statement description.</li>
-          <li>At the end of the document, an endorsement from an industry professional to validate that it is genuine.</li>
-        </ul>
-      </div>
       <div class="track4-option" id="t4opt1" onclick="selectTrack4Option('P9')">
         <input type="radio" name="track4choice" id="t4r1" value="P9">
         <div>
@@ -429,36 +420,6 @@
         <div>
           <div class="track4-option-label">P10: Secure Supply Chain Tracking for Women Entrepreneurs</div>
           <div class="track4-option-desc">Build an IoT-enabled cargo tracking and tamper-detection system to help women-led enterprises securely ship products to distant urban markets with real-time monitoring and alerts.</div>
-        </div>
-      </div>
-      <div class="track4-option" id="t4opt3" onclick="selectTrack4Option('SELF')">
-        <input type="radio" name="track4choice" id="t4r3" value="SELF">
-        <div>
-          <div class="track4-option-label">I have my own industry problem statement</div>
-          <div class="track4-option-desc">Your team has identified a real-world industry problem. Describe it below and upload a document with your problem statement, endorsed by an industry professional (required).</div>
-        </div>
-      </div>
-      <div id="selfProblemRow" style="display:none; margin-top:12px;">
-        <div class="field-row">
-          <label for="selfProblemDesc">Describe Your Problem Statement <span class="req">*</span></label>
-          <textarea id="selfProblemDesc" placeholder="Briefly describe the industry problem your team has identified (100–300 words)..."></textarea>
-        </div>
-        <div class="field-row">
-          <label for="pdfFile">Endorsed Problem Statement Document (PDF) <span class="req">*</span></label>
-          <div class="note-box" style="margin-bottom:8px;">
-            This document must have both of the following, in this order:
-            <ul style="margin:6px 0 0 18px; padding:0;">
-              <li>Your problem statement description.</li>
-              <li>At the end of the document, an endorsement from an industry professional (for example, a signed letter or email from the company) to validate that it is genuine.</li>
-            </ul>
-          </div>
-          <div class="file-zone" id="fileZone">
-            <input type="file" accept=".pdf" id="pdfFile" onchange="handleFile(this)">
-            <svg class="file-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <div class="upload-label">Click to upload endorsed problem statement document (required)</div>
-            <div class="upload-hint">PDF only · Max 2 MB</div>
-            <div class="file-name-display" id="fileNameDisplay"></div>
-          </div>
         </div>
       </div>
     </div>
@@ -606,10 +567,6 @@
       <div class="faq-a">No. Before <strong>10th August 2026</strong> (extended from 31st July), you only need to do two things: select your track and problem statement, and fill in your team details. After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. It's a good idea to start preparing it early.</div>
     </div>
     <div class="faq-item">
-      <button type="button" class="faq-q" onclick="toggleFaq(this)">I'm registering for Track 4 with my own problem statement. What do I need to upload? <span class="chev">▾</span></button>
-      <div class="faq-a">You must upload a document at the time of registration containing your problem statement, endorsed by an industry professional (a signed letter or email from the company). This is the only case where a document is required immediately.</div>
-    </div>
-    <div class="faq-item">
       <button type="button" class="faq-q" onclick="toggleFaq(this)">Which rounds are online and which are offline? <span class="chev">▾</span></button>
       <div class="faq-a">Round 1 and Round 2 are conducted <strong>online</strong>. Only the <strong>Grand Finale is offline</strong>, held in person at SVNIT, Surat.</div>
     </div>
@@ -674,7 +631,6 @@
       <ul>
         <li>Before <strong>10th August 2026</strong> (extended from 31st July): select your track and problem statement, and fill in your team details. That's all this registration form requires.</li>
         <li>After you register: you'll get an <strong>email asking you to submit your Idea/Solution Document by 25th August 2026</strong>. It is <strong>not needed at registration</strong>, but start preparing it early.</li>
-        <li><strong>Exception for Track 4 (own industry problem statement):</strong> if your team is submitting its own problem statement, you must upload a document containing the problem statement, <strong>endorsed by an industry professional</strong>, at the time of registration so it can be verified as genuine.</li>
       </ul>
       <h4>Round 1 <span class="mode-tag online">ONLINE</span></h4>
       <ul>
@@ -747,7 +703,7 @@
   let currentRound = 1;
   let track4Choice = "";
   const roundNotes = {
-    1: "<strong>Round 1</strong> (Registration Deadline: <strong>10th August 2026</strong>, extended from 31st July). Right now, this is all you need to do: <ul style='margin:6px 0 0 18px; padding:0;'><li>Select your track and problem statement.</li><li>Fill in your team details.</li><li>That's it. No document upload is needed at this stage.</li><li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li><li>Exception: Track 4 teams submitting their own industry problem statement must also upload an endorsed document now. See the Track 4 section below.</li></ul>",
+    1: "<strong>Round 1</strong> (Registration Deadline: <strong>10th August 2026</strong>, extended from 31st July). Right now, this is all you need to do: <ul style='margin:6px 0 0 18px; padding:0;'><li>Select your track and problem statement.</li><li>Fill in your team details.</li><li>That's it. No document upload is needed at this stage.</li><li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li></ul>",
     2: "<strong>Round 2</strong> (Submission Deadline: 15th September 2026, for selected teams only). Further details will be shared directly with shortlisted teams closer to the round.",
     3: "<strong>Round 3: Grand Finale</strong> (25th October 2026, SVNIT Surat, for selected teams only — selection communicated via email). ILS registration and payment confirmation are required below."
   };
@@ -795,9 +751,8 @@
       document.getElementById('problemSelectRow').style.display = 'none';
       document.getElementById('track4Row').style.display = 'block';
       track4Choice = "";
-      ['t4opt1','t4opt2','t4opt3'].forEach(id => document.getElementById(id).classList.remove('selected'));
+      ['t4opt1','t4opt2'].forEach(id => document.getElementById(id).classList.remove('selected'));
       document.querySelectorAll('input[name="track4choice"]').forEach(r => r.checked = false);
-      document.getElementById('selfProblemRow').style.display = 'none';
     } else if (problemsByTrack[track]) {
       document.getElementById('problemSelectRow').style.display = 'block';
       document.getElementById('track4Row').style.display = 'none';
@@ -807,9 +762,6 @@
         opt.textContent = p.id + ": " + p.title;
         sel.appendChild(opt);
       });
-      pdfBase64 = ""; pdfFileName = "";
-      const d = document.getElementById("fileNameDisplay");
-      if (d) d.style.display = 'none';
     } else {
       document.getElementById('problemSelectRow').style.display = 'none';
       document.getElementById('track4Row').style.display = 'none';
@@ -830,33 +782,13 @@
   }
   function selectTrack4Option(choice) {
     track4Choice = choice;
-    ['t4opt1','t4opt2','t4opt3'].forEach(el => document.getElementById(el).classList.remove('selected'));
-    const map = { P9:'t4opt1', P10:'t4opt2', SELF:'t4opt3' };
-    const radMap = { P9:'t4r1', P10:'t4r2', SELF:'t4r3' };
+    ['t4opt1','t4opt2'].forEach(el => document.getElementById(el).classList.remove('selected'));
+    const map = { P9:'t4opt1', P10:'t4opt2' };
+    const radMap = { P9:'t4r1', P10:'t4r2' };
     document.getElementById(map[choice]).classList.add('selected');
     document.getElementById(radMap[choice]).checked = true;
-    document.getElementById('selfProblemRow').style.display = choice==='SELF' ? 'block' : 'none';
   }
-  let pdfBase64 = "", pdfFileName = "";
   let paymentBase64 = "", paymentFileName = "", paymentMimeType = "";
-
-  // ── FIX 1: Single correct FileReader (original had a broken double-FileReader) ──
-  function handleFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-    if (file.type !== "application/pdf") { showError("Only PDF files are accepted."); input.value=""; return; }
-    if (file.size > 2*1024*1024) { showError("PDF must be under 2 MB."); input.value=""; return; }
-    pdfFileName = file.name;
-    const fr = new FileReader();
-    fr.onload = function(e) {
-      pdfBase64 = e.target.result.split(",")[1];
-      const d = document.getElementById("fileNameDisplay");
-      d.textContent = "✓ " + file.name;
-      d.style.display = "block";
-      document.getElementById("fileZone").style.borderColor = "#c9a0e8";
-    };
-    fr.readAsDataURL(file);
-  }
 
   function handlePaymentFile(input) {
     const file = input.files[0];
@@ -946,14 +878,7 @@
     let finalProblemStatement = "";
     if (track===INDUSTRY_TRACK) {
       if (!track4Choice) { firstError=firstError||"Problem Statement (Track 4)"; }
-      else if (track4Choice==="SELF") {
-        finalProblemStatement = "Self-identified: " + gv("selfProblemDesc");
-        if (!gv("selfProblemDesc")) { markError("selfProblemDesc"); firstError=firstError||"Problem description"; }
-        if (!pdfBase64) {
-          document.getElementById("fileZone").style.borderColor="#b8005e";
-          firstError=firstError||"Endorsed Problem Statement Document";
-        }
-      } else {
+      else {
         const labels={P9:"P9: Inclusive Public Transport Intelligence Platform",P10:"P10: Secure Supply Chain Tracking for Women Entrepreneurs"};
         finalProblemStatement = labels[track4Choice];
       }
@@ -1003,10 +928,6 @@
       if (currentRound===3 && paymentBase64) {
         paymentUrl = await uploadToSupabaseStorage(paymentBase64, paymentFileName, paymentMimeType || "image/jpeg", "payments");
       }
-      let supportingDocUrl = "";
-      if (pdfBase64 && pdfFileName) {
-        supportingDocUrl = await uploadToSupabaseStorage(pdfBase64, pdfFileName, "application/pdf", "supporting-docs");
-      }
 
       const row = {
         round: "Round "+currentRound,
@@ -1020,8 +941,8 @@
         leader_email: gv("m1Email"), leader_phone: gv("m1Phone"),
         leader_year: gv("m1Year"), leader_dept: gv("m1Dept"), leader_ieee: gv("m1Ieee"),
         members,
-        supporting_doc_name: pdfFileName || "",
-        supporting_doc_url: supportingDocUrl
+        supporting_doc_name: "",
+        supporting_doc_url: ""
       };
 
       const res = await fetch(SUPABASE_URL + "/rest/v1/registrations", {
@@ -1050,12 +971,11 @@
       launchConfetti();
       document.getElementById("successMsg").scrollIntoView({behavior:"smooth"});
       document.querySelectorAll("input,select,textarea").forEach(el=>el.value="");
-      pdfBase64=""; pdfFileName=""; paymentBase64=""; paymentFileName=""; paymentMimeType=""; track4Choice="";
-      ["fileNameDisplay","paymentFileName"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display="none";});
-      document.getElementById("fileZone").style.borderColor="";
+      paymentBase64=""; paymentFileName=""; paymentMimeType=""; track4Choice="";
+      const paymentFileNameEl = document.getElementById("paymentFileName");
+      if (paymentFileNameEl) paymentFileNameEl.style.display="none";
       document.getElementById("paymentZone").style.borderColor="";
-      ['t4opt1','t4opt2','t4opt3'].forEach(id=>document.getElementById(id).classList.remove('selected'));
-      document.getElementById('selfProblemRow').style.display='none';
+      ['t4opt1','t4opt2'].forEach(id=>document.getElementById(id).classList.remove('selected'));
     } catch (err) {
       setLoading(false);
       if (err.message === "DUPLICATE_ENTRY") {
