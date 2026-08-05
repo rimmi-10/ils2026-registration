@@ -220,6 +220,7 @@
     <span class="sel-count" id="selCount">0 selected</span>
     <button class="btn" style="width:auto;" onclick="openBroadcast()">✉ Broadcast Email</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openSelection()">🎯 Selection</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="remindPendingRound1()">📢 Remind Pending Round 1</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openDuplicates()">🔁 Duplicate Entries</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Email Log</button>
@@ -1409,6 +1410,20 @@
     document.getElementById('bcBody').value = round === 2
       ? "Congratulations! Your team has been selected to advance to Round 2 of IEEE WIE ILS 2026.\n\nFurther details and submission instructions will follow separately. Please keep an eye on your email and the WhatsApp group.\n\n— IEEE WIE ILS 2026 Team"
       : "Congratulations! Your team has been selected for the Grand Finale of IEEE WIE ILS 2026, to be held on 24-25 October 2026 at SVNIT, Surat.\n\nPlease complete your ILS registration and keep your payment confirmation ready. Further details will follow.\n\n— IEEE WIE ILS 2026 Team";
+  }
+
+  function remindPendingRound1() {
+    const ids = allRows.filter(r => round1StatusOf(r) === 'pending').map(r => r.id);
+    if (ids.length === 0) { alert('No teams are currently pending Round 1 submission (within the window).'); return; }
+    selectedIds = new Set(ids);
+    renderTable();
+    openBroadcast();
+    document.getElementById('bcSubject').value = "Reminder: Submit Your Round 1 Idea/Solution Document";
+    document.getElementById('bcBody').value =
+      "Hi Team,\n\nThis is a reminder that we haven't yet received your Round 1 Idea/Solution Document for IEEE WIE ILS 2026.\n\n" +
+      "Submission window: 1st August 2026 to 25th August 2026\n" +
+      "Submit here: https://rimmi-10.github.io/ils2026-registration/submit-round1.html\n\n" +
+      "Please don't wait until the last moment — submit as soon as you're ready.\n\n— IEEE WIE ILS 2026 Team";
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
