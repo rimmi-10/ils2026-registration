@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE WIE ILS 2026 — Judge Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f7eeff; min-height: 100vh; color: #2c1a40; }
+  .hero {
+    background: linear-gradient(135deg, #6a1794 0%, #b8005e 100%);
+    padding: 1.5rem; text-align: center; color: white;
+  }
+  .hero h1 { font-size: 1.4rem; font-weight: 700; }
+  .hero .tagline { font-size: 12.5px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+
+  .login-wrap { max-width: 380px; margin: 3rem auto; padding: 0 1rem; }
+  .card {
+    background: white; border-radius: 16px; padding: 1.75rem;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  .card h2 { font-size: 17px; color: #6a1794; margin-bottom: 1.25rem; }
+  .field-row { margin-bottom: 1rem; }
+  label { display: block; font-size: 13px; font-weight: 500; color: #4a1b6e; margin-bottom: 5px; }
+  input, textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #ddc4f0;
+    border-radius: 8px; font-size: 14px; font-family: inherit;
+    background: #fdf8ff; outline: none;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, textarea:focus { border-color: #8c3ec0; background: white; }
+  .btn {
+    width: 100%; padding: 11px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #6a1794, #b8005e); color: white;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn:hover { opacity: 0.92; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-secondary { background: white; color: #6a1794; border: 1.5px solid #ddc4f0; }
+  .btn-small { padding: 8px 16px; font-size: 12.5px; width: auto; }
+  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+  .msg.error { background: #fff5f9; border: 1px solid #f0a0c0; color: #8b0038; }
+  .msg.success { background: #f0fff7; border: 1px solid #6fcf97; color: #1a6b3a; }
+
+  .dash { display: none; max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  .dash-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 12px; flex-wrap: wrap; }
+  .dash-top .btn { width: auto; padding: 9px 18px; }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .stat-box {
+    background: white; border-radius: 12px; padding: 14px 20px; flex: 1; min-width: 130px;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  .stat-box .num { font-size: 22px; font-weight: 700; color: #6a1794; }
+  .stat-box .lbl { font-size: 12px; color: #7c2ab0; margin-top: 2px; }
+  .controls { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .controls input, .controls select {
+    padding: 9px 12px; border: 1.5px solid #ddc4f0; border-radius: 8px;
+    font-size: 13px; font-family: inherit; background: white; outline: none;
+  }
+  .controls input { flex: 1; min-width: 200px; }
+  .sub-card {
+    background: white; border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+    display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .sub-card .info { font-size: 13.5px; }
+  .sub-card .info b { color: #6a1794; }
+  .sub-card .track { font-size: 11.5px; color: #7c5a9b; margin-top: 2px; }
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    margin-left: 6px;
+  }
+  .pill-scored { background: #eafaf0; color: #1a6b3a; }
+  .pill-unscored { background: #f2f2f2; color: #7a7a7a; }
+  .empty-state { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
+  .loading { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(44,26,64,0.55);
+    z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 16px; max-width: 560px; width: 100%;
+    max-height: 90vh; overflow-y: auto; padding: 1.5rem;
+  }
+  .modal-box h3 { font-size: 16px; color: #6a1794; margin-bottom: 4px; }
+  .modal-box .sub { font-size: 12px; color: #9b7ab0; margin-bottom: 1rem; }
+  .score-row { display: grid; grid-template-columns: 1fr 90px; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .score-row label { margin-bottom: 0; }
+  .score-row .max { font-size: 11px; color: #9b7ab0; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.25rem; }
+  .modal-actions .btn { width: auto; flex: 1; }
+  a.filelink { color: #6a1794; font-weight: 600; text-decoration: none; }
+  a.filelink:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>IEEE WIE ILS 2026 — Judge Portal</h1>
+  <div class="tagline">Round 1 Idea/Solution Document Scoring</div>
+</div>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="card">
+    <h2>Judge Login</h2>
+    <div class="msg error" id="loginError"></div>
+    <div class="field-row">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com">
+    </div>
+    <div class="field-row">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••">
+    </div>
+    <button class="btn" id="loginBtn" onclick="login()">Sign In</button>
+  </div>
+</div>
+
+<div class="dash" id="dash">
+  <div class="dash-top">
+    <div>
+      <div style="font-size:15px; font-weight:700; color:#6a1794;" id="judgeNameLabel"></div>
+      <div style="font-size:12px; color:#9b7ab0;">Score every submission across the 6 criteria below</div>
+    </div>
+    <button class="btn btn-secondary" style="width:auto;" onclick="logout()">Log Out</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search by team name..." oninput="renderList()">
+    <select id="trackFilter" onchange="renderList()">
+      <option value="">All Tracks</option>
+    </select>
+    <select id="scoreFilter" onchange="renderList()">
+      <option value="">All</option>
+      <option value="unscored">Not Scored Yet</option>
+      <option value="scored">Already Scored</option>
+    </select>
+  </div>
+  <div id="listHost"><div class="loading">Loading…</div></div>
+</div>
+
+<!-- SCORE MODAL -->
+<div class="modal-overlay" id="scoreModal">
+  <div class="modal-box">
+    <h3 id="scoreModalTitle">Score Submission</h3>
+    <div class="sub" id="scoreModalTrack"></div>
+    <div class="msg error" id="scoreError"></div>
+    <div class="msg success" id="scoreSuccess"></div>
+    <div style="margin-bottom:14px;" id="scoreModalPdf"></div>
+
+    <div class="score-row">
+      <label for="scProblem">Problem Understanding <span class="max">(out of 10)</span></label>
+      <input type="number" id="scProblem" min="0" max="10" step="0.5">
+    </div>
+    <div class="score-row">
+      <label for="scSolution">Solution &amp; Innovation <span class="max">(out of 25)</span></label>
+      <input type="number" id="scSolution" min="0" max="25" step="0.5">
+    </div>
+    <div class="score-row">
+      <label for="scFeasibility">Feasibility &amp; Implementation <span class="max">(out of 20)</span></label>
+      <input type="number" id="scFeasibility" min="0" max="20" step="0.5">
+    </div>
+    <div class="score-row">
+      <label for="scImpact">Expected Impact <span class="max">(out of 20)</span></label>
+      <input type="number" id="scImpact" min="0" max="20" step="0.5">
+    </div>
+    <div class="score-row">
+      <label for="scTech">Technology &amp; Execution <span class="max">(out of 15)</span></label>
+      <input type="number" id="scTech" min="0" max="15" step="0.5">
+    </div>
+    <div class="score-row">
+      <label for="scTeam">Team &amp; Presentation <span class="max">(out of 10)</span></label>
+      <input type="number" id="scTeam" min="0" max="10" step="0.5">
+    </div>
+    <div style="text-align:right; font-size:13px; font-weight:700; color:#6a1794; margin:8px 0 14px;" id="scoreTotal">Total: 0 / 100</div>
+
+    <div class="field-row">
+      <label for="scComments">Comments (optional)</label>
+      <textarea id="scComments" placeholder="Notes for your own reference or for the panel..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeScoreModal()">Cancel</button>
+      <button class="btn" onclick="saveScore()">Save Score</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://gfoclvqlkylujopcvuht.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let submissions = [];
+  let myScores = {}; // registration_id -> score row
+  let judgeId = null;
+  let activeSubmissionId = null;
+
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    if (!email || !password) { errEl.textContent = 'Enter email and password.'; errEl.style.display = 'block'; return; }
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginBtn').textContent = 'Signing in…';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').textContent = 'Sign In';
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+
+    const { data: profile, error: profileErr } = await sb.from('judge_profiles').select('*').eq('user_id', data.user.id).maybeSingle();
+    if (profileErr || !profile) {
+      errEl.textContent = 'This account is not registered as a judge. Contact the organizers.';
+      errEl.style.display = 'block';
+      await sb.auth.signOut();
+      return;
+    }
+    judgeId = data.user.id;
+    document.getElementById('judgeNameLabel').textContent = 'Welcome, ' + profile.judge_name;
+    showDashboard();
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    document.getElementById('dash').style.display = 'none';
+    document.getElementById('loginWrap').style.display = 'block';
+  }
+
+  async function showDashboard() {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    await loadData();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function loadData() {
+    document.getElementById('listHost').innerHTML = '<div class="loading">Loading…</div>';
+    const { data: subs, error: subsErr } = await sb.from('round1_judge_view').select('*').order('team_name', { ascending: true });
+    if (subsErr) {
+      document.getElementById('listHost').innerHTML = '<div class="empty-state">Failed to load: ' + subsErr.message + '</div>';
+      return;
+    }
+    submissions = subs || [];
+
+    const { data: scores, error: scoresErr } = await sb.from('round1_scores').select('*').eq('judge_id', judgeId);
+    if (scoresErr) console.error('Failed to load my scores:', scoresErr.message);
+    myScores = {};
+    (scores || []).forEach(s => { myScores[s.registration_id] = s; });
+
+    const trackSel = document.getElementById('trackFilter');
+    const tracks = Array.from(new Set(submissions.map(s => s.track).filter(Boolean))).sort();
+    trackSel.innerHTML = '<option value="">All Tracks</option>' + tracks.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
+
+    renderStats();
+    renderList();
+  }
+
+  function renderStats() {
+    const total = submissions.length;
+    const scored = submissions.filter(s => myScores[s.id]).length;
+    document.getElementById('stats').innerHTML =
+      '<div class="stat-box"><div class="num">' + total + '</div><div class="lbl">Total Submissions</div></div>' +
+      '<div class="stat-box"><div class="num">' + scored + ' / ' + total + '</div><div class="lbl">You Have Scored</div></div>';
+  }
+
+  function renderList() {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const trackF = document.getElementById('trackFilter').value;
+    const scoreF = document.getElementById('scoreFilter').value;
+    let rows = submissions;
+    if (trackF) rows = rows.filter(r => r.track === trackF);
+    if (q) rows = rows.filter(r => (r.team_name || '').toLowerCase().includes(q));
+    if (scoreF === 'scored') rows = rows.filter(r => myScores[r.id]);
+    else if (scoreF === 'unscored') rows = rows.filter(r => !myScores[r.id]);
+
+    const host = document.getElementById('listHost');
+    if (rows.length === 0) {
+      host.innerHTML = '<div class="empty-state">No submissions match.</div>';
+      return;
+    }
+    host.innerHTML = rows.map(r => {
+      const scored = myScores[r.id];
+      return (
+        '<div class="sub-card">' +
+          '<div class="info">' +
+            '<b>' + escapeHtml(r.team_name) + '</b>' +
+            (scored ? '<span class="pill pill-scored">✅ Scored</span>' : '<span class="pill pill-unscored">Not scored</span>') +
+            '<div class="track">' + escapeHtml(r.track) + '</div>' +
+          '</div>' +
+          '<button class="btn btn-small" onclick="openScoreModal(\'' + r.id + '\')">' + (scored ? 'Edit Score' : 'Score Now') + '</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function computeTotal() {
+    const vals = ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].map(id => parseFloat(document.getElementById(id).value) || 0);
+    const total = vals.reduce((a,b) => a+b, 0);
+    document.getElementById('scoreTotal').textContent = 'Total: ' + total + ' / 100';
+  }
+
+  function openScoreModal(id) {
+    const sub = submissions.find(s => s.id === id);
+    if (!sub) return;
+    activeSubmissionId = id;
+    document.getElementById('scoreError').style.display = 'none';
+    document.getElementById('scoreSuccess').style.display = 'none';
+    document.getElementById('scoreModalTitle').textContent = sub.team_name;
+    document.getElementById('scoreModalTrack').textContent = sub.track || '';
+    document.getElementById('scoreModalPdf').innerHTML = sub.round1_doc_url
+      ? '<a class="filelink" href="' + sub.round1_doc_url + '" target="_blank" rel="noopener">📄 View Submitted PDF</a>'
+      : '<span style="color:#c0a8d8;">No PDF on file</span>';
+
+    const existing = myScores[id];
+    document.getElementById('scProblem').value = existing?.problem_understanding ?? '';
+    document.getElementById('scSolution').value = existing?.solution_innovation ?? '';
+    document.getElementById('scFeasibility').value = existing?.feasibility_implementation ?? '';
+    document.getElementById('scImpact').value = existing?.expected_impact ?? '';
+    document.getElementById('scTech').value = existing?.technology_execution ?? '';
+    document.getElementById('scTeam').value = existing?.team_presentation ?? '';
+    document.getElementById('scComments').value = existing?.comments || '';
+    computeTotal();
+
+    document.getElementById('scoreModal').classList.add('open');
+  }
+
+  function closeScoreModal() {
+    document.getElementById('scoreModal').classList.remove('open');
+    activeSubmissionId = null;
+  }
+
+  async function saveScore() {
+    if (!activeSubmissionId) return;
+    const errEl = document.getElementById('scoreError');
+    const okEl = document.getElementById('scoreSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+
+    const val = (id, max) => {
+      const v = document.getElementById(id).value;
+      if (v === '') return null;
+      const n = parseFloat(v);
+      if (isNaN(n) || n < 0 || n > max) return undefined; // invalid marker
+      return n;
+    };
+    const fields = {
+      problem_understanding: val('scProblem', 10),
+      solution_innovation: val('scSolution', 25),
+      feasibility_implementation: val('scFeasibility', 20),
+      expected_impact: val('scImpact', 20),
+      technology_execution: val('scTech', 15),
+      team_presentation: val('scTeam', 10),
+    };
+    if (Object.values(fields).some(v => v === undefined)) {
+      errEl.textContent = 'One or more scores are out of range. Check the max for each field.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const payload = {
+      registration_id: activeSubmissionId,
+      judge_id: judgeId,
+      ...fields,
+      comments: document.getElementById('scComments').value.trim(),
+      submitted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await sb.from('round1_scores')
+      .upsert(payload, { onConflict: 'registration_id,judge_id' })
+      .select()
+      .maybeSingle();
+
+    if (error) { errEl.textContent = 'Failed to save: ' + error.message; errEl.style.display = 'block'; return; }
+
+    myScores[activeSubmissionId] = data;
+    okEl.textContent = 'Score saved.';
+    okEl.style.display = 'block';
+    renderStats();
+    renderList();
+    setTimeout(closeScoreModal, 900);
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].forEach(id => {
+      document.getElementById(id).addEventListener('input', computeTotal);
+    });
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      const { data: profile } = await sb.from('judge_profiles').select('*').eq('user_id', data.session.user.id).maybeSingle();
+      if (profile) {
+        judgeId = data.session.user.id;
+        document.getElementById('judgeNameLabel').textContent = 'Welcome, ' + profile.judge_name;
+        showDashboard();
+      }
+    }
+  });
+</script>
+</body>
+</html>
