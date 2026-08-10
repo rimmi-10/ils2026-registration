@@ -253,11 +253,11 @@
   </div>
 </div>
 <div class="form-container">
-  <div class="extended-banner">
+  <div class="extended-banner" id="closedBanner" style="display:none;">
     <svg width="22" height="22" fill="none" stroke="#3a1d00" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
     <div>
-      <div class="eb-title">⏰ Registration Deadline Extended!</div>
-      <div class="eb-text">You can now register until <strong>10th August 2026</strong> (previously 31st July 2026). Don't wait — register today!</div>
+      <div class="eb-title">🔒 Round 1 Registration Is Now Closed</div>
+      <div class="eb-text">The registration window closed on <strong>10th August 2026</strong>. Already registered? You'll be contacted separately about your Idea/Solution Document and, if selected, Round 2. Questions? Reach us on WhatsApp below.</div>
     </div>
   </div>
   <div class="top-actions">
@@ -306,6 +306,7 @@
       </ul>
     </div>
   </div>
+  <div id="registrationFormBody">
   <!-- ILS DETAILS — Round 3 only -->
   <div class="card" id="ilsCard" style="display:none;">
     <div class="card-title">
@@ -609,6 +610,7 @@
     <span class="msg-icon">⚠️</span>
     <span id="errorText">Something went wrong. Please try again.</span>
   </div>
+  </div>
   <p class="footer-note">IEEE WIE ILS 2026 National Hackathon · Queries: Madhav Maheshwari, +91 95888 74415 · ieeegujaratsection.org</p>
 </div>
 <!-- GUIDELINES MODAL -->
@@ -700,6 +702,10 @@
     return SUPABASE_URL + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/" + path;
   }
 
+  // Round 1 registration deadline (10th August 2026) has passed. Flip this to
+  // false (and update the round-tab logic below) whenever Round 1 needs to
+  // reopen, or repurpose the same pattern when Round 2 closes later.
+  const REGISTRATION_CLOSED = true;
   let currentRound = 1;
   let track4Choice = "";
   const roundNotes = {
@@ -992,6 +998,18 @@
     sessionStorage.setItem('ils2026_guidelines_seen', '1');
   }
   window.addEventListener('DOMContentLoaded', () => {
+    if (REGISTRATION_CLOSED) {
+      document.getElementById('closedBanner').style.display = 'flex';
+      document.getElementById('registrationFormBody').style.display = 'none';
+      const tab1 = document.getElementById('tab-r1');
+      tab1.classList.add('disabled');
+      tab1.classList.remove('active');
+      tab1.removeAttribute('onclick');
+      tab1.title = 'Round 1 registration is closed';
+      document.getElementById('roundNote').innerHTML =
+        '<strong>Round 1 registration is now closed.</strong> The deadline was 10th August 2026. ' +
+        'If you already registered, watch your email for next steps — including your Idea/Solution Document deadline (25th August 2026) and, if selected, Round 2.';
+    }
     if (!sessionStorage.getItem('ils2026_guidelines_seen')) openGuidelines();
   });
   function toggleFaq(btn) {
