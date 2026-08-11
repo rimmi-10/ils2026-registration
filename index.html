@@ -257,7 +257,14 @@
     <svg width="22" height="22" fill="none" stroke="#3a1d00" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
     <div>
       <div class="eb-title">🔒 Round 1 Registration Is Now Closed</div>
-      <div class="eb-text">The registration window closed on <strong>11th August 2026</strong>. Already registered? You'll be contacted separately about your Idea/Solution Document and, if selected, Round 2. Questions? Reach us on WhatsApp below.</div>
+      <div class="eb-text">The registration window has closed. Already registered? You'll be contacted separately about your Idea/Solution Document and, if selected, Round 2. Questions? Reach us on WhatsApp below.</div>
+    </div>
+  </div>
+  <div class="extended-banner" id="resumedBanner" style="display:none;">
+    <svg width="22" height="22" fill="none" stroke="#3a1d00" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <div>
+      <div class="eb-title">🔄 Registration Resumed</div>
+      <div class="eb-text">Due to heavy demand and database maintenance, the form was closed early — we're resuming registration now. Register as soon as you can, the window may close again without further notice.</div>
     </div>
   </div>
   <div class="top-actions">
@@ -297,7 +304,7 @@
       </div>
     </div>
     <div class="note-box" id="roundNote" style="margin-bottom:0;">
-      <strong>Round 1</strong> (Registration Deadline: <strong>11th August 2026</strong>, extended). Right now, this is all you need to do:
+      <strong>Round 1</strong> — registration has been resumed after an earlier pause; please register as soon as possible as the window may close again without notice. Right now, this is all you need to do:
       <ul style="margin:6px 0 0 18px; padding:0;">
         <li>Select your track and problem statement.</li>
         <li>Fill in your team details.</li>
@@ -565,7 +572,7 @@
     </div>
     <div class="faq-item">
       <button type="button" class="faq-q" onclick="toggleFaq(this)">Do I need to submit a solution document right now? <span class="chev">▾</span></button>
-      <div class="faq-a">No. Before <strong>11th August 2026</strong> (extended), you only need to do two things: select your track and problem statement, and fill in your team details. After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. It's a good idea to start preparing it early.</div>
+      <div class="faq-a">No. While registration is open, you only need to do two things: select your track and problem statement, and fill in your team details. After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. It's a good idea to start preparing it early.</div>
     </div>
     <div class="faq-item">
       <button type="button" class="faq-q" onclick="toggleFaq(this)">Which rounds are online and which are offline? <span class="chev">▾</span></button>
@@ -624,19 +631,19 @@
       <div class="extended-banner" style="margin-bottom:12px;">
         <svg width="20" height="20" fill="none" stroke="#3a1d00" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         <div>
-          <div class="eb-title">⏰ Registration Deadline Extended!</div>
-          <div class="eb-text">Registration now closes on <strong>11th August 2026</strong>.</div>
+          <div class="eb-title">🔄 Registration Resumed</div>
+          <div class="eb-text">Due to heavy demand and database maintenance, the form was closed early — we're resuming registration now. Register as soon as you can, the window may close again without further notice.</div>
         </div>
       </div>
       <div class="note-box" style="margin-bottom:12px;"><strong>The dates mentioned in these Guidelines and in the registration form are the latest and final.</strong> Please follow these dates for all rounds.</div>
       <h4>What you need to do right now</h4>
       <ul>
-        <li>Before <strong>11th August 2026</strong> (extended): select your track and problem statement, and fill in your team details. That's all this registration form requires.</li>
+        <li>While registration is open: select your track and problem statement, and fill in your team details. That's all this registration form requires.</li>
         <li>After you register: you'll get an <strong>email asking you to submit your Idea/Solution Document by 25th August 2026</strong>. It is <strong>not needed at registration</strong>, but start preparing it early.</li>
       </ul>
       <h4>Round 1 <span class="mode-tag online">ONLINE</span></h4>
       <ul>
-        <li>Registration Deadline: <strong>11th August 2026</strong> (extended).</li>
+        <li>Registration is open now — please register as soon as possible, the window may close again without further notice.</li>
         <li>Submit your team details and problem statement.</li>
         <li>Idea/Solution Document Submission Deadline: 25th August 2026.</li>
       </ul>
@@ -710,7 +717,7 @@
   let currentRound = 1;
   let track4Choice = "";
   const roundNotes = {
-    1: "<strong>Round 1</strong> (Registration Deadline: <strong>11th August 2026</strong>, extended). Right now, this is all you need to do: <ul style='margin:6px 0 0 18px; padding:0;'><li>Select your track and problem statement.</li><li>Fill in your team details.</li><li>That's it. No document upload is needed at this stage.</li><li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li></ul>",
+    1: "<strong>Round 1</strong> — registration has been resumed after an earlier pause; please register as soon as possible as the window may close again without notice. Right now, this is all you need to do: <ul style='margin:6px 0 0 18px; padding:0;'><li>Select your track and problem statement.</li><li>Fill in your team details.</li><li>That's it. No document upload is needed at this stage.</li><li>After you register, you will get an email asking you to submit your Idea/Solution Document by <strong>25th August 2026</strong>. Start preparing it early.</li></ul>",
     2: "<strong>Round 2</strong> (Submission Deadline: 15th September 2026, for selected teams only). Further details will be shared directly with shortlisted teams closer to the round.",
     3: "<strong>Round 3: Grand Finale</strong> (25th October 2026, SVNIT Surat, for selected teams only — selection communicated via email). ILS registration and payment confirmation are required below."
   };
@@ -1008,8 +1015,10 @@
       tab1.removeAttribute('onclick');
       tab1.title = 'Round 1 registration is closed';
       document.getElementById('roundNote').innerHTML =
-        '<strong>Round 1 registration is now closed.</strong> The deadline was 11th August 2026. ' +
+        '<strong>Round 1 registration is now closed.</strong> ' +
         'If you already registered, watch your email for next steps — including your Idea/Solution Document deadline (25th August 2026) and, if selected, Round 2.';
+    } else {
+      document.getElementById('resumedBanner').style.display = 'flex';
     }
     if (!sessionStorage.getItem('ils2026_guidelines_seen')) openGuidelines();
   });
