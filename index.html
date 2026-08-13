@@ -712,7 +712,7 @@
   // Round 1 registration reopened, closing automatically at midnight IST
   // (matches the DB-level cutoff in the anon insert RLS policy - both need
   // to be updated together if this date ever changes again).
-  const ROUND1_REOPEN_DEADLINE = new Date('2026-08-14T00:00:00+05:30');
+  const ROUND1_REOPEN_DEADLINE = new Date('2026-08-15T00:00:00+05:30');
   const REGISTRATION_CLOSED = new Date() >= ROUND1_REOPEN_DEADLINE;
   let currentRound = 1;
   let track4Choice = "";
