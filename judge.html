@@ -78,6 +78,27 @@
   .empty-state { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
   .loading { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
 
+  .tabs { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+  .tab-btn {
+    flex: 1; padding: 10px; border: 1.5px solid #ddc4f0; border-radius: 10px;
+    background: white; color: #7c2ab0; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; text-align: center;
+  }
+  .tab-btn.active { background: linear-gradient(135deg, #6a1794, #b8005e); color: white; border-color: transparent; }
+  .track-group {
+    background: white; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+    border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07);
+  }
+  .track-group h4 { font-size: 13.5px; color: #6a1794; margin-bottom: 10px; }
+  .track-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid #f0d5fa; font-size: 13px;
+  }
+  .track-row:last-child { border-bottom: none; }
+  .track-row .score { font-weight: 700; color: #6a1794; }
+  .track-row .judges { font-weight: 400; color: #9b7ab0; font-size: 11px; margin-left: 4px; }
+  .track-row.mine { background: #fdf0ff; margin: 0 -16px; padding: 7px 16px; }
+
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(44,26,64,0.55);
     z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
@@ -130,18 +151,32 @@
     <button class="btn btn-secondary" style="width:auto;" onclick="logout()">Log Out</button>
   </div>
   <div class="stats" id="stats"></div>
-  <div class="controls">
-    <input type="text" id="search" placeholder="Search by team name..." oninput="renderList()">
-    <select id="trackFilter" onchange="renderList()">
-      <option value="">All Tracks</option>
-    </select>
-    <select id="scoreFilter" onchange="renderList()">
-      <option value="">All</option>
-      <option value="unscored">Not Scored Yet</option>
-      <option value="scored">Already Scored</option>
-    </select>
+  <div class="tabs">
+    <button class="tab-btn active" id="queueTabBtn" onclick="showQueueTab()">📋 My Queue</button>
+    <button class="tab-btn" id="leaderboardTabBtn" onclick="showLeaderboardTab()">🏆 Track Leaderboard</button>
   </div>
-  <div id="listHost"><div class="loading">Loading…</div></div>
+
+  <div id="queueView">
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search by team name..." oninput="renderList()">
+      <select id="trackFilter" onchange="renderList()">
+        <option value="">All Tracks</option>
+      </select>
+      <select id="scoreFilter" onchange="renderList()">
+        <option value="">All</option>
+        <option value="unscored">Not Scored Yet</option>
+        <option value="scored">Already Scored</option>
+      </select>
+    </div>
+    <div id="listHost"><div class="loading">Loading…</div></div>
+  </div>
+
+  <div id="leaderboardView" style="display:none;">
+    <p style="font-size:12px; color:#9b7ab0; margin-bottom:12px;">
+      Shows only teams you've already scored, ranked within their track against every judge's average — so it never influences a score before you've given it. Your own score in each row is highlighted.
+    </p>
+    <div id="leaderboardHost"><div class="loading">Loading…</div></div>
+  </div>
 </div>
 
 <!-- SCORE MODAL -->
@@ -386,7 +421,77 @@
     okEl.style.display = 'block';
     renderStats();
     renderList();
+    if (document.getElementById('leaderboardView').style.display !== 'none') loadLeaderboard();
     setTimeout(closeScoreModal, 900);
+  }
+
+  // ── TABS / TRACK LEADERBOARD ──
+  function showQueueTab() {
+    document.getElementById('queueTabBtn').classList.add('active');
+    document.getElementById('leaderboardTabBtn').classList.remove('active');
+    document.getElementById('queueView').style.display = 'block';
+    document.getElementById('leaderboardView').style.display = 'none';
+  }
+
+  function showLeaderboardTab() {
+    document.getElementById('leaderboardTabBtn').classList.add('active');
+    document.getElementById('queueTabBtn').classList.remove('active');
+    document.getElementById('queueView').style.display = 'none';
+    document.getElementById('leaderboardView').style.display = 'block';
+    loadLeaderboard();
+  }
+
+  async function loadLeaderboard() {
+    const host = document.getElementById('leaderboardHost');
+    host.innerHTML = '<div class="loading">Loading…</div>';
+
+    // RLS already restricts this to: my own scores, plus other judges' scores
+    // ONLY for registrations I've already scored myself - so this query can't
+    // leak scores for anything I haven't scored yet, even if the UI had a bug.
+    const { data: allScores, error } = await sb.from('round1_scores').select('*');
+    if (error) {
+      host.innerHTML = '<div class="empty-state">Failed to load: ' + error.message + '</div>';
+      return;
+    }
+
+    const byReg = {};
+    (allScores || []).forEach(s => {
+      const total = (s.problem_understanding||0) + (s.solution_innovation||0) + (s.feasibility_implementation||0) +
+        (s.expected_impact||0) + (s.technology_execution||0) + (s.team_presentation||0);
+      (byReg[s.registration_id] = byReg[s.registration_id] || []).push({ total, judgeId: s.judge_id });
+    });
+
+    const rows = Object.entries(byReg)
+      .filter(([regId]) => myScores[regId]) // only teams I've scored myself
+      .map(([regId, entries]) => {
+        const sub = submissions.find(s => s.id === regId);
+        if (!sub) return null;
+        const avg = entries.reduce((a,b) => a + b.total, 0) / entries.length;
+        return { sub, avg, judgeCount: entries.length };
+      })
+      .filter(Boolean);
+
+    if (rows.length === 0) {
+      host.innerHTML = '<div class="empty-state">Score at least one team to see how it compares within its track.</div>';
+      return;
+    }
+
+    const byTrack = {};
+    rows.forEach(r => { (byTrack[r.sub.track || 'Unknown'] = byTrack[r.sub.track || 'Unknown'] || []).push(r); });
+    Object.values(byTrack).forEach(list => list.sort((a, b) => b.avg - a.avg));
+
+    host.innerHTML = Object.keys(byTrack).sort().map(track => {
+      const list = byTrack[track];
+      return '<div class="track-group">' +
+        '<h4>' + escapeHtml(track) + '</h4>' +
+        list.map((r, i) => (
+          '<div class="track-row">' +
+            '<span>' + (i + 1) + '. ' + escapeHtml(r.sub.team_name) + '</span>' +
+            '<span><span class="score">' + r.avg.toFixed(1) + '/100</span><span class="judges"> (' + r.judgeCount + ' judge' + (r.judgeCount > 1 ? 's' : '') + ')</span></span>' +
+          '</div>'
+        )).join('') +
+        '</div>';
+    }).join('');
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
