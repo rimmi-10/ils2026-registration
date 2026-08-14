@@ -1607,11 +1607,14 @@
         (s.expected_impact||0) + (s.technology_execution||0) + (s.team_presentation||0);
       (byReg[s.registration_id] = byReg[s.registration_id] || []).push({ total, comments: s.comments, judgeId: s.judge_id });
     });
+    const DISAGREEMENT_THRESHOLD = 20; // points out of 100 between highest and lowest judge
     const flat = Object.entries(byReg).map(([regId, entries]) => {
       const row = allRows.find(r => r.id === regId);
       if (!row) return null;
       const avg = entries.reduce((a,b) => a + b.total, 0) / entries.length;
-      return { regId, row, avg, judgeCount: entries.length, entries };
+      const totals = entries.map(e => e.total);
+      const spread = entries.length > 1 ? Math.max(...totals) - Math.min(...totals) : 0;
+      return { regId, row, avg, judgeCount: entries.length, entries, spread, disagrees: spread >= DISAGREEMENT_THRESHOLD };
     }).filter(Boolean);
 
     const byTrack = {};
@@ -1639,7 +1642,9 @@
           list.map((r, i) => (
             '<tr style="border-bottom:1px solid #f0d5fa; cursor:pointer;" onclick="toggleScoreComments(this)">' +
               '<td style="padding:7px 4px; width:24px; color:#9b7ab0;">' + (i+1) + '</td>' +
-              '<td style="padding:7px 4px;">' + escapeHtml(r.row.team_name) + '</td>' +
+              '<td style="padding:7px 4px;">' + escapeHtml(r.row.team_name) +
+                (r.disagrees ? ' <span class="pill pill-late" title="Judges\' scores differ by ' + r.spread.toFixed(0) + ' points — worth a second look">⚠ Disagreement</span>' : '') +
+              '</td>' +
               '<td style="padding:7px 4px; font-weight:700; color:#6a1794; white-space:nowrap;">' + r.avg.toFixed(1) + '/100</td>' +
               '<td style="padding:7px 4px; color:#9b7ab0; white-space:nowrap;">' + r.judgeCount + ' judge' + (r.judgeCount>1?'s':'') + '</td>' +
               '<td style="padding:7px 4px;">' + fileLink(r.row.round1_doc_url, 'PDF') + '</td>' +

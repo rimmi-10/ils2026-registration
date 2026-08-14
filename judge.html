@@ -78,6 +78,15 @@
   .empty-state { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
   .loading { text-align: center; padding: 3rem; color: #7c2ab0; font-size: 14px; }
 
+  .progress-track {
+    background: #f0e0fa; border-radius: 20px; height: 8px; overflow: hidden;
+    margin-top: 8px; width: 100%;
+  }
+  .progress-fill {
+    background: linear-gradient(90deg, #6a1794, #b8005e); height: 100%;
+    border-radius: 20px; transition: width 0.3s ease;
+  }
+
   .tabs { display: flex; gap: 8px; margin-bottom: 1.25rem; }
   .tab-btn {
     flex: 1; padding: 10px; border: 1.5px solid #ddc4f0; border-radius: 10px;
@@ -302,9 +311,13 @@
   function renderStats() {
     const total = submissions.length;
     const scored = submissions.filter(s => myScores[s.id]).length;
+    const pct = total > 0 ? Math.round((scored / total) * 100) : 0;
     document.getElementById('stats').innerHTML =
       '<div class="stat-box"><div class="num">' + total + '</div><div class="lbl">Total Submissions</div></div>' +
-      '<div class="stat-box"><div class="num">' + scored + ' / ' + total + '</div><div class="lbl">You Have Scored</div></div>';
+      '<div class="stat-box" style="flex:2;">' +
+        '<div class="num">' + scored + ' / ' + total + '</div><div class="lbl">You Have Scored (' + pct + '%)</div>' +
+        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%;"></div></div>' +
+      '</div>';
   }
 
   function renderList() {
@@ -416,13 +429,22 @@
 
     if (error) { errEl.textContent = 'Failed to save: ' + error.message; errEl.style.display = 'block'; return; }
 
+    // Find the next unscored submission (staying within the active track
+    // filter, if any) before we close and lose track of activeSubmissionId.
+    const trackF = document.getElementById('trackFilter').value;
+    const pool = trackF ? submissions.filter(s => s.track === trackF) : submissions;
+    const nextUnscored = pool.find(s => s.id !== activeSubmissionId && !myScores[s.id]);
+
     myScores[activeSubmissionId] = data;
-    okEl.textContent = 'Score saved.';
+    okEl.textContent = nextUnscored ? 'Score saved. Opening next…' : 'Score saved. You\'re all caught up here!';
     okEl.style.display = 'block';
     renderStats();
     renderList();
     if (document.getElementById('leaderboardView').style.display !== 'none') loadLeaderboard();
-    setTimeout(closeScoreModal, 900);
+    setTimeout(() => {
+      closeScoreModal();
+      if (nextUnscored) openScoreModal(nextUnscored.id);
+    }, 900);
   }
 
   // ── TABS / TRACK LEADERBOARD ──
