@@ -62,6 +62,20 @@
     padding: 9px 12px; border: 1.5px solid #ddc4f0; border-radius: 8px;
     font-size: 13px; font-family: inherit; background: white; outline: none;
   }
+  .more-menu-wrap { position: relative; display: inline-block; }
+  .more-menu {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: white; border: 1.5px solid #ddc4f0; border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(106,23,148,0.15); z-index: 60; min-width: 190px; overflow: hidden;
+  }
+  .more-menu.open { display: block; }
+  .more-menu button {
+    display: block; width: 100%; text-align: left; padding: 10px 14px;
+    background: white; border: none; border-bottom: 1px solid #f0d5fa;
+    font-size: 12.5px; color: #4a1b6e; cursor: pointer; font-family: inherit;
+  }
+  .more-menu button:last-child { border-bottom: none; }
+  .more-menu button:hover { background: #f5ecff; }
   .controls input { flex: 1; min-width: 200px; }
   .table-wrap {
     background: white; border-radius: 12px; overflow: auto; max-height: 70vh;
@@ -222,12 +236,17 @@
     <button class="btn btn-secondary" style="width:auto;" onclick="openSelection()">🎯 Selection</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="remindPendingRound1()">📢 Remind Pending Round 1</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openScores()">🏆 Round 1 Scores</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openCleanup()">🧹 Legacy Cleanup</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openDuplicates()">🔁 Duplicate Entries</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openJudgesModal()">👩‍⚖️ Judges</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Email Log</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">📊 Analytics</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
+    <div class="more-menu-wrap">
+      <button class="btn btn-secondary" style="width:auto;" onclick="toggleMoreMenu()">⋯ More</button>
+      <div id="moreMenu" class="more-menu">
+        <button onclick="closeMoreMenu(); openDuplicates();">🔁 Duplicate Entries</button>
+      </div>
+    </div>
   </div>
   <div class="table-wrap">
     <div id="tableHost"><div class="loading">Loading…</div></div>
@@ -336,6 +355,33 @@
     <div id="scoresList"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeScores()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE JUDGES MODAL -->
+<div class="modal-overlay" id="judgesModal">
+  <div class="modal-box" style="max-width:640px;">
+    <h3>👩‍⚖️ Manage Judges</h3>
+    <div class="msg error" id="judgesError"></div>
+    <div class="msg success" id="judgesSuccess"></div>
+    <div id="judgesList" style="margin-bottom:14px;"></div>
+    <div class="detail-section" style="margin-top:0; border-top:1.5px solid #f0d5fa; padding-top:14px;">
+      <h4 id="judgeFormTitle">Add New Judge</h4>
+      <input type="hidden" id="judgeEditingId">
+      <div class="field-row"><label for="judgeNameInput">Name</label><input type="text" id="judgeNameInput" placeholder="Judge's full name"></div>
+      <div class="field-row"><label for="judgeEmailInput">Email</label><input type="email" id="judgeEmailInput" placeholder="judge@example.com"></div>
+      <div class="field-row">
+        <label for="judgePasswordInput">Password <span style="font-weight:400; color:#9b7ab0;">— leave blank to keep unchanged when editing</span></label>
+        <input type="password" id="judgePasswordInput" placeholder="min 8 characters">
+      </div>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button class="btn btn-secondary btn-small" onclick="resetJudgeForm()">Clear / Cancel Edit</button>
+        <button class="btn btn-small" onclick="saveJudge()">Save Judge</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeJudgesModal()">Close</button>
     </div>
   </div>
 </div>
@@ -1426,6 +1472,129 @@
   function closeAnalytics() {
     document.getElementById('analyticsModal').classList.remove('open');
   }
+
+  // ── MANAGE JUDGES ──
+  let judgesCache = [];
+
+  async function callManageJudge(payload) {
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const res = await fetch(SUPABASE_URL + '/functions/v1/manage-judge', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+    return result;
+  }
+
+  async function openJudgesModal() {
+    document.getElementById('judgesError').style.display = 'none';
+    document.getElementById('judgesSuccess').style.display = 'none';
+    resetJudgeForm();
+    document.getElementById('judgesModal').classList.add('open');
+    await loadJudgesList();
+  }
+
+  function closeJudgesModal() {
+    document.getElementById('judgesModal').classList.remove('open');
+  }
+
+  async function loadJudgesList() {
+    const host = document.getElementById('judgesList');
+    host.innerHTML = '<div class="loading">Loading…</div>';
+    try {
+      const result = await callManageJudge({ action: 'list' });
+      judgesCache = result.judges || [];
+      if (judgesCache.length === 0) { host.innerHTML = '<div class="empty-state">No judges added yet.</div>'; return; }
+      host.innerHTML = judgesCache.map(j => (
+        '<div class="cleanup-item">' +
+          '<div class="info"><b>' + escapeHtml(j.judgeName) + '</b><br>' + escapeHtml(j.email || '—') + '</div>' +
+          '<div class="row-actions">' +
+            '<button class="btn btn-secondary btn-small" onclick="editJudge(\'' + j.userId + '\')">Edit</button>' +
+            '<button class="btn btn-danger btn-small" onclick="deleteJudge(\'' + j.userId + '\', ' + JSON.stringify(j.judgeName) + ')">Remove</button>' +
+          '</div>' +
+        '</div>'
+      )).join('');
+    } catch (err) {
+      host.innerHTML = '<div class="empty-state">Failed to load: ' + err.message + '</div>';
+    }
+  }
+
+  function resetJudgeForm() {
+    document.getElementById('judgeFormTitle').textContent = 'Add New Judge';
+    document.getElementById('judgeEditingId').value = '';
+    document.getElementById('judgeNameInput').value = '';
+    document.getElementById('judgeEmailInput').value = '';
+    document.getElementById('judgePasswordInput').value = '';
+  }
+
+  function editJudge(userId) {
+    const j = judgesCache.find(x => x.userId === userId);
+    if (!j) return;
+    document.getElementById('judgeFormTitle').textContent = 'Edit Judge';
+    document.getElementById('judgeEditingId').value = userId;
+    document.getElementById('judgeNameInput').value = j.judgeName || '';
+    document.getElementById('judgeEmailInput').value = j.email || '';
+    document.getElementById('judgePasswordInput').value = '';
+  }
+
+  async function saveJudge() {
+    const errEl = document.getElementById('judgesError');
+    const okEl = document.getElementById('judgesSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+
+    const editingId = document.getElementById('judgeEditingId').value;
+    const judgeName = document.getElementById('judgeNameInput').value.trim();
+    const email = document.getElementById('judgeEmailInput').value.trim();
+    const password = document.getElementById('judgePasswordInput').value;
+
+    if (!judgeName) { errEl.textContent = 'Name is required.'; errEl.style.display = 'block'; return; }
+    if (!editingId && (!email || !password)) { errEl.textContent = 'Email and password are required for a new judge.'; errEl.style.display = 'block'; return; }
+    if (password && password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+
+    try {
+      if (editingId) {
+        await callManageJudge({ action: 'update', judgeUserId: editingId, judgeName, email: email || undefined, password: password || undefined });
+        okEl.textContent = 'Judge updated.';
+      } else {
+        await callManageJudge({ action: 'create', judgeName, email, password });
+        okEl.textContent = 'Judge added.';
+      }
+      okEl.style.display = 'block';
+      resetJudgeForm();
+      loadJudgesList();
+    } catch (err) {
+      errEl.textContent = 'Failed: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function deleteJudge(userId, judgeName) {
+    if (!confirm('Remove judge "' + judgeName + '"? This deletes their login entirely and cannot be undone.')) return;
+    const errEl = document.getElementById('judgesError');
+    errEl.style.display = 'none';
+    try {
+      await callManageJudge({ action: 'delete', judgeUserId: userId });
+      loadJudgesList();
+    } catch (err) {
+      errEl.textContent = 'Failed to remove: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  // ── MORE MENU ──
+  function toggleMoreMenu() {
+    document.getElementById('moreMenu').classList.toggle('open');
+  }
+  function closeMoreMenu() {
+    document.getElementById('moreMenu').classList.remove('open');
+  }
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.more-menu-wrap');
+    if (wrap && !wrap.contains(e.target)) closeMoreMenu();
+  });
 
   // ── COLLEGE NAME MERGE ──
   function computeCollegeGroups() {
