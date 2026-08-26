@@ -237,6 +237,8 @@
     <button class="btn btn-secondary" style="width:auto;" onclick="remindPendingRound1()">📢 Remind Pending Round 1</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openScores()">🏆 Round 1 Scores</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openJudgesModal()">👩‍⚖️ Judges</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openScreening()">🔍 Screening</button>
+    <button class="btn btn-secondary" style="width:auto;" onclick="openScreenersModal()">🧑‍🔬 Screeners</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">📨 Email Log</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">📊 Analytics</button>
     <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
@@ -382,6 +384,54 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeJudgesModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE SCREENERS MODAL -->
+<div class="modal-overlay" id="screenersModal">
+  <div class="modal-box" style="max-width:640px;">
+    <h3>🧑‍🔬 Manage Screeners</h3>
+    <div class="msg error" id="screenersError"></div>
+    <div class="msg success" id="screenersSuccess"></div>
+    <div id="screenersList" style="margin-bottom:14px;"></div>
+    <div class="detail-section" style="margin-top:0; border-top:1.5px solid #f0d5fa; padding-top:14px;">
+      <h4 id="screenerFormTitle">Add New Screener</h4>
+      <input type="hidden" id="screenerEditingId">
+      <div class="field-row"><label for="screenerNameInput">Name</label><input type="text" id="screenerNameInput" placeholder="Screener's full name"></div>
+      <div class="field-row"><label for="screenerEmailInput">Email</label><input type="email" id="screenerEmailInput" placeholder="screener@example.com"></div>
+      <div class="field-row">
+        <label for="screenerPasswordInput">Password <span style="font-weight:400; color:#9b7ab0;">— leave blank to keep unchanged when editing</span></label>
+        <input type="password" id="screenerPasswordInput" placeholder="min 8 characters">
+      </div>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button class="btn btn-secondary btn-small" onclick="resetScreenerForm()">Clear / Cancel Edit</button>
+        <button class="btn btn-small" onclick="saveScreener()">Save Screener</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeScreenersModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREENING OVERVIEW MODAL -->
+<div class="modal-overlay" id="screeningModal">
+  <div class="modal-box" style="max-width:820px;">
+    <h3>🔍 Round 1 Screening</h3>
+    <p style="font-size:12px; color:#9b7ab0; margin-bottom:12px;">
+      Every team is reviewed by 2 randomly assigned, independent screeners. Agreement settles it automatically. Disagreements are flagged below for a third reviewer/admin call — never resolved by either original screener.
+    </p>
+    <div class="msg error" id="screeningError"></div>
+    <div class="msg success" id="screeningSuccess"></div>
+    <div class="modal-actions" style="margin-bottom:14px;">
+      <button class="btn" onclick="runScreeningAllocation()">🎲 Generate / Top-up Assignments</button>
+      <button class="btn btn-secondary" onclick="loadScreeningOverview()">Refresh</button>
+    </div>
+    <div id="screeningStats" style="margin-bottom:14px;"></div>
+    <div id="screeningList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeScreening()">Close</button>
     </div>
   </div>
 </div>
@@ -1582,6 +1632,210 @@
       errEl.textContent = 'Failed to remove: ' + err.message;
       errEl.style.display = 'block';
     }
+  }
+
+  // ── MANAGE SCREENERS ──
+  let screenersCache = [];
+
+  async function callManageScreener(payload) {
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const res = await fetch(SUPABASE_URL + '/functions/v1/manage-screener', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+    return result;
+  }
+
+  async function openScreenersModal() {
+    document.getElementById('screenersError').style.display = 'none';
+    document.getElementById('screenersSuccess').style.display = 'none';
+    resetScreenerForm();
+    document.getElementById('screenersModal').classList.add('open');
+    await loadScreenersList();
+  }
+
+  function closeScreenersModal() {
+    document.getElementById('screenersModal').classList.remove('open');
+  }
+
+  async function loadScreenersList() {
+    const host = document.getElementById('screenersList');
+    host.innerHTML = '<div class="loading">Loading…</div>';
+    try {
+      const result = await callManageScreener({ action: 'list' });
+      screenersCache = result.screeners || [];
+      if (screenersCache.length === 0) { host.innerHTML = '<div class="empty-state">No screeners added yet.</div>'; return; }
+      host.innerHTML = screenersCache.map(s => (
+        '<div class="cleanup-item">' +
+          '<div class="info"><b>' + escapeHtml(s.screenerName) + '</b><br>' + escapeHtml(s.email || '—') + '</div>' +
+          '<div class="row-actions">' +
+            '<button class="btn btn-secondary btn-small" onclick="editScreener(\'' + s.userId + '\')">Edit</button>' +
+            '<button class="btn btn-danger btn-small" onclick="deleteScreener(\'' + s.userId + '\', ' + JSON.stringify(s.screenerName) + ')">Remove</button>' +
+          '</div>' +
+        '</div>'
+      )).join('');
+    } catch (err) {
+      host.innerHTML = '<div class="empty-state">Failed to load: ' + err.message + '</div>';
+    }
+  }
+
+  function resetScreenerForm() {
+    document.getElementById('screenerFormTitle').textContent = 'Add New Screener';
+    document.getElementById('screenerEditingId').value = '';
+    document.getElementById('screenerNameInput').value = '';
+    document.getElementById('screenerEmailInput').value = '';
+    document.getElementById('screenerPasswordInput').value = '';
+  }
+
+  function editScreener(userId) {
+    const s = screenersCache.find(x => x.userId === userId);
+    if (!s) return;
+    document.getElementById('screenerFormTitle').textContent = 'Edit Screener';
+    document.getElementById('screenerEditingId').value = userId;
+    document.getElementById('screenerNameInput').value = s.screenerName || '';
+    document.getElementById('screenerEmailInput').value = s.email || '';
+    document.getElementById('screenerPasswordInput').value = '';
+  }
+
+  async function saveScreener() {
+    const errEl = document.getElementById('screenersError');
+    const okEl = document.getElementById('screenersSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+
+    const editingId = document.getElementById('screenerEditingId').value;
+    const screenerName = document.getElementById('screenerNameInput').value.trim();
+    const email = document.getElementById('screenerEmailInput').value.trim();
+    const password = document.getElementById('screenerPasswordInput').value;
+
+    if (!screenerName) { errEl.textContent = 'Name is required.'; errEl.style.display = 'block'; return; }
+    if (!editingId && (!email || !password)) { errEl.textContent = 'Email and password are required for a new screener.'; errEl.style.display = 'block'; return; }
+    if (password && password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+
+    try {
+      if (editingId) {
+        await callManageScreener({ action: 'update', screenerUserId: editingId, screenerName, email: email || undefined, password: password || undefined });
+        okEl.textContent = 'Screener updated.';
+      } else {
+        await callManageScreener({ action: 'create', screenerName, email, password });
+        okEl.textContent = 'Screener added.';
+      }
+      okEl.style.display = 'block';
+      resetScreenerForm();
+      loadScreenersList();
+    } catch (err) {
+      errEl.textContent = 'Failed: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function deleteScreener(userId, screenerName) {
+    if (!confirm('Remove screener "' + screenerName + '"? This deletes their login entirely and cannot be undone.')) return;
+    const errEl = document.getElementById('screenersError');
+    errEl.style.display = 'none';
+    try {
+      await callManageScreener({ action: 'delete', screenerUserId: userId });
+      loadScreenersList();
+    } catch (err) {
+      errEl.textContent = 'Failed to remove: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  // ── SCREENING OVERVIEW ──
+  async function openScreening() {
+    document.getElementById('screeningError').style.display = 'none';
+    document.getElementById('screeningSuccess').style.display = 'none';
+    document.getElementById('screeningModal').classList.add('open');
+    await loadScreeningOverview();
+  }
+
+  function closeScreening() {
+    document.getElementById('screeningModal').classList.remove('open');
+  }
+
+  async function runScreeningAllocation() {
+    const errEl = document.getElementById('screeningError');
+    const okEl = document.getElementById('screeningSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(SUPABASE_URL + '/functions/v1/generate-screening-assignments', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+      okEl.textContent = result.newAssignments + ' new assignment(s) created across ' + result.totalTeams + ' team(s).';
+      okEl.style.display = 'block';
+      await loadScreeningOverview();
+    } catch (err) {
+      errEl.textContent = 'Failed: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function loadScreeningOverview() {
+    const host = document.getElementById('screeningList');
+    const statsHost = document.getElementById('screeningStats');
+    host.innerHTML = '<div class="loading">Loading…</div>';
+    const [{ data: rows, error: rowsErr }, { data: screeners, error: screenersErr }, { data: decisions, error: decisionsErr }] = await Promise.all([
+      sb.from('screening_admin_view').select('*'),
+      sb.from('screener_profiles').select('*'),
+      sb.from('screening_decisions').select('*'),
+    ]);
+    if (rowsErr) { host.innerHTML = '<div class="empty-state">Failed to load: ' + rowsErr.message + '</div>'; return; }
+    if (screenersErr) console.error('Failed to load screener profiles:', screenersErr.message);
+    if (decisionsErr) console.error('Failed to load screening decisions:', decisionsErr.message);
+
+    const nameByScreener = {};
+    (screeners || []).forEach(s => { nameByScreener[s.user_id] = s.screener_name; });
+    const decisionsByReg = {};
+    (decisions || []).forEach(d => { (decisionsByReg[d.registration_id] = decisionsByReg[d.registration_id] || []).push(d); });
+
+    const totalTeams = (rows || []).length;
+    const fullyReviewed = (rows || []).filter(r => r.decisions_count >= 2).length;
+    const disagreements = (rows || []).filter(r => r.disagreement).length;
+    statsHost.innerHTML =
+      '<div class="stats">' +
+        '<div class="stat-box"><div class="num">' + totalTeams + '</div><div class="lbl">Total Teams</div></div>' +
+        '<div class="stat-box"><div class="num">' + fullyReviewed + '</div><div class="lbl">Fully Reviewed (2/2)</div></div>' +
+        '<div class="stat-box"><div class="num">' + disagreements + '</div><div class="lbl">⚠ Disagreements — need a call</div></div>' +
+      '</div>';
+
+    if (totalTeams === 0) { host.innerHTML = '<div class="empty-state">No Round 1 submissions yet.</div>'; return; }
+
+    const sorted = (rows || []).slice().sort((a, b) => {
+      if (a.disagreement !== b.disagreement) return a.disagreement ? -1 : 1;
+      return (a.decisions_count - b.decisions_count) - 0 || a.team_name.localeCompare(b.team_name);
+    });
+
+    host.innerHTML = sorted.map(r => {
+      const entries = decisionsByReg[r.registration_id] || [];
+      const entriesHtml = entries.map(d => (
+        '<div style="font-size:11.5px; color:#4a1b6e; margin-top:4px;">' +
+          '<b>' + escapeHtml(nameByScreener[d.screener_id] || d.screener_id.slice(0,8)) + ':</b> ' +
+          (d.decision === 'pass' ? '✅ Pass' : '❌ Reject (' + escapeHtml(d.gate_failed || '') + ')') +
+          (d.note ? ' — ' + escapeHtml(d.note) : '') +
+        '</div>'
+      )).join('');
+      return (
+        '<div class="cleanup-item" style="display:block;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<div><b>' + escapeHtml(r.team_name) + '</b> <span style="font-size:11px; color:#9b7ab0;">' + escapeHtml(r.track) + '</span></div>' +
+            '<div>' +
+              (r.disagreement ? '<span class="pill pill-late">⚠ Disagreement</span>' : '') +
+              '<span class="pill ' + (r.decisions_count >= 2 ? 'pill-scored' : 'pill-unscored') + '">' + r.decisions_count + '/2 reviewed</span>' +
+            '</div>' +
+          '</div>' +
+          entriesHtml +
+        '</div>'
+      );
+    }).join('');
   }
 
   // ── MORE MENU ──
