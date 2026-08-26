@@ -133,6 +133,11 @@
   <div class="tagline">Submit the PDF for the team you registered</div>
 </div>
 <div class="wrap">
+  <div class="window-banner" id="closedBanner" style="display:none;">
+    <div class="wb-title">🔒 Round 1 Submission Has Closed</div>
+    <div class="wb-text">The submission window has ended and no further documents can be accepted. Please watch this page for the Results, which will be announced in 1–2 weeks. Questions? Contact us on WhatsApp below.</div>
+  </div>
+  <div id="submissionFormBody">
   <button type="button" class="action-btn" onclick="openGuide()">
     <svg class="book-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     Read the Submission Guide <span class="point-hand">👉</span>
@@ -188,6 +193,7 @@
   <div class="msg-box error-msg" id="errorMsg">
     <span class="msg-icon">⚠️</span>
     <span id="errorText">Something went wrong. Please try again.</span>
+  </div>
   </div>
   <p class="footer-note">Trouble submitting or need a correction after locking? Contact Madhav Maheshwari — <a href="tel:+919588874415" style="color:#6a1794; font-weight:600;">+91 95888 74415</a> (WhatsApp)</p>
 </div>
@@ -331,7 +337,18 @@
     document.getElementById('guideModal').classList.remove('open');
     sessionStorage.setItem('ils2026_round1_guide_seen', '1');
   }
+
+  // Matches the WINDOW_END enforced server-side in submit-round1-doc - keep
+  // both in sync if this date ever needs to change.
+  const SUBMISSION_WINDOW_END = new Date('2026-08-25T23:59:59+05:30');
+  const SUBMISSION_CLOSED = new Date() > SUBMISSION_WINDOW_END;
+
   window.addEventListener('DOMContentLoaded', () => {
+    if (SUBMISSION_CLOSED) {
+      document.getElementById('closedBanner').style.display = 'block';
+      document.getElementById('submissionFormBody').style.display = 'none';
+      return;
+    }
     if (!sessionStorage.getItem('ils2026_round1_guide_seen')) openGuide();
   });
 </script>
