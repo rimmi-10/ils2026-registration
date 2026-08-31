@@ -171,8 +171,8 @@
   </div>
   <div class="stats" id="stats"></div>
   <div class="tabs">
-    <button class="tab-btn active" id="queueTabBtn" onclick="showQueueTab()">📋 My Queue</button>
-    <button class="tab-btn" id="leaderboardTabBtn" onclick="showLeaderboardTab()">🏆 Track Leaderboard</button>
+    <button class="tab-btn active" id="queueTabBtn" onclick="showQueueTab()">My Queue</button>
+    <button class="tab-btn" id="leaderboardTabBtn" onclick="showLeaderboardTab()">Track Leaderboard</button>
   </div>
 
   <div id="queueView">
@@ -256,7 +256,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let submissions = [];
-  let myScores = {}; // registration_id -> score row
+  let myScores = {}; // registration_id ->score row
   let judgeId = null;
   let activeSubmissionId = null;
 
@@ -298,7 +298,7 @@
   }
 
   function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s ?? '').replace(/[&<>"']/g, c =>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
   async function loadData() {
@@ -311,16 +311,16 @@
     // judge_queue_view uses registration_id as the key; normalize to .id so
     // the rest of this file (written against round1_judge_view) needs no
     // other changes.
-    submissions = (subs || []).map(s => ({ ...s, id: s.registration_id }));
+    submissions = (subs || []).map(s =>({ ...s, id: s.registration_id }));
 
     const { data: scores, error: scoresErr } = await sb.from('round1_scores').select('*').eq('judge_id', judgeId);
     if (scoresErr) console.error('Failed to load my scores:', scoresErr.message);
     myScores = {};
-    (scores || []).forEach(s => { myScores[s.registration_id] = s; });
+    (scores || []).forEach(s =>{ myScores[s.registration_id] = s; });
 
     const trackSel = document.getElementById('trackFilter');
-    const tracks = Array.from(new Set(submissions.map(s => s.track).filter(Boolean))).sort();
-    trackSel.innerHTML = '<option value="">All Tracks</option>' + tracks.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
+    const tracks = Array.from(new Set(submissions.map(s =>s.track).filter(Boolean))).sort();
+    trackSel.innerHTML = '<option value="">All Tracks</option>' + tracks.map(t =>'<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
 
     renderStats();
     renderList();
@@ -328,8 +328,8 @@
 
   function renderStats() {
     const total = submissions.length;
-    const scored = submissions.filter(s => myScores[s.id]).length;
-    const pct = total > 0 ? Math.round((scored / total) * 100) : 0;
+    const scored = submissions.filter(s =>myScores[s.id]).length;
+    const pct = total >0 ? Math.round((scored / total) * 100) : 0;
     document.getElementById('stats').innerHTML =
       '<div class="stat-box"><div class="num">' + total + '</div><div class="lbl">Total Submissions</div></div>' +
       '<div class="stat-box" style="flex:2;">' +
@@ -343,23 +343,23 @@
     const trackF = document.getElementById('trackFilter').value;
     const scoreF = document.getElementById('scoreFilter').value;
     let rows = submissions;
-    if (trackF) rows = rows.filter(r => r.track === trackF);
-    if (q) rows = rows.filter(r => (r.team_name || '').toLowerCase().includes(q));
-    if (scoreF === 'scored') rows = rows.filter(r => myScores[r.id]);
-    else if (scoreF === 'unscored') rows = rows.filter(r => !myScores[r.id]);
+    if (trackF) rows = rows.filter(r =>r.track === trackF);
+    if (q) rows = rows.filter(r =>(r.team_name || '').toLowerCase().includes(q));
+    if (scoreF === 'scored') rows = rows.filter(r =>myScores[r.id]);
+    else if (scoreF === 'unscored') rows = rows.filter(r =>!myScores[r.id]);
 
     const host = document.getElementById('listHost');
     if (rows.length === 0) {
       host.innerHTML = '<div class="empty-state">No submissions match.</div>';
       return;
     }
-    host.innerHTML = rows.map(r => {
+    host.innerHTML = rows.map(r =>{
       const scored = myScores[r.id];
       return (
         '<div class="sub-card">' +
           '<div class="info">' +
             '<b>' + escapeHtml(r.team_name) + '</b>' +
-            (scored ? '<span class="pill pill-scored">✅ Scored</span>' : '<span class="pill pill-unscored">Not scored</span>') +
+            (scored ? '<span class="pill pill-scored">Scored</span>' : '<span class="pill pill-unscored">Not scored</span>') +
             '<div class="track">' + escapeHtml(r.track) + '</div>' +
           '</div>' +
           '<button class="btn btn-small" onclick="openScoreModal(\'' + r.id + '\')">' + (scored ? 'Edit Score' : 'Score Now') + '</button>' +
@@ -369,13 +369,13 @@
   }
 
   function computeTotal() {
-    const vals = ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].map(id => parseFloat(document.getElementById(id).value) || 0);
-    const total = vals.reduce((a,b) => a+b, 0);
+    const vals = ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].map(id =>parseFloat(document.getElementById(id).value) || 0);
+    const total = vals.reduce((a,b) =>a+b, 0);
     document.getElementById('scoreTotal').textContent = 'Total: ' + total + ' / 100';
   }
 
   function openScoreModal(id) {
-    const sub = submissions.find(s => s.id === id);
+    const sub = submissions.find(s =>s.id === id);
     if (!sub) return;
     activeSubmissionId = id;
     document.getElementById('scoreError').style.display = 'none';
@@ -411,11 +411,11 @@
     const okEl = document.getElementById('scoreSuccess');
     errEl.style.display = 'none'; okEl.style.display = 'none';
 
-    const val = (id, max) => {
+    const val = (id, max) =>{
       const v = document.getElementById(id).value;
       if (v === '') return null;
       const n = parseFloat(v);
-      if (isNaN(n) || n < 0 || n > max) return undefined; // invalid marker
+      if (isNaN(n) || n < 0 || n >max) return undefined; // invalid marker
       return n;
     };
     const fields = {
@@ -426,7 +426,7 @@
       technology_execution: val('scTech', 15),
       team_presentation: val('scTeam', 10),
     };
-    if (Object.values(fields).some(v => v === undefined)) {
+    if (Object.values(fields).some(v =>v === undefined)) {
       errEl.textContent = 'One or more scores are out of range. Check the max for each field.';
       errEl.style.display = 'block';
       return;
@@ -451,8 +451,8 @@
     // Find the next unscored submission (staying within the active track
     // filter, if any) before we close and lose track of activeSubmissionId.
     const trackF = document.getElementById('trackFilter').value;
-    const pool = trackF ? submissions.filter(s => s.track === trackF) : submissions;
-    const nextUnscored = pool.find(s => s.id !== activeSubmissionId && !myScores[s.id]);
+    const pool = trackF ? submissions.filter(s =>s.track === trackF) : submissions;
+    const nextUnscored = pool.find(s =>s.id !== activeSubmissionId && !myScores[s.id]);
 
     myScores[activeSubmissionId] = data;
     okEl.textContent = nextUnscored ? 'Score saved. Opening next…' : 'Score saved. You\'re all caught up here!';
@@ -460,7 +460,7 @@
     renderStats();
     renderList();
     if (document.getElementById('leaderboardView').style.display !== 'none') loadLeaderboard();
-    setTimeout(() => {
+    setTimeout(() =>{
       closeScoreModal();
       if (nextUnscored) openScoreModal(nextUnscored.id);
     }, 900);
@@ -496,18 +496,18 @@
     }
 
     const byReg = {};
-    (allScores || []).forEach(s => {
+    (allScores || []).forEach(s =>{
       const total = (s.problem_understanding||0) + (s.solution_innovation||0) + (s.feasibility_implementation||0) +
         (s.expected_impact||0) + (s.technology_execution||0) + (s.team_presentation||0);
       (byReg[s.registration_id] = byReg[s.registration_id] || []).push({ total, judgeId: s.judge_id });
     });
 
     const rows = Object.entries(byReg)
-      .filter(([regId]) => myScores[regId]) // only teams I've scored myself
-      .map(([regId, entries]) => {
-        const sub = submissions.find(s => s.id === regId);
+      .filter(([regId]) =>myScores[regId]) // only teams I've scored myself
+      .map(([regId, entries]) =>{
+        const sub = submissions.find(s =>s.id === regId);
         if (!sub) return null;
-        const avg = entries.reduce((a,b) => a + b.total, 0) / entries.length;
+        const avg = entries.reduce((a,b) =>a + b.total, 0) / entries.length;
         return { sub, avg, judgeCount: entries.length };
       })
       .filter(Boolean);
@@ -518,25 +518,25 @@
     }
 
     const byTrack = {};
-    rows.forEach(r => { (byTrack[r.sub.track || 'Unknown'] = byTrack[r.sub.track || 'Unknown'] || []).push(r); });
-    Object.values(byTrack).forEach(list => list.sort((a, b) => b.avg - a.avg));
+    rows.forEach(r =>{ (byTrack[r.sub.track || 'Unknown'] = byTrack[r.sub.track || 'Unknown'] || []).push(r); });
+    Object.values(byTrack).forEach(list =>list.sort((a, b) =>b.avg - a.avg));
 
-    host.innerHTML = Object.keys(byTrack).sort().map(track => {
+    host.innerHTML = Object.keys(byTrack).sort().map(track =>{
       const list = byTrack[track];
       return '<div class="track-group">' +
         '<h4>' + escapeHtml(track) + '</h4>' +
-        list.map((r, i) => (
+        list.map((r, i) =>(
           '<div class="track-row">' +
             '<span>' + (i + 1) + '. ' + escapeHtml(r.sub.team_name) + '</span>' +
-            '<span><span class="score">' + r.avg.toFixed(1) + '/100</span><span class="judges"> (' + r.judgeCount + ' judge' + (r.judgeCount > 1 ? 's' : '') + ')</span></span>' +
+            '<span><span class="score">' + r.avg.toFixed(1) + '/100</span><span class="judges">(' + r.judgeCount + ' judge' + (r.judgeCount >1 ? 's' : '') + ')</span></span>' +
           '</div>'
         )).join('') +
         '</div>';
     }).join('');
   }
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].forEach(id => {
+  window.addEventListener('DOMContentLoaded', async () =>{
+    ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].forEach(id =>{
       document.getElementById(id).addEventListener('input', computeTotal);
     });
     const { data } = await sb.auth.getSession();
