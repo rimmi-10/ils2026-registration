@@ -149,6 +149,9 @@
   .pill-submitted { background: #eafaf0; color: #1a6b3a; }
   .pill-pending { background: #f2f2f2; color: #7a7a7a; }
   .pill-late { background: #fff0f0; color: #b8005e; }
+  .pill-scored, .pill-pass { background: #eafaf0; color: #1a6b3a; margin-left: 6px; }
+  .pill-unscored { background: #f2f2f2; color: #7a7a7a; margin-left: 6px; }
+  .pill-reject { background: #fff0f5; color: #b8005e; margin-left: 6px; }
 
   /* ── SORTABLE HEADERS ── */
   th.sortable { cursor: pointer; user-select: none; }
@@ -409,6 +412,18 @@
         <button class="btn btn-small" onclick="saveScreener()">Save Screener</button>
       </div>
     </div>
+    <div class="detail-section" style="border-top:1.5px solid #f0d5fa; padding-top:14px;">
+      <h4>Bulk Import (CSV — no header row)</h4>
+      <p style="font-size:11.5px; color:#9b7ab0; margin-bottom:8px;">
+        One screener per line: <code>username,password</code>. Each username becomes a login email automatically (e.g. <code>screener07</code> → <code>screener07@ils2026-screener.local</code>) — you'll get the full list back to distribute individually.
+      </p>
+      <textarea id="screenerCsvInput" style="min-height:110px; font-family:monospace; font-size:12px;" placeholder="screener01,SomePass123
+screener02,AnotherPass456"></textarea>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button class="btn btn-small" onclick="bulkImportScreeners()">Import All</button>
+      </div>
+      <div id="screenerBulkResult" style="margin-top:10px; font-size:12px;"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeScreenersModal()">Close</button>
     </div>
@@ -424,9 +439,12 @@
     </p>
     <div class="msg error" id="screeningError"></div>
     <div class="msg success" id="screeningSuccess"></div>
-    <div class="modal-actions" style="margin-bottom:14px;">
-      <button class="btn" onclick="runScreeningAllocation()">🎲 Generate / Top-up Assignments</button>
+    <div class="modal-actions" style="margin-bottom:8px;">
+      <button class="btn" onclick="runScreeningAllocation()">🎲 Step 1: Generate / Top-up Screener Assignments</button>
       <button class="btn btn-secondary" onclick="loadScreeningOverview()">Refresh</button>
+    </div>
+    <div class="modal-actions" style="margin-bottom:14px;">
+      <button class="btn btn-secondary" onclick="runJudgeAllocation()">⚖️ Step 2: Generate Judge Assignments (shortlisted teams only)</button>
     </div>
     <div id="screeningStats" style="margin-bottom:14px;"></div>
     <div id="screeningList"></div>
@@ -1732,6 +1750,43 @@
     }
   }
 
+  async function bulkImportScreeners() {
+    const resultEl = document.getElementById('screenerBulkResult');
+    const raw = document.getElementById('screenerCsvInput').value.trim();
+    if (!raw) { resultEl.innerHTML = '<span style="color:#b8005e;">Paste some rows first.</span>'; return; }
+    const rows = raw.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+      const [username, password] = line.split(',').map(s => (s || '').trim());
+      return { username, password };
+    });
+    resultEl.innerHTML = 'Importing ' + rows.length + '…';
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(SUPABASE_URL + '/functions/v1/bulk-create-screeners', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows })
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+
+      const pwByUsername = {};
+      rows.forEach(r => { pwByUsername[r.username] = r.password; });
+      const createdLines = (result.created || []).map(c => c.username + ' | ' + c.email + ' | ' + (pwByUsername[c.username] || ''));
+      const failedLines = (result.failed || []).map(f => f.username + ' — FAILED: ' + f.error);
+
+      resultEl.innerHTML =
+        '<div style="color:#1a6b3a; font-weight:600; margin-bottom:6px;">' + (result.created || []).length + ' created, ' + (result.failed || []).length + ' failed.</div>' +
+        (createdLines.length ? '<div style="font-size:11px; color:#7c5a9b; margin-bottom:4px;">username | login email | password — copy this to distribute:</div><textarea readonly style="min-height:100px; font-family:monospace; font-size:11px;" onclick="this.select()">' + escapeHtml(createdLines.join('\n')) + '</textarea>' : '') +
+        (failedLines.length ? '<div style="color:#b8005e; font-size:11px; margin-top:6px; white-space:pre-wrap;">' + escapeHtml(failedLines.join('\n')) + '</div>' : '');
+
+      document.getElementById('screenerCsvInput').value = '';
+      loadScreenersList();
+    } catch (err) {
+      resultEl.innerHTML = '<span style="color:#b8005e;">Failed: ' + escapeHtml(err.message) + '</span>';
+    }
+  }
+
   async function deleteScreener(userId, screenerName) {
     if (!confirm('Remove screener "' + screenerName + '"? This deletes their login entirely and cannot be undone.')) return;
     const errEl = document.getElementById('screenersError');
@@ -1779,32 +1834,69 @@
     }
   }
 
+  async function runJudgeAllocation() {
+    const errEl = document.getElementById('screeningError');
+    const okEl = document.getElementById('screeningSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(SUPABASE_URL + '/functions/v1/generate-judge-assignments', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+      okEl.textContent = result.newAssignments + ' new judge assignment(s) across ' + result.totalShortlistedTeams + ' shortlisted team(s).' +
+        (result.shortfallTeams > 0 ? ' ⚠ ' + result.shortfallTeams + ' team(s) couldn\'t get all 3 judges — add more judge accounts or raise the cap.' : '');
+      okEl.style.display = 'block';
+    } catch (err) {
+      errEl.textContent = 'Failed: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function setScreeningOutcome(regId, outcome) {
+    const { data: sessionData } = await sb.auth.getSession();
+    const uid = sessionData?.session?.user?.id;
+    const { error } = await sb.from('screening_outcomes')
+      .upsert({ registration_id: regId, outcome, decided_by: uid, decided_at: new Date().toISOString() }, { onConflict: 'registration_id' });
+    if (error) { alert('Failed to save outcome: ' + error.message); return; }
+    loadScreeningOverview();
+  }
+
   async function loadScreeningOverview() {
     const host = document.getElementById('screeningList');
     const statsHost = document.getElementById('screeningStats');
     host.innerHTML = '<div class="loading">Loading…</div>';
-    const [{ data: rows, error: rowsErr }, { data: screeners, error: screenersErr }, { data: decisions, error: decisionsErr }] = await Promise.all([
+    const [{ data: rows, error: rowsErr }, { data: screeners, error: screenersErr }, { data: decisions, error: decisionsErr }, { data: outcomes, error: outcomesErr }] = await Promise.all([
       sb.from('screening_admin_view').select('*'),
       sb.from('screener_profiles').select('*'),
       sb.from('screening_decisions').select('*'),
+      sb.from('screening_outcomes').select('*'),
     ]);
     if (rowsErr) { host.innerHTML = '<div class="empty-state">Failed to load: ' + rowsErr.message + '</div>'; return; }
     if (screenersErr) console.error('Failed to load screener profiles:', screenersErr.message);
     if (decisionsErr) console.error('Failed to load screening decisions:', decisionsErr.message);
+    if (outcomesErr) console.error('Failed to load screening outcomes:', outcomesErr.message);
 
     const nameByScreener = {};
     (screeners || []).forEach(s => { nameByScreener[s.user_id] = s.screener_name; });
     const decisionsByReg = {};
     (decisions || []).forEach(d => { (decisionsByReg[d.registration_id] = decisionsByReg[d.registration_id] || []).push(d); });
+    const outcomeByReg = {};
+    (outcomes || []).forEach(o => { outcomeByReg[o.registration_id] = o.outcome; });
 
     const totalTeams = (rows || []).length;
     const fullyReviewed = (rows || []).filter(r => r.decisions_count >= 2).length;
     const disagreements = (rows || []).filter(r => r.disagreement).length;
+    const shortlisted = Object.values(outcomeByReg).filter(o => o === 'shortlist').length;
     statsHost.innerHTML =
       '<div class="stats">' +
         '<div class="stat-box"><div class="num">' + totalTeams + '</div><div class="lbl">Total Teams</div></div>' +
         '<div class="stat-box"><div class="num">' + fullyReviewed + '</div><div class="lbl">Fully Reviewed (2/2)</div></div>' +
         '<div class="stat-box"><div class="num">' + disagreements + '</div><div class="lbl">⚠ Disagreements — need a call</div></div>' +
+        '<div class="stat-box"><div class="num">' + shortlisted + '</div><div class="lbl">Shortlisted so far</div></div>' +
       '</div>';
 
     if (totalTeams === 0) { host.innerHTML = '<div class="empty-state">No Round 1 submissions yet.</div>'; return; }
@@ -1823,16 +1915,22 @@
           (d.note ? ' — ' + escapeHtml(d.note) : '') +
         '</div>'
       )).join('');
+      const outcome = outcomeByReg[r.registration_id];
       return (
         '<div class="cleanup-item" style="display:block;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
             '<div><b>' + escapeHtml(r.team_name) + '</b> <span style="font-size:11px; color:#9b7ab0;">' + escapeHtml(r.track) + '</span></div>' +
             '<div>' +
               (r.disagreement ? '<span class="pill pill-late">⚠ Disagreement</span>' : '') +
               '<span class="pill ' + (r.decisions_count >= 2 ? 'pill-scored' : 'pill-unscored') + '">' + r.decisions_count + '/2 reviewed</span>' +
+              (outcome ? '<span class="pill ' + (outcome === 'shortlist' ? 'pill-pass' : 'pill-reject') + '">' + (outcome === 'shortlist' ? '✅ Shortlisted' : '❌ Rejected') + '</span>' : '') +
             '</div>' +
           '</div>' +
           entriesHtml +
+          '<div class="row-actions" style="margin-top:8px;">' +
+            '<button class="btn btn-secondary btn-small" onclick="setScreeningOutcome(\'' + r.registration_id + '\', \'shortlist\')">✅ Shortlist</button>' +
+            '<button class="btn btn-danger btn-small" onclick="setScreeningOutcome(\'' + r.registration_id + '\', \'reject\')">❌ Reject</button>' +
+          '</div>' +
         '</div>'
       );
     }).join('');

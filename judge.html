@@ -165,7 +165,7 @@
   <div class="dash-top">
     <div>
       <div style="font-size:15px; font-weight:700; color:#6a1794;" id="judgeNameLabel"></div>
-      <div style="font-size:12px; color:#9b7ab0;">Score every submission across the 6 criteria below</div>
+      <div style="font-size:12px; color:#9b7ab0;">These are your 4 randomly assigned, shortlisted teams — score each across the 6 criteria below</div>
     </div>
     <button class="btn btn-secondary" style="width:auto;" onclick="logout()">Log Out</button>
   </div>
@@ -303,12 +303,15 @@
 
   async function loadData() {
     document.getElementById('listHost').innerHTML = '<div class="loading">Loading…</div>';
-    const { data: subs, error: subsErr } = await sb.from('round1_judge_view').select('*').order('team_name', { ascending: true });
+    const { data: subs, error: subsErr } = await sb.from('judge_queue_view').select('*').order('team_name', { ascending: true });
     if (subsErr) {
       document.getElementById('listHost').innerHTML = '<div class="empty-state">Failed to load: ' + subsErr.message + '</div>';
       return;
     }
-    submissions = subs || [];
+    // judge_queue_view uses registration_id as the key; normalize to .id so
+    // the rest of this file (written against round1_judge_view) needs no
+    // other changes.
+    submissions = (subs || []).map(s => ({ ...s, id: s.registration_id }));
 
     const { data: scores, error: scoresErr } = await sb.from('round1_scores').select('*').eq('judge_id', judgeId);
     if (scoresErr) console.error('Failed to load my scores:', scoresErr.message);
