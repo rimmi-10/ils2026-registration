@@ -113,7 +113,7 @@
   </div>
   <div class="stats" id="stats"></div>
   <div class="note-box">
-    <b>Screening is pass/fail, not scoring.</b> Weak writing, short documents, no diagrams, or your own opinion on how good the idea is are <b>not</b> valid reasons to reject — that's the jury's job later. Only reject if a submission clearly fails one of the 4 gates below. If it's borderline, pass it.
+    <b>Screening is pass/fail, not scoring.</b>Weak writing, short documents, no diagrams, or your own opinion on how good the idea is are <b>not</b>valid reasons to reject — that's the jury's job later. Only reject if a submission clearly fails one of the 4 gates below. If it's borderline, pass it.
   </div>
   <div id="listHost"><div class="loading">Loading…</div></div>
 </div>
@@ -131,16 +131,16 @@
 
       <div>
         <div class="gate-choice">
-          <button id="passBtn" onclick="chooseDecision('pass')">✅ Pass</button>
-          <button id="rejectBtn" onclick="chooseDecision('reject')">❌ Reject</button>
+          <button id="passBtn" onclick="chooseDecision('pass')">Pass</button>
+          <button id="rejectBtn" onclick="chooseDecision('reject')">Reject</button>
         </div>
 
         <div class="gate-list" id="gateList">
           <label style="margin-bottom:8px;">Which gate does it clearly fail?</label>
-          <label class="gate-option"><input type="radio" name="gate" value="on_topic"><span><b>Off-topic</b><span class="desc"> — completely unrelated to the assigned track's problem statement</span></span></label>
-          <label class="gate-option"><input type="radio" name="gate" value="has_solution"><span><b>No solution</b><span class="desc"> — only restates the problem, proposes nothing</span></span></label>
-          <label class="gate-option"><input type="radio" name="gate" value="complete"><span><b>Incomplete</b><span class="desc"> — a required section (team info / problem / solution) is entirely missing</span></span></label>
-          <label class="gate-option"><input type="radio" name="gate" value="duplicate"><span><b>Duplicate</b><span class="desc"> — near-verbatim copy of another team's document</span></span></label>
+          <label class="gate-option"><input type="radio" name="gate" value="on_topic"><span><b>Off-topic</b><span class="desc">— completely unrelated to the assigned track's problem statement</span></span></label>
+          <label class="gate-option"><input type="radio" name="gate" value="has_solution"><span><b>No solution</b><span class="desc">— only restates the problem, proposes nothing</span></span></label>
+          <label class="gate-option"><input type="radio" name="gate" value="complete"><span><b>Incomplete</b><span class="desc">— a required section (team info / problem / solution) is entirely missing</span></span></label>
+          <label class="gate-option"><input type="radio" name="gate" value="duplicate"><span><b>Duplicate</b><span class="desc">— near-verbatim copy of another team's document</span></span></label>
         </div>
 
         <div class="field-row">
@@ -163,7 +163,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let queue = [];
-  let myDecisions = {}; // registration_id -> decision row
+  let myDecisions = {}; // registration_id ->decision row
   let screenerId = null;
   let activeId = null;
   let currentDecision = null; // 'pass' | 'reject'
@@ -206,7 +206,7 @@
   }
 
   function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s ?? '').replace(/[&<>"']/g, c =>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
   async function loadData() {
@@ -221,7 +221,7 @@
     const { data: decisions, error: dErr } = await sb.from('screening_decisions').select('*').eq('screener_id', screenerId);
     if (dErr) console.error('Failed to load my decisions:', dErr.message);
     myDecisions = {};
-    (decisions || []).forEach(d => { myDecisions[d.registration_id] = d; });
+    (decisions || []).forEach(d =>{ myDecisions[d.registration_id] = d; });
 
     renderStats();
     renderList();
@@ -229,8 +229,8 @@
 
   function renderStats() {
     const total = queue.length;
-    const done = queue.filter(s => myDecisions[s.registration_id]).length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const done = queue.filter(s =>myDecisions[s.registration_id]).length;
+    const pct = total >0 ? Math.round((done / total) * 100) : 0;
     document.getElementById('stats').innerHTML =
       '<div class="stat-box"><div class="num">' + total + '</div><div class="lbl">Assigned To You</div></div>' +
       '<div class="stat-box" style="flex:2;">' +
@@ -245,11 +245,11 @@
       host.innerHTML = '<div class="empty-state">No teams assigned to you yet. Check back once the organizers run allocation.</div>';
       return;
     }
-    host.innerHTML = queue.map(r => {
+    host.innerHTML = queue.map(r =>{
       const d = myDecisions[r.registration_id];
       let pill = '<span class="pill pill-pending">Not reviewed</span>';
-      if (d && d.decision === 'pass') pill = '<span class="pill pill-pass">✅ Pass</span>';
-      if (d && d.decision === 'reject') pill = '<span class="pill pill-reject">❌ Reject</span>';
+      if (d && d.decision === 'pass') pill = '<span class="pill pill-pass">Pass</span>';
+      if (d && d.decision === 'reject') pill = '<span class="pill pill-reject">Reject</span>';
       return (
         '<div class="sub-card">' +
           '<div class="info">' +
@@ -270,7 +270,7 @@
   }
 
   function openDecisionModal(id) {
-    const sub = queue.find(s => s.registration_id === id);
+    const sub = queue.find(s =>s.registration_id === id);
     if (!sub) return;
     activeId = id;
     document.getElementById('decisionError').style.display = 'none';
@@ -287,7 +287,7 @@
     document.getElementById('passBtn').classList.toggle('active-pass', currentDecision === 'pass');
     document.getElementById('rejectBtn').classList.toggle('active-reject', currentDecision === 'reject');
     document.getElementById('gateList').classList.toggle('open', currentDecision === 'reject');
-    document.querySelectorAll('input[name="gate"]').forEach(el => { el.checked = existing && existing.gate_failed === el.value; });
+    document.querySelectorAll('input[name="gate"]').forEach(el =>{ el.checked = existing && existing.gate_failed === el.value; });
     document.getElementById('scNote').value = existing?.note || '';
 
     document.getElementById('decisionModal').classList.add('open');
@@ -331,20 +331,20 @@
 
     if (error) { errEl.textContent = 'Failed to save: ' + error.message; errEl.style.display = 'block'; return; }
 
-    const nextUnreviewed = queue.find(s => s.registration_id !== activeId && !myDecisions[s.registration_id]);
+    const nextUnreviewed = queue.find(s =>s.registration_id !== activeId && !myDecisions[s.registration_id]);
 
     myDecisions[activeId] = data;
     okEl.textContent = nextUnreviewed ? 'Saved. Opening next…' : 'Saved. You\'re all caught up!';
     okEl.style.display = 'block';
     renderStats();
     renderList();
-    setTimeout(() => {
+    setTimeout(() =>{
       closeDecisionModal();
       if (nextUnreviewed) openDecisionModal(nextUnreviewed.registration_id);
     }, 900);
   }
 
-  window.addEventListener('DOMContentLoaded', async () => {
+  window.addEventListener('DOMContentLoaded', async () =>{
     const { data } = await sb.auth.getSession();
     if (data.session) {
       const { data: profile } = await sb.from('screener_profiles').select('*').eq('user_id', data.session.user.id).maybeSingle();
