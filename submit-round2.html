@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE WIE ILS 2026 -- Round 2 Submission</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f7eeff; min-height: 100vh; color: #2c1a40; }
+  .hero { background: linear-gradient(135deg, #6a1794 0%, #b8005e 100%); padding: 1.75rem 1rem; text-align: center; color: white; }
+  .hero h1 { font-size: 1.4rem; font-weight: 700; }
+  .hero .tagline { font-size: 12.5px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+
+  .wrap { max-width: 560px; margin: 2.5rem auto; padding: 0 1rem 3rem; }
+  .card { background: white; border-radius: 16px; padding: 1.75rem; border: 0.5px solid #e2c8f5; box-shadow: 0 2px 14px rgba(106,23,148,0.07); margin-bottom: 1.25rem; }
+  .card h2 { font-size: 17px; color: #6a1794; margin-bottom: 1.25rem; }
+  .field-row { margin-bottom: 1rem; }
+  label { display: block; font-size: 13px; font-weight: 500; color: #4a1b6e; margin-bottom: 5px; }
+  input { width: 100%; padding: 10px 12px; border: 1.5px solid #ddc4f0; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fdf8ff; outline: none; }
+  input:focus { border-color: #8c3ec0; background: white; }
+  .btn { width: 100%; padding: 11px; border: none; border-radius: 10px; background: linear-gradient(135deg, #6a1794, #b8005e); color: white; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn:hover { opacity: 0.92; }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-secondary { background: white; color: #6a1794; border: 1.5px solid #ddc4f0; }
+  .msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+  .msg.error { background: #fff5f9; border: 1px solid #f0a0c0; color: #8b0038; }
+  .msg.success { background: #f0fff7; border: 1px solid #6fcf97; color: #1a6b3a; }
+  .msg.info { background: #fdf0ff; border: 1px solid #e2c8f5; color: #6a1794; }
+
+  .stepper { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: 12px; position: relative; padding-bottom: 22px; }
+  .step:last-child { padding-bottom: 0; }
+  .step-dot {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; z-index: 1;
+  }
+  .step-line {
+    position: absolute; left: 13px; top: 26px; bottom: 0; width: 2px;
+  }
+  .step.done .step-dot { background: #1a6b3a; color: white; }
+  .step.done .step-line { background: #6fcf97; }
+  .step.active .step-dot { background: #6a1794; color: white; box-shadow: 0 0 0 4px rgba(106,23,148,0.15); }
+  .step.active .step-line { background: #e2c8f5; }
+  .step.pending .step-dot { background: #f0e0fa; color: #9b7ab0; border: 1.5px solid #ddc4f0; }
+  .step.pending .step-line { background: #e2c8f5; }
+  .step.rejected .step-dot { background: #fff0f5; color: #b8005e; border: 1.5px solid #f0a0c0; }
+  .step-body { flex: 1; padding-top: 2px; }
+  .step-title { font-size: 13.5px; font-weight: 600; color: #2c1a40; }
+  .step.pending .step-title { color: #9b7ab0; }
+  .step-sub { font-size: 11.5px; color: #9b7ab0; margin-top: 2px; }
+
+  .upload-box { border: 1.5px dashed #ddc4f0; border-radius: 12px; padding: 18px; text-align: center; background: #fdf8ff; }
+  .upload-box input[type="file"] { margin-top: 10px; }
+  .file-locked { background: #f0fff7; border: 1px solid #6fcf97; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #1a6b3a; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>IEEE WIE ILS 2026 -- Round 2 Submission</h1>
+  <div class="tagline">Track your progress and submit your Round 2 deck</div>
+</div>
+
+<div class="wrap">
+  <div class="card" id="loginCard">
+    <h2>Find Your Team</h2>
+    <div class="msg error" id="loginError"></div>
+    <div class="field-row">
+      <label for="teamName">Team Name</label>
+      <input type="text" id="teamName" placeholder="Exactly as used at registration">
+    </div>
+    <div class="field-row">
+      <label for="leaderEmail">Leader Email</label>
+      <input type="email" id="leaderEmail" placeholder="leader@example.com">
+    </div>
+    <div class="field-row">
+      <label for="leaderPhone">Leader Phone</label>
+      <input type="tel" id="leaderPhone" maxlength="10" inputmode="numeric" placeholder="10-digit number" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
+    </div>
+    <button class="btn" id="checkBtn" onclick="checkStatus()">Check Status</button>
+  </div>
+
+  <div class="card" id="statusCard" style="display:none;">
+    <h2 id="statusTeamName">Your Progress</h2>
+    <div class="stepper" id="stepperHost"></div>
+  </div>
+
+  <div class="card" id="uploadCard" style="display:none;">
+    <h2>Round 2 Deck Submission</h2>
+    <div class="msg error" id="uploadError"></div>
+    <div class="msg success" id="uploadSuccess"></div>
+    <div id="uploadArea"></div>
+  </div>
+
+  <div style="text-align:center;">
+    <button class="btn-secondary" style="width:auto; padding:8px 16px; border-radius:8px; font-size:12.5px; cursor:pointer;" onclick="resetForm()">Check a different team</button>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://gfoclvqlkylujopcvuht.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
+
+  let currentTeam = null; // { teamName, leaderEmail, leaderPhone }
+  let currentStatus = null;
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function checkStatus() {
+    const teamName = document.getElementById('teamName').value.trim();
+    const leaderEmail = document.getElementById('leaderEmail').value.trim();
+    const leaderPhone = document.getElementById('leaderPhone').value.trim();
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    if (!teamName || !leaderEmail || !leaderPhone) { errEl.textContent = 'Fill in all three fields.'; errEl.style.display = 'block'; return; }
+
+    document.getElementById('checkBtn').disabled = true;
+    document.getElementById('checkBtn').textContent = 'Checking...';
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/round2-status', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamName, leaderEmail, leaderPhone }),
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+
+      currentTeam = { teamName, leaderEmail, leaderPhone };
+      currentStatus = result;
+      renderStatus(result);
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    } finally {
+      document.getElementById('checkBtn').disabled = false;
+      document.getElementById('checkBtn').textContent = 'Check Status';
+    }
+  }
+
+  function stepClass(state) {
+    return 'step ' + state;
+  }
+
+  function renderStatus(s) {
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('statusCard').style.display = 'block';
+    document.getElementById('statusTeamName').textContent = s.teamName;
+
+    const steps = [];
+    steps.push({ title: 'Registered', sub: '', state: 'done' });
+    steps.push({
+      title: 'Round 1 Submitted',
+      sub: s.round1Submitted ? new Date(s.round1SubmittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Not submitted',
+      state: s.round1Submitted ? 'done' : 'pending',
+    });
+
+    let screeningState = 'pending';
+    let screeningSub = 'Not reviewed yet';
+    if (s.screeningReviewCount > 0) { screeningState = 'done'; screeningSub = s.screeningReviewCount + ' review(s) so far'; }
+    steps.push({ title: 'Screened', sub: screeningSub, state: s.round1Submitted ? screeningState : 'pending' });
+
+    let shortlistState = 'pending';
+    let shortlistSub = 'Awaiting decision';
+    if (s.screeningOutcome === 'shortlist') { shortlistState = 'done'; shortlistSub = 'Shortlisted for Round 2'; }
+    else if (s.screeningOutcome === 'reject') { shortlistState = 'rejected'; shortlistSub = 'Not shortlisted this round'; }
+    steps.push({ title: 'Shortlist Decision', sub: shortlistSub, state: shortlistState });
+
+    let r2State = 'pending';
+    let r2Sub = 'Not submitted yet';
+    if (s.round2Submitted) { r2State = 'done'; r2Sub = s.round2DocName + ' -- ' + new Date(s.round2SubmittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+    else if (shortlistState === 'done') { r2State = 'active'; r2Sub = 'Open -- upload your deck below'; }
+    steps.push({ title: 'Round 2 Submitted', sub: r2Sub, state: r2State });
+
+    document.getElementById('stepperHost').innerHTML = steps.map((st, i) => (
+      '<div class="' + stepClass(st.state) + '">' +
+        (i < steps.length - 1 ? '<div class="step-line"></div>' : '') +
+        '<div class="step-dot">' + (st.state === 'done' ? String.fromCharCode(10003) : (i + 1)) + '</div>' +
+        '<div class="step-body"><div class="step-title">' + escapeHtml(st.title) + '</div><div class="step-sub">' + escapeHtml(st.sub) + '</div></div>' +
+      '</div>'
+    )).join('');
+
+    renderUploadArea(s);
+  }
+
+  function renderUploadArea(s) {
+    const card = document.getElementById('uploadCard');
+    const area = document.getElementById('uploadArea');
+
+    if (s.round2Submitted) {
+      card.style.display = 'block';
+      area.innerHTML = '<div class="file-locked">Submitted: ' + escapeHtml(s.round2DocName) + '<br>Contact the organizers if you need to resubmit.</div>';
+      return;
+    }
+    if (s.screeningOutcome !== 'shortlist') {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = 'block';
+    area.innerHTML =
+      '<div class="upload-box">' +
+        '<div style="font-size:13px; color:#6a1794;">Upload your Round 2 deck (.ppt, .pptx, or .pdf -- max 20 MB)</div>' +
+        '<input type="file" id="deckFile" accept=".ppt,.pptx,.pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf">' +
+      '</div>' +
+      '<button class="btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Deck</button>' +
+      '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">Once submitted, this is locked -- double check your file before submitting.</div>';
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadDeck() {
+    const errEl = document.getElementById('uploadError');
+    const okEl = document.getElementById('uploadSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+
+    const input = document.getElementById('deckFile');
+    const file = input.files[0];
+    if (!file) { errEl.textContent = 'Choose a file first.'; errEl.style.display = 'block'; return; }
+    if (file.size > 20 * 1024 * 1024) { errEl.textContent = 'File must be under 20 MB.'; errEl.style.display = 'block'; return; }
+
+    try {
+      const fileBase64 = await fileToBase64(file);
+      const res = await fetch(SUPABASE_URL + '/functions/v1/submit-round2-doc', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...currentTeam, fileName: file.name, fileBase64 }),
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+
+      okEl.textContent = 'Deck submitted successfully.';
+      okEl.style.display = 'block';
+      await checkStatusSilently();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function checkStatusSilently() {
+    if (!currentTeam) return;
+    const res = await fetch(SUPABASE_URL + '/functions/v1/round2-status', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentTeam),
+    });
+    const result = await res.json().catch(() => null);
+    if (res.ok) { currentStatus = result; renderStatus(result); }
+  }
+
+  function resetForm() {
+    currentTeam = null; currentStatus = null;
+    document.getElementById('loginCard').style.display = 'block';
+    document.getElementById('statusCard').style.display = 'none';
+    document.getElementById('uploadCard').style.display = 'none';
+    document.getElementById('teamName').value = '';
+    document.getElementById('leaderEmail').value = '';
+    document.getElementById('leaderPhone').value = '';
+  }
+</script>
+</body>
+</html>

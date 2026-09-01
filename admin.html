@@ -58,6 +58,12 @@
   .stat-box .num { font-size: 22px; font-weight: 700; color: #6a1794; }
   .stat-box .lbl { font-size: 12px; color: #7c2ab0; margin-top: 2px; }
   .controls { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .toolbar-group { margin-bottom: 1rem; }
+  .toolbar-group .controls { margin-bottom: 0.5rem; }
+  .toolbar-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    color: #9b7ab0; margin-bottom: 6px;
+  }
   .controls input, .controls select {
     padding: 9px 12px; border: 1.5px solid #ddc4f0; border-radius: 8px;
     font-size: 13px; font-family: inherit; background: white; outline: none;
@@ -235,24 +241,43 @@
       <option value="none">Not Selected</option>
     </select>
     <span class="sel-count" id="selCount">0 selected</span>
-    <button class="btn" style="width:auto;" onclick="openBroadcast()">Broadcast Email</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openSelection()">Selection</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="remindPendingRound1()">Remind Pending Round 1</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openScores()">Round 1 Scores</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openJudgesModal()">Judges</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openScreening()">Screening</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openScreenersModal()">Screeners</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">Email Log</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">Analytics</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
-    <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
-    <div class="more-menu-wrap">
-      <button class="btn btn-secondary" style="width:auto;" onclick="toggleMoreMenu()">⋯ More</button>
-      <div id="moreMenu" class="more-menu">
-        <button onclick="closeMoreMenu(); openDuplicates();">Duplicate Entries</button>
+  </div>
+
+  <div class="toolbar-group">
+    <div class="toolbar-label">Communication</div>
+    <div class="controls">
+      <button class="btn" style="width:auto;" onclick="openBroadcast()">Broadcast Email</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="openSelection()">Selection</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="remindPendingRound1()">Remind Pending Round 1</button>
+    </div>
+  </div>
+
+  <div class="toolbar-group">
+    <div class="toolbar-label">Judging Pipeline</div>
+    <div class="controls">
+      <button class="btn btn-secondary" style="width:auto;" onclick="openScreening()">Screening</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="openScreenersModal()">Screeners</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="openScores()">Round 1 Scores</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="openJudgesModal()">Judges</button>
+    </div>
+  </div>
+
+  <div class="toolbar-group">
+    <div class="toolbar-label">Data &amp; Tools</div>
+    <div class="controls">
+      <button class="btn btn-secondary" style="width:auto;" onclick="openSentLog()">Email Log</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="openAnalytics()">Analytics</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="exportCsv()">Export CSV</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="loadData()">Refresh</button>
+      <div class="more-menu-wrap">
+        <button class="btn btn-secondary" style="width:auto;" onclick="toggleMoreMenu()">More</button>
+        <div id="moreMenu" class="more-menu">
+          <button onclick="closeMoreMenu(); openDuplicates();">Duplicate Entries</button>
+        </div>
       </div>
     </div>
   </div>
+
   <div class="table-wrap">
     <div id="tableHost"><div class="loading">Loading…</div></div>
   </div>
@@ -549,11 +574,24 @@ screener02,AnotherPass456"></textarea>
       <div class="row-actions" style="margin-bottom:6px;">
         <button class="btn btn-secondary btn-small" id="detailUnlockBtn" onclick="unlockRound1()">Unlock for Resubmission</button>
         <label class="btn btn-secondary btn-small" style="cursor:pointer; display:inline-flex; align-items:center;">
-           Upload on Behalf
+          Upload on Behalf
           <input type="file" accept="application/pdf,.pdf" id="detailUploadFile" style="display:none;" onchange="uploadRound1OnBehalf(this)">
         </label>
       </div>
       <div style="font-size:11.5px; color:#9b7ab0;">Upload on Behalf bypasses the submission window and lock — use for teams who couldn't submit themselves.</div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Round 2 Deck</h4>
+      <div id="detailRound2Status" style="font-size:13px; margin-bottom:10px;"></div>
+      <div class="row-actions" style="margin-bottom:6px;">
+        <button class="btn btn-secondary btn-small" id="detailUnlockRound2Btn" onclick="unlockRound2()">Unlock for Resubmission</button>
+        <label class="btn btn-secondary btn-small" style="cursor:pointer; display:inline-flex; align-items:center;">
+          Upload on Behalf
+          <input type="file" accept=".ppt,.pptx,.pdf" id="detailUploadRound2File" style="display:none;" onchange="uploadRound2OnBehalf(this)">
+        </label>
+      </div>
+      <div style="font-size:11.5px; color:#9b7ab0;">Only relevant for teams shortlisted from Round 1 screening. Upload on Behalf bypasses the window and lock.</div>
     </div>
 
     <div class="detail-section">
@@ -609,6 +647,7 @@ screener02,AnotherPass456"></textarea>
   let sortKey = 'created_at';
   let sortDir = 'desc';
   let detailRowId = null;
+  let screeningOutcomeById = {};
 
   const ROUND1_DEADLINE = new Date('2026-08-25T23:59:59+05:30');
 
@@ -627,7 +666,26 @@ screener02,AnotherPass456"></textarea>
       return '<span class="pill pill-submitted">Submitted' + (submittedLate ? ' (late)' : '') + '</span>';
     }
     if (status === 'late') return '<span class="pill pill-late">Late — not submitted</span>';
-    return '<span class="pill pill-pending">⏳ Pending</span>';
+    return '<span class="pill pill-pending">Pending</span>';
+  }
+
+  // status: 'submitted' | 'not_shortlisted' | 'awaiting_screening' | 'open' | null
+  function round2StatusOf(r) {
+    if (r.round !== 'Round 1' || r.track === 'PENDING RESUBMISSION') return null;
+    if (r.round2_doc_url) return 'submitted';
+    const outcome = screeningOutcomeById[r.id];
+    if (outcome === 'reject') return 'not_shortlisted';
+    if (outcome === 'shortlist') return 'open';
+    return 'awaiting_screening';
+  }
+
+  function round2Pill(r) {
+    const status = round2StatusOf(r);
+    if (status === null) return '<span class="empty-cell">—</span>';
+    if (status === 'submitted') return '<span class="pill pill-submitted">Submitted</span>';
+    if (status === 'not_shortlisted') return '<span class="pill pill-reject">Not shortlisted</span>';
+    if (status === 'open') return '<span class="pill pill-pending">Open, not submitted</span>';
+    return '<span class="empty-cell">Awaiting screening</span>';
   }
 
   function selectionPill(r) {
@@ -666,12 +724,17 @@ screener02,AnotherPass456"></textarea>
 
   async function loadData() {
     document.getElementById('tableHost').innerHTML = '<div class="loading">Loading…</div>';
-    const { data, error } = await sb.from('registrations').select('*').order('created_at', { ascending: false });
+    const [{ data, error }, { data: outcomes }] = await Promise.all([
+      sb.from('registrations').select('*').order('created_at', { ascending: false }),
+      sb.from('screening_outcomes').select('registration_id, outcome'),
+    ]);
     if (error) {
       document.getElementById('tableHost').innerHTML = '<div class="empty-state">Failed to load: ' + error.message + '</div>';
       return;
     }
     allRows = data || [];
+    screeningOutcomeById = {};
+    (outcomes || []).forEach(o => { screeningOutcomeById[o.registration_id] = o.outcome; });
     renderStats();
     renderTable();
   }
@@ -689,6 +752,11 @@ screener02,AnotherPass456"></textarea>
     const round1Submitted = round1Eligible.filter(r =>round1StatusOf(r) === 'submitted');
     if (round1Eligible.length >0) {
       html += '<div class="stat-box"><div class="num">' + round1Submitted.length + ' / ' + round1Eligible.length + '</div><div class="lbl">Round 1 Docs Submitted</div></div>';
+    }
+    const shortlistedCount = Object.values(screeningOutcomeById).filter(o => o === 'shortlist').length;
+    const round2Submitted = allRows.filter(r => r.round2_doc_url).length;
+    if (shortlistedCount > 0) {
+      html += '<div class="stat-box"><div class="num">' + round2Submitted + ' / ' + shortlistedCount + '</div><div class="lbl">Round 2 Decks Submitted</div></div>';
     }
     const round2Count = allRows.filter(r =>r.round2_selected).length;
     const round3Count = allRows.filter(r =>r.round3_selected).length;
@@ -759,7 +827,7 @@ screener02,AnotherPass456"></textarea>
       '<th class="sortable" onclick="toggleSort(\'college\')">College' + sortArrow('college') + '</th>' +
       '<th>Track</th><th>Problem Statement</th>' +
       '<th>Leader Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Year</th><th>Dept</th><th>IEEE #</th>' +
-      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Round 1 Doc</th><th>Selection</th><th>Actions</th>' +
+      '<th>Members</th><th>ILS Reg ID</th><th>Payment</th><th>Supporting Doc</th><th>Round 1 Doc</th><th>Round 2 Deck</th><th>Selection</th><th>Actions</th>' +
       '</tr></thead><tbody>';
     rows.forEach(r =>{
       const members = Array.isArray(r.members) ? r.members : [];
@@ -787,6 +855,7 @@ screener02,AnotherPass456"></textarea>
         '<td>' + fileLink(r.payment_screenshot_url, 'View') + '</td>' +
         '<td>' + fileLink(r.supporting_doc_url, r.supporting_doc_name || 'View') + '</td>' +
         '<td>' + round1Pill(r) + '</td>' +
+        '<td>' + round2Pill(r) + '</td>' +
         '<td>' + selectionPill(r) + '</td>' +
         '<td><div class="row-actions">' +
           '<button class="btn-icon" title="View details" onclick="openDetail(\'' + r.id + '\')">' +
@@ -943,7 +1012,7 @@ screener02,AnotherPass456"></textarea>
     const cols = ['created_at','round','entry_type','team_name','college','track','problem_statement',
       'leader_name','leader_gender','leader_email','leader_phone','leader_year','leader_dept','leader_ieee',
       'ils_reg_id','payment_screenshot_url','supporting_doc_url',
-      'round1_doc_url','round1_submitted_at','admin_notes',
+      'round1_doc_url','round1_submitted_at','round2_doc_url','round2_submitted_at','admin_notes',
       'round2_selected','round3_selected'];
     let csv = cols.join(',') + '\n';
     filteredRows().forEach(r =>{
@@ -1106,6 +1175,15 @@ screener02,AnotherPass456"></textarea>
     }
     document.getElementById('detailRound1Status').innerHTML = statusHtml;
     document.getElementById('detailUnlockBtn').style.display = r.round1_locked ? 'inline-flex' : 'none';
+
+    const r2status = round2StatusOf(r);
+    let r2statusHtml = round2Pill(r);
+    if (r2status === 'submitted') {
+      r2statusHtml += '<div style="margin-top:8px;">' + fileLink(r.round2_doc_url, r.round2_doc_name || 'View submitted deck') + '</div>';
+      r2statusHtml += '<div style="color:#9b7ab0; font-size:12px; margin-top:4px;">Submitted ' + escapeHtml(new Date(r.round2_submitted_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) + '</div>';
+    }
+    document.getElementById('detailRound2Status').innerHTML = r2statusHtml;
+    document.getElementById('detailUnlockRound2Btn').style.display = r.round2_locked ? 'inline-flex' : 'none';
     document.getElementById('detailNotes').value = r.admin_notes || '';
 
     fillEditForm(r);
@@ -1290,6 +1368,62 @@ screener02,AnotherPass456"></textarea>
       if (row) {
         row.round1_doc_url = url; row.round1_doc_name = file.name; row.round1_doc_hash = hash;
         row.round1_submitted_at = new Date().toISOString(); row.round1_locked = true;
+      }
+      okEl.textContent = 'Uploaded on behalf of the team.';
+      okEl.style.display = 'block';
+      renderTable(); renderStats();
+      openDetail(detailRowId);
+    } catch (err) {
+      errEl.textContent = 'Upload failed: ' + err.message;
+      errEl.style.display = 'block';
+    } finally {
+      input.value = '';
+    }
+  }
+
+  async function unlockRound2() {
+    if (!detailRowId) return;
+    if (!confirm('Unlock this team for Round 2 resubmission? They will be able to upload a new deck again.')) return;
+    const errEl = document.getElementById('detailError');
+    errEl.style.display = 'none';
+    const { error } = await sb.from('registrations').update({ round2_locked: false }).eq('id', detailRowId);
+    if (error) { errEl.textContent = 'Failed to unlock: ' + error.message; errEl.style.display = 'block'; return; }
+    const row = allRows.find(r =>r.id === detailRowId);
+    if (row) row.round2_locked = false;
+    renderTable(); renderStats();
+    openDetail(detailRowId);
+  }
+
+  async function uploadRound2OnBehalf(input) {
+    const file = input.files[0];
+    if (!file || !detailRowId) return;
+    const errEl = document.getElementById('detailError');
+    const okEl = document.getElementById('detailSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    const okExt = /\.(ppt|pptx|pdf)$/i.test(file.name);
+    if (!okExt) {
+      errEl.textContent = 'Only .ppt, .pptx, or .pdf files are accepted.'; errEl.style.display = 'block'; input.value = ''; return;
+    }
+    if (file.size >20 * 1024 * 1024) {
+      errEl.textContent = 'File must be under 20 MB.'; errEl.style.display = 'block'; input.value = ''; return;
+    }
+    try {
+      const buf = await file.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', buf);
+      const hash = Array.from(new Uint8Array(digest)).map(b =>b.toString(16).padStart(2, '0')).join('');
+      const url = await uploadToSupabaseStorageAdmin(new Uint8Array(buf), file.name, file.type || 'application/octet-stream', 'round2-submissions');
+      const { error } = await sb.from('registrations').update({
+        round2_doc_url: url,
+        round2_doc_name: file.name,
+        round2_doc_hash: hash,
+        round2_submitted_at: new Date().toISOString(),
+        round2_locked: true
+      }).eq('id', detailRowId);
+      if (error) throw error;
+      const row = allRows.find(r =>r.id === detailRowId);
+      if (row) {
+        row.round2_doc_url = url; row.round2_doc_name = file.name; row.round2_doc_hash = hash;
+        row.round2_submitted_at = new Date().toISOString(); row.round2_locked = true;
       }
       okEl.textContent = 'Uploaded on behalf of the team.';
       okEl.style.display = 'block';

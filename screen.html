@@ -279,7 +279,7 @@
     document.getElementById('modalTrack').textContent = sub.track || '';
     document.getElementById('modalPdf').innerHTML = sub.round1_doc_url
       ? '<iframe src="' + sub.round1_doc_url + '" title="Submitted PDF"></iframe>' +
-        '<div class="pdf-fallback">Not loading? <a class="filelink" href="' + sub.round1_doc_url + '" target="_blank" rel="noopener">Open in a new tab ↗</a></div>'
+        '<div class="pdf-fallback">Not loading? <a class="filelink" href="' + sub.round1_doc_url + '" target="_blank" rel="noopener">Open in a new tab</a></div>'
       : '<span style="color:#c0a8d8;">No PDF on file</span>';
 
     const existing = myDecisions[id];
