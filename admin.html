@@ -514,15 +514,28 @@ screener02,AnotherPass456"></textarea>
     <div class="detail-grid" id="detailGrid"></div>
 
     <div class="detail-section">
-      <h4>Contact Info
-        <button class="btn-icon" style="width:auto; padding:4px 10px; font-size:11px; vertical-align:middle;" onclick="toggleEditContact()" id="editContactToggleBtn">Fix a typo</button>
+      <h4>Team Details
+        <button class="btn-icon" style="width:auto; padding:4px 10px; font-size:11px; vertical-align:middle;" onclick="toggleEditContact()" id="editContactToggleBtn">Edit Details</button>
       </h4>
       <div id="editContactForm" style="display:none;">
         <div class="field-row"><label for="editTeamName">Team Name</label><input type="text" id="editTeamName"></div>
         <div class="field-row"><label for="editCollege">College</label><input type="text" id="editCollege"></div>
+        <div class="field-row"><label for="editTrack">Track</label><input type="text" id="editTrack"></div>
+        <div class="field-row"><label for="editProblemStatement">Problem Statement</label><textarea id="editProblemStatement" style="min-height:80px;"></textarea></div>
         <div class="field-row"><label for="editLeaderName">Leader Name</label><input type="text" id="editLeaderName"></div>
+        <div class="field-row"><label for="editLeaderGender">Leader Gender</label><input type="text" id="editLeaderGender"></div>
         <div class="field-row"><label for="editLeaderEmail">Leader Email</label><input type="email" id="editLeaderEmail"></div>
         <div class="field-row"><label for="editLeaderPhone">Leader Phone</label><input type="tel" id="editLeaderPhone" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"></div>
+        <div class="field-row"><label for="editLeaderYear">Year</label><input type="text" id="editLeaderYear"></div>
+        <div class="field-row"><label for="editLeaderDept">Department</label><input type="text" id="editLeaderDept"></div>
+        <div class="field-row"><label for="editLeaderIeee">IEEE #</label><input type="text" id="editLeaderIeee"></div>
+
+        <div class="field-row">
+          <label>Team Members</label>
+          <div id="editMembersList"></div>
+          <button class="btn btn-secondary btn-small" style="margin-top:6px;" onclick="addMemberRow()">Add Member</button>
+        </div>
+
         <div class="modal-actions" style="margin-top:6px;">
           <button class="btn btn-secondary btn-small" onclick="toggleEditContact()">Cancel</button>
           <button class="btn btn-small" onclick="saveContactInfo()">Save Changes</button>
@@ -1095,13 +1108,9 @@ screener02,AnotherPass456"></textarea>
     document.getElementById('detailUnlockBtn').style.display = r.round1_locked ? 'inline-flex' : 'none';
     document.getElementById('detailNotes').value = r.admin_notes || '';
 
-    document.getElementById('editTeamName').value = r.team_name || '';
-    document.getElementById('editCollege').value = r.college || '';
-    document.getElementById('editLeaderName').value = r.leader_name || '';
-    document.getElementById('editLeaderEmail').value = r.leader_email || '';
-    document.getElementById('editLeaderPhone').value = r.leader_phone || '';
+    fillEditForm(r);
     document.getElementById('editContactForm').style.display = 'none';
-    document.getElementById('editContactToggleBtn').textContent = 'Fix a typo';
+    document.getElementById('editContactToggleBtn').textContent = 'Edit Details';
 
     document.getElementById('detailModal').classList.add('open');
   }
@@ -1125,22 +1134,65 @@ screener02,AnotherPass456"></textarea>
     okEl.style.display = 'block';
   }
 
+  function fillEditForm(r) {
+    document.getElementById('editTeamName').value = r.team_name || '';
+    document.getElementById('editCollege').value = r.college || '';
+    document.getElementById('editTrack').value = r.track || '';
+    document.getElementById('editProblemStatement').value = r.problem_statement || '';
+    document.getElementById('editLeaderName').value = r.leader_name || '';
+    document.getElementById('editLeaderGender').value = r.leader_gender || '';
+    document.getElementById('editLeaderEmail').value = r.leader_email || '';
+    document.getElementById('editLeaderPhone').value = r.leader_phone || '';
+    document.getElementById('editLeaderYear').value = r.leader_year || '';
+    document.getElementById('editLeaderDept').value = r.leader_dept || '';
+    document.getElementById('editLeaderIeee').value = r.leader_ieee || '';
+    renderMemberRows(Array.isArray(r.members) ? r.members : []);
+  }
+
+  function renderMemberRows(members) {
+    const host = document.getElementById('editMembersList');
+    if (!members.length) { host.innerHTML = ''; return; }
+    host.innerHTML = members.map((m, i) => (
+      '<div class="member-edit-row" style="display:flex; gap:6px; margin-bottom:6px; align-items:center;">' +
+        '<input type="text" class="mName" placeholder="Name" value="' + escapeHtml(m.name || '') + '" style="flex:1.2;">' +
+        '<input type="text" class="mGender" placeholder="Gender" value="' + escapeHtml(m.gender || '') + '" style="flex:0.8;">' +
+        '<input type="email" class="mEmail" placeholder="Email" value="' + escapeHtml(m.email || '') + '" style="flex:1.5;">' +
+        '<button class="btn-icon-danger" type="button" onclick="this.closest(\'.member-edit-row\').remove()" title="Remove member">&times;</button>' +
+      '</div>'
+    )).join('');
+  }
+
+  function addMemberRow() {
+    const host = document.getElementById('editMembersList');
+    const row = document.createElement('div');
+    row.className = 'member-edit-row';
+    row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px; align-items:center;';
+    row.innerHTML =
+      '<input type="text" class="mName" placeholder="Name" style="flex:1.2;">' +
+      '<input type="text" class="mGender" placeholder="Gender" style="flex:0.8;">' +
+      '<input type="email" class="mEmail" placeholder="Email" style="flex:1.5;">' +
+      '<button class="btn-icon-danger" type="button" onclick="this.closest(\'.member-edit-row\').remove()" title="Remove member">&times;</button>';
+    host.appendChild(row);
+  }
+
+  function collectMemberRows() {
+    return Array.from(document.querySelectorAll('#editMembersList .member-edit-row')).map(row => ({
+      name: row.querySelector('.mName').value.trim(),
+      gender: row.querySelector('.mGender').value.trim(),
+      email: row.querySelector('.mEmail').value.trim(),
+    })).filter(m => m.name || m.gender || m.email);
+  }
+
   function toggleEditContact() {
     const form = document.getElementById('editContactForm');
     const btn = document.getElementById('editContactToggleBtn');
     const opening = form.style.display === 'none';
     form.style.display = opening ? 'block' : 'none';
-    btn.textContent = opening ? 'Hide' : 'Fix a typo';
+    btn.textContent = opening ? 'Hide' : 'Edit Details';
     if (!opening) {
       // Cancel: reset fields back to the saved values.
       const row = allRows.find(r =>r.id === detailRowId);
-      if (row) {
-        document.getElementById('editTeamName').value = row.team_name || '';
-        document.getElementById('editCollege').value = row.college || '';
-        document.getElementById('editLeaderName').value = row.leader_name || '';
-        document.getElementById('editLeaderEmail').value = row.leader_email || '';
-        document.getElementById('editLeaderPhone').value = row.leader_phone || '';
-      }
+      if (row) fillEditForm(row);
     }
   }
 
@@ -1152,16 +1204,28 @@ screener02,AnotherPass456"></textarea>
 
     const teamName = document.getElementById('editTeamName').value.trim();
     const college = document.getElementById('editCollege').value.trim();
+    const track = document.getElementById('editTrack').value.trim();
+    const problemStatement = document.getElementById('editProblemStatement').value.trim();
     const leaderName = document.getElementById('editLeaderName').value.trim();
+    const leaderGender = document.getElementById('editLeaderGender').value.trim();
     const leaderEmail = document.getElementById('editLeaderEmail').value.trim();
     const leaderPhone = document.getElementById('editLeaderPhone').value.trim();
+    const leaderYear = document.getElementById('editLeaderYear').value.trim();
+    const leaderDept = document.getElementById('editLeaderDept').value.trim();
+    const leaderIeee = document.getElementById('editLeaderIeee').value.trim();
+    const members = collectMemberRows();
 
     if (!teamName || !leaderName) { errEl.textContent = 'Team name and leader name cannot be empty.'; errEl.style.display = 'block'; return; }
     if (!isValidEmail(leaderEmail)) { errEl.textContent = 'Enter a valid leader email.'; errEl.style.display = 'block'; return; }
     if (!/^[0-9]{10}$/.test(leaderPhone)) { errEl.textContent = 'Leader phone must be exactly 10 digits.'; errEl.style.display = 'block'; return; }
+    for (const m of members) {
+      if (m.email && !isValidEmail(m.email)) { errEl.textContent = 'One of the team member emails is not valid.'; errEl.style.display = 'block'; return; }
+    }
 
     const { error } = await sb.from('registrations').update({
-      team_name: teamName, college, leader_name: leaderName, leader_email: leaderEmail, leader_phone: leaderPhone
+      team_name: teamName, college, track, problem_statement: problemStatement,
+      leader_name: leaderName, leader_gender: leaderGender, leader_email: leaderEmail, leader_phone: leaderPhone,
+      leader_year: leaderYear, leader_dept: leaderDept, leader_ieee: leaderIeee, members
     }).eq('id', detailRowId);
 
     if (error) {
@@ -1173,11 +1237,14 @@ screener02,AnotherPass456"></textarea>
     }
 
     const row = allRows.find(r =>r.id === detailRowId);
-    if (row) { row.team_name = teamName; row.college = college; row.leader_name = leaderName; row.leader_email = leaderEmail; row.leader_phone = leaderPhone; }
-    okEl.textContent = 'Contact info updated.';
-    okEl.style.display = 'block';
-    toggleEditContact();
-    document.getElementById('detailTitle').textContent = teamName || '(no team name)';
+    if (row) {
+      row.team_name = teamName; row.college = college; row.track = track; row.problem_statement = problemStatement;
+      row.leader_name = leaderName; row.leader_gender = leaderGender; row.leader_email = leaderEmail; row.leader_phone = leaderPhone;
+      row.leader_year = leaderYear; row.leader_dept = leaderDept; row.leader_ieee = leaderIeee; row.members = members;
+    }
+    openDetail(detailRowId);
+    document.getElementById('detailSuccess').textContent = 'Team details updated.';
+    document.getElementById('detailSuccess').style.display = 'block';
     renderTable();
   }
 
