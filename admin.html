@@ -2124,6 +2124,20 @@ screener02,AnotherPass456"></textarea>
     const { error } = await sb.from('screening_outcomes')
       .upsert({ registration_id: regId, outcome, decided_by: uid, decided_at: new Date().toISOString() }, { onConflict: 'registration_id' });
     if (error) { alert('Failed to save outcome: ' + error.message); return; }
+
+    // You've made the final call yourself -- clear any second-reviewer
+    // assignment on this team that hasn't been used yet, so nobody wastes
+    // time reviewing something already decided.
+    try {
+      await fetch(SUPABASE_URL + '/functions/v1/clear-screening-assignment', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + sessionData?.session?.access_token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: regId })
+      });
+    } catch (err) {
+      console.error('Failed to clear pending assignment:', err.message);
+    }
+
     loadScreeningOverview();
   }
 
