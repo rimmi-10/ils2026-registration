@@ -476,9 +476,17 @@ screener02,AnotherPass456"></textarea>
       <button class="btn" onclick="runScreeningAllocation()">Step 1: Generate / Top-up Screener Assignments</button>
       <button class="btn btn-secondary" onclick="loadScreeningOverview()">Refresh</button>
     </div>
-    <div class="modal-actions" style="margin-bottom:14px;">
+    <div class="modal-actions" style="margin-bottom:8px;">
       <button class="btn btn-secondary" onclick="runJudgeAllocation()">Step 2: Generate Judge Assignments (shortlisted teams only)</button>
     </div>
+    <div class="modal-actions" style="margin-bottom:8px; align-items:center; gap:8px;">
+      <label style="font-size:12px; color:#7c2ab0; white-space:nowrap;">Top N per track:</label>
+      <input type="number" id="round2TopNInput" value="20" min="1" style="width:60px; padding:6px 8px; border:1.5px solid #ddc4f0; border-radius:8px; font-size:13px;">
+      <button class="btn btn-secondary" onclick="runFinalizeRound2()">Step 3: Finalize Round 2 Selection (from judge scores)</button>
+    </div>
+    <p style="font-size:11px; color:#9b7ab0; margin-bottom:14px;">
+      Selects the top N teams per track by judge average score. Safe to re-run any time scores change -- it always recomputes from scratch. Results are NOT shown to teams until the results reveal date set in the Round 2 portal, so re-running this early never gives any team a head start.
+    </p>
     <div id="screeningStats" style="margin-bottom:14px;"></div>
     <div id="screeningList"></div>
     <div class="modal-actions">
@@ -590,16 +598,18 @@ screener02,AnotherPass456"></textarea>
     </div>
 
     <div class="detail-section">
-      <h4>Round 2 Deck</h4>
+      <h4>Round 2 Submission</h4>
       <div id="detailRound2Status" style="font-size:13px; margin-bottom:10px;"></div>
+      <div class="field-row"><label for="detailRound2VideoInput">Prototype Video Link</label><input type="url" id="detailRound2VideoInput" placeholder="https://youtube.com/..."></div>
       <div class="row-actions" style="margin-bottom:6px;">
+        <button class="btn btn-secondary btn-small" onclick="saveRound2VideoUrl()">Save Video Link</button>
         <button class="btn btn-secondary btn-small" id="detailUnlockRound2Btn" onclick="unlockRound2()">Unlock for Resubmission</button>
         <label class="btn btn-secondary btn-small" style="cursor:pointer; display:inline-flex; align-items:center;">
-          Upload on Behalf
+          Upload Deck on Behalf
           <input type="file" accept=".ppt,.pptx,.pdf" id="detailUploadRound2File" style="display:none;" onchange="uploadRound2OnBehalf(this)">
         </label>
       </div>
-      <div style="font-size:11.5px; color:#9b7ab0;">Only relevant for teams shortlisted from Round 1 screening. Upload on Behalf bypasses the window and lock.</div>
+      <div style="font-size:11.5px; color:#9b7ab0;">Only relevant once a team is selected for Round 2 (real selection, from judge scores). Upload on Behalf bypasses the window and lock.</div>
     </div>
 
     <div class="detail-section">
@@ -677,23 +687,23 @@ screener02,AnotherPass456"></textarea>
     return '<span class="pill pill-pending">Pending</span>';
   }
 
-  // status: 'submitted' | 'not_shortlisted' | 'awaiting_screening' | 'open' | null
+  // status: 'submitted' | 'not_selected' | 'open' | null
+  // NOTE: gated on round2_selected (real Round 2 selection, from judge scores
+  // via Finalize Round 2 Selection), NOT the screening outcome -- screening
+  // only decides who goes to jury, not who advances to Round 2.
   function round2StatusOf(r) {
     if (r.round !== 'Round 1' || r.track === 'PENDING RESUBMISSION') return null;
     if (r.round2_doc_url) return 'submitted';
-    const outcome = screeningOutcomeById[r.id];
-    if (outcome === 'reject') return 'not_shortlisted';
-    if (outcome === 'shortlist') return 'open';
-    return 'awaiting_screening';
+    if (r.round2_selected) return 'open';
+    return 'not_selected';
   }
 
   function round2Pill(r) {
     const status = round2StatusOf(r);
     if (status === null) return '<span class="empty-cell">—</span>';
     if (status === 'submitted') return '<span class="pill pill-submitted">Submitted</span>';
-    if (status === 'not_shortlisted') return '<span class="pill pill-reject">Not shortlisted</span>';
-    if (status === 'open') return '<span class="pill pill-pending">Open, not submitted</span>';
-    return '<span class="empty-cell">Awaiting screening</span>';
+    if (status === 'open') return '<span class="pill pill-pending">Selected, not submitted</span>';
+    return '<span class="empty-cell">Not selected</span>';
   }
 
   function selectionPill(r) {
@@ -761,10 +771,10 @@ screener02,AnotherPass456"></textarea>
     if (round1Eligible.length >0) {
       html += '<div class="stat-box"><div class="num">' + round1Submitted.length + ' / ' + round1Eligible.length + '</div><div class="lbl">Round 1 Docs Submitted</div></div>';
     }
-    const shortlistedCount = Object.values(screeningOutcomeById).filter(o => o === 'shortlist').length;
+    const round2SelectedCount = allRows.filter(r => r.round2_selected).length;
     const round2Submitted = allRows.filter(r => r.round2_doc_url).length;
-    if (shortlistedCount > 0) {
-      html += '<div class="stat-box"><div class="num">' + round2Submitted + ' / ' + shortlistedCount + '</div><div class="lbl">Round 2 Decks Submitted</div></div>';
+    if (round2SelectedCount > 0) {
+      html += '<div class="stat-box"><div class="num">' + round2Submitted + ' / ' + round2SelectedCount + '</div><div class="lbl">Round 2 Submissions</div></div>';
     }
     const round2Count = allRows.filter(r =>r.round2_selected).length;
     const round3Count = allRows.filter(r =>r.round3_selected).length;
@@ -1191,6 +1201,7 @@ screener02,AnotherPass456"></textarea>
       r2statusHtml += '<div style="color:#9b7ab0; font-size:12px; margin-top:4px;">Submitted ' + escapeHtml(new Date(r.round2_submitted_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})) + '</div>';
     }
     document.getElementById('detailRound2Status').innerHTML = r2statusHtml;
+    document.getElementById('detailRound2VideoInput').value = r.round2_video_url || '';
     document.getElementById('detailUnlockRound2Btn').style.display = r.round2_locked ? 'inline-flex' : 'none';
     document.getElementById('detailNotes').value = r.admin_notes || '';
 
@@ -1387,6 +1398,21 @@ screener02,AnotherPass456"></textarea>
     } finally {
       input.value = '';
     }
+  }
+
+  async function saveRound2VideoUrl() {
+    if (!detailRowId) return;
+    const errEl = document.getElementById('detailError');
+    const okEl = document.getElementById('detailSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    const url = document.getElementById('detailRound2VideoInput').value.trim();
+    if (url) { try { new URL(url); } catch { errEl.textContent = 'Enter a valid link (starting with http:// or https://) or leave it blank.'; errEl.style.display = 'block'; return; } }
+    const { error } = await sb.from('registrations').update({ round2_video_url: url || null }).eq('id', detailRowId);
+    if (error) { errEl.textContent = 'Failed to save: ' + error.message; errEl.style.display = 'block'; return; }
+    const row = allRows.find(r =>r.id === detailRowId);
+    if (row) row.round2_video_url = url || null;
+    okEl.textContent = 'Video link saved.';
+    okEl.style.display = 'block';
   }
 
   async function unlockRound2() {
@@ -2059,6 +2085,33 @@ screener02,AnotherPass456"></textarea>
       okEl.textContent = result.newAssignments + ' new judge assignment(s) across ' + result.totalShortlistedTeams + ' shortlisted team(s).' +
         (result.shortfallTeams >0 ? '  ' + result.shortfallTeams + ' team(s) couldn\'t get all 3 judges — add more judge accounts or raise the cap.' : '');
       okEl.style.display = 'block';
+    } catch (err) {
+      errEl.textContent = 'Failed: ' + err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function runFinalizeRound2() {
+    const errEl = document.getElementById('screeningError');
+    const okEl = document.getElementById('screeningSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    const topN = parseInt(document.getElementById('round2TopNInput').value, 10) || 20;
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(SUPABASE_URL + '/functions/v1/finalize-round2-selection', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topN })
+      });
+      const result = await res.json().catch(() =>null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+      const trackLines = Object.entries(result.perTrackSummary || {}).map(([t, n]) => t + ': ' + n).join(', ');
+      okEl.innerHTML = result.totalSelected + ' team(s) selected for Round 2 across ' + Object.keys(result.perTrackSummary || {}).length + ' track(s) (' + trackLines + '). ' +
+        result.newlySelected + ' newly selected, ' + result.newlyDeselected + ' newly deselected this run.' +
+        '<br><span style="color:#9b7ab0;">Not visible to teams until the results reveal date.</span>';
+      okEl.style.display = 'block';
+      loadData();
     } catch (err) {
       errEl.textContent = 'Failed: ' + err.message;
       errEl.style.display = 'block';

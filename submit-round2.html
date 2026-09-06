@@ -62,7 +62,7 @@
 
 <div class="hero">
   <h1>IEEE WIE ILS 2026 -- Round 2 Submission</h1>
-  <div class="tagline">Track your progress and submit your Round 2 deck</div>
+  <div class="tagline">Track your progress and submit your Round 2 deck and prototype video</div>
 </div>
 
 <div class="wrap">
@@ -165,16 +165,19 @@
     if (s.screeningReviewCount > 0) { screeningState = 'done'; screeningSub = s.screeningReviewCount + ' review(s) so far'; }
     steps.push({ title: 'Screened', sub: screeningSub, state: s.round1Submitted ? screeningState : 'pending' });
 
-    let shortlistState = 'pending';
-    let shortlistSub = 'Awaiting decision';
-    if (s.screeningOutcome === 'shortlist') { shortlistState = 'done'; shortlistSub = 'Shortlisted for Round 2'; }
-    else if (s.screeningOutcome === 'reject') { shortlistState = 'rejected'; shortlistSub = 'Not shortlisted this round'; }
-    steps.push({ title: 'Shortlist Decision', sub: shortlistSub, state: shortlistState });
+    const revealDateStr = new Date(s.resultsRevealDate).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' });
+    let resultState = 'pending';
+    let resultSub = 'Results will be announced on ' + revealDateStr;
+    if (s.resultsRevealed) {
+      if (s.selectedForRound2) { resultState = 'done'; resultSub = 'Selected for Round 2'; }
+      else { resultState = 'rejected'; resultSub = 'Not selected for Round 2'; }
+    }
+    steps.push({ title: 'Round 2 Selection', sub: resultSub, state: resultState });
 
     let r2State = 'pending';
     let r2Sub = 'Not submitted yet';
-    if (s.round2Submitted) { r2State = 'done'; r2Sub = s.round2DocName + ' -- ' + new Date(s.round2SubmittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }); }
-    else if (shortlistState === 'done') { r2State = 'active'; r2Sub = 'Open -- upload your deck below'; }
+    if (s.round2Submitted) { r2State = 'done'; r2Sub = 'Deck: ' + s.round2DocName + ' -- ' + new Date(s.round2SubmittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+    else if (resultState === 'done') { r2State = 'active'; r2Sub = 'Open -- submit your deck and video below'; }
     steps.push({ title: 'Round 2 Submitted', sub: r2Sub, state: r2State });
 
     document.getElementById('stepperHost').innerHTML = steps.map((st, i) => (
@@ -194,21 +197,32 @@
 
     if (s.round2Submitted) {
       card.style.display = 'block';
-      area.innerHTML = '<div class="file-locked">Submitted: ' + escapeHtml(s.round2DocName) + '<br>Contact the organizers if you need to resubmit.</div>';
+      area.innerHTML = '<div class="file-locked">Deck: ' + escapeHtml(s.round2DocName) +
+        (s.round2VideoUrl ? '<br>Video: <a href="' + escapeHtml(s.round2VideoUrl) + '" target="_blank" rel="noopener">' + escapeHtml(s.round2VideoUrl) + '</a>' : '') +
+        '<br>Contact the organizers if you need to resubmit.</div>';
       return;
     }
-    if (s.screeningOutcome !== 'shortlist') {
+    if (!s.resultsRevealed || !s.selectedForRound2) {
       card.style.display = 'none';
       return;
     }
     card.style.display = 'block';
     area.innerHTML =
+      '<p style="font-size:13px; color:#2c1a40; line-height:1.6; margin-bottom:14px;">You have been selected for Round 2. You need to submit <b>both</b> of the following:</p>' +
+      '<ul style="font-size:13px; color:#2c1a40; line-height:1.8; margin:0 0 14px 18px;">' +
+      '<li>A PPT of your solution (.ppt, .pptx, or .pdf -- max 20 MB)</li>' +
+      '<li>A link to a video recording of your working prototype (upload to YouTube/Google Drive and paste the link -- do not upload the video file itself here)</li>' +
+      '</ul>' +
       '<div class="upload-box">' +
-        '<div style="font-size:13px; color:#6a1794;">Upload your Round 2 deck (.ppt, .pptx, or .pdf -- max 20 MB)</div>' +
+        '<div style="font-size:13px; color:#6a1794;">PPT / Deck</div>' +
         '<input type="file" id="deckFile" accept=".ppt,.pptx,.pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf">' +
       '</div>' +
-      '<button class="btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Deck</button>' +
-      '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">Once submitted, this is locked -- double check your file before submitting.</div>';
+      '<div class="field-row" style="margin-top:14px;">' +
+        '<label for="videoUrl">Prototype Video Link</label>' +
+        '<input type="url" id="videoUrl" placeholder="https://youtube.com/... or https://drive.google.com/...">' +
+      '</div>' +
+      '<button class="btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Round 2</button>' +
+      '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">Once submitted, this is locked -- double check your file and link before submitting.</div>';
   }
 
   function fileToBase64(file) {
@@ -227,20 +241,23 @@
 
     const input = document.getElementById('deckFile');
     const file = input.files[0];
+    const videoUrl = document.getElementById('videoUrl').value.trim();
     if (!file) { errEl.textContent = 'Choose a file first.'; errEl.style.display = 'block'; return; }
     if (file.size > 20 * 1024 * 1024) { errEl.textContent = 'File must be under 20 MB.'; errEl.style.display = 'block'; return; }
+    if (!videoUrl) { errEl.textContent = 'Paste your prototype video link.'; errEl.style.display = 'block'; return; }
+    try { new URL(videoUrl); } catch { errEl.textContent = 'Enter a valid video link (starting with http:// or https://).'; errEl.style.display = 'block'; return; }
 
     try {
       const fileBase64 = await fileToBase64(file);
       const res = await fetch(SUPABASE_URL + '/functions/v1/submit-round2-doc', {
         method: 'POST',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...currentTeam, fileName: file.name, fileBase64 }),
+        body: JSON.stringify({ ...currentTeam, fileName: file.name, fileBase64, videoUrl }),
       });
       const result = await res.json().catch(() => null);
       if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
 
-      okEl.textContent = 'Deck submitted successfully.';
+      okEl.textContent = 'Round 2 submitted successfully.';
       okEl.style.display = 'block';
       await checkStatusSilently();
     } catch (err) {
