@@ -2150,20 +2150,51 @@ screener02,AnotherPass456"></textarea>
     (outcomes || []).forEach(o =>{ outcomeByReg[o.registration_id] = o.outcome; });
 
     const totalTeams = (rows || []).length;
-    const fullyReviewed = (rows || []).filter(r =>r.decisions_count >= 2).length;
-    const disagreements = (rows || []).filter(r =>r.disagreement).length;
+    const inProgress = (rows || []).filter(r =>r.decisions_count < 2).length;
+    const needsCall = (rows || []).filter(r =>r.decisions_count >= 2 && !outcomeByReg[r.registration_id]).length;
     const shortlisted = Object.values(outcomeByReg).filter(o =>o === 'shortlist').length;
+    const disqualified = Object.values(outcomeByReg).filter(o =>o === 'reject').length;
     statsHost.innerHTML =
       '<div class="stats">' +
         '<div class="stat-box"><div class="num">' + totalTeams + '</div><div class="lbl">Total Teams</div></div>' +
-        '<div class="stat-box"><div class="num">' + fullyReviewed + '</div><div class="lbl">Fully Reviewed (2/2)</div></div>' +
-        '<div class="stat-box"><div class="num">' + disagreements + '</div><div class="lbl">Disagreements — need a call</div></div>' +
-        '<div class="stat-box"><div class="num">' + shortlisted + '</div><div class="lbl">Shortlisted so far</div></div>' +
+        '<div class="stat-box"><div class="num">' + inProgress + '</div><div class="lbl">Still In Progress</div></div>' +
+        '<div class="stat-box"><div class="num">' + needsCall + '</div><div class="lbl">Needs Your Call</div></div>' +
+        '<div class="stat-box"><div class="num">' + shortlisted + '</div><div class="lbl">Shortlisted (auto + manual)</div></div>' +
+        '<div class="stat-box"><div class="num">' + disqualified + '</div><div class="lbl">Disqualified (auto + manual)</div></div>' +
+      '</div>' +
+      '<div class="field-row" style="margin-top:10px; max-width:260px;">' +
+        '<label for="screeningViewFilter">Show</label>' +
+        '<select id="screeningViewFilter" onchange="renderScreeningListFiltered()">' +
+          '<option value="needs_call">Needs Your Call only</option>' +
+          '<option value="in_progress">Still In Progress only</option>' +
+          '<option value="all">All Teams</option>' +
+        '</select>' +
       '</div>';
 
     if (totalTeams === 0) { host.innerHTML = '<div class="empty-state">No Round 1 submissions yet.</div>'; return; }
 
-    const sorted = (rows || []).slice().sort((a, b) =>{
+    screeningRowsCache = { rows: rows || [], decisionsByReg, outcomeByReg, nameByScreener };
+    renderScreeningListFiltered();
+  }
+
+  let screeningRowsCache = null;
+
+  function renderScreeningListFiltered() {
+    if (!screeningRowsCache) return;
+    const { rows, decisionsByReg, outcomeByReg, nameByScreener } = screeningRowsCache;
+    const host = document.getElementById('screeningList');
+    const filter = document.getElementById('screeningViewFilter') ? document.getElementById('screeningViewFilter').value : 'needs_call';
+
+    let filtered = rows;
+    if (filter === 'needs_call') filtered = rows.filter(r =>r.decisions_count >= 2 && !outcomeByReg[r.registration_id]);
+    else if (filter === 'in_progress') filtered = rows.filter(r =>r.decisions_count < 2);
+
+    if (filtered.length === 0) {
+      host.innerHTML = '<div class="empty-state">' + (filter === 'needs_call' ? 'Nothing needs your call right now.' : 'No teams match this view.') + '</div>';
+      return;
+    }
+
+    const sorted = filtered.slice().sort((a, b) =>{
       if (a.disagreement !== b.disagreement) return a.disagreement ? -1 : 1;
       return (a.decisions_count - b.decisions_count) - 0 || a.team_name.localeCompare(b.team_name);
     });
