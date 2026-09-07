@@ -2168,7 +2168,7 @@ screener02,AnotherPass456"></textarea>
     // any team with at least 1 decision already has an outcome -- so
     // "in progress" means truly unreviewed (0 decisions), and "needs your
     // call" only ever catches an edge case, not the normal path.
-    const inProgress = (rows || []).filter(r =>r.decisions_count === 0).length;
+    const inProgress = (rows || []).filter(r =>r.decisions_count === 0 && !outcomeByReg[r.registration_id]).length;
     const needsCall = (rows || []).filter(r =>r.decisions_count >= 1 && !outcomeByReg[r.registration_id]).length;
     const shortlisted = Object.values(outcomeByReg).filter(o =>o === 'shortlist').length;
     const disqualified = Object.values(outcomeByReg).filter(o =>o === 'reject').length;
@@ -2208,7 +2208,7 @@ screener02,AnotherPass456"></textarea>
 
     let filtered = rows;
     if (filter === 'needs_call') filtered = rows.filter(r =>r.decisions_count >= 1 && !outcomeByReg[r.registration_id]);
-    else if (filter === 'in_progress') filtered = rows.filter(r =>r.decisions_count === 0);
+    else if (filter === 'in_progress') filtered = rows.filter(r =>r.decisions_count === 0 && !outcomeByReg[r.registration_id]);
     else if (filter === 'single_review_shortlist') filtered = rows.filter(r =>outcomeByReg[r.registration_id] === 'shortlist' && r.decisions_count === 1);
 
     if (filtered.length === 0) {
