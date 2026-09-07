@@ -2172,7 +2172,6 @@ screener02,AnotherPass456"></textarea>
     const needsCall = (rows || []).filter(r =>r.decisions_count >= 1 && !outcomeByReg[r.registration_id]).length;
     const shortlisted = Object.values(outcomeByReg).filter(o =>o === 'shortlist').length;
     const disqualified = Object.values(outcomeByReg).filter(o =>o === 'reject').length;
-    const singleReviewShortlist = (rows || []).filter(r =>outcomeByReg[r.registration_id] === 'shortlist' && r.decisions_count === 1).length;
     statsHost.innerHTML =
       '<div class="stats">' +
         '<div class="stat-box"><div class="num">' + totalTeams + '</div><div class="lbl">Total Teams</div></div>' +
@@ -2180,14 +2179,12 @@ screener02,AnotherPass456"></textarea>
         '<div class="stat-box"><div class="num">' + needsCall + '</div><div class="lbl">Needs Your Call</div></div>' +
         '<div class="stat-box"><div class="num">' + shortlisted + '</div><div class="lbl">Shortlisted (auto + manual)</div></div>' +
         '<div class="stat-box"><div class="num">' + disqualified + '</div><div class="lbl">Disqualified (auto + manual)</div></div>' +
-        '<div class="stat-box"><div class="num">' + singleReviewShortlist + '</div><div class="lbl">Shortlisted on 1 review only</div></div>' +
       '</div>' +
       '<div class="field-row" style="margin-top:10px; max-width:280px;">' +
         '<label for="screeningViewFilter">Show</label>' +
         '<select id="screeningViewFilter" onchange="renderScreeningListFiltered()">' +
           '<option value="needs_call">Needs Your Call only</option>' +
           '<option value="in_progress">Still In Progress (unreviewed)</option>' +
-          '<option value="single_review_shortlist">Shortlisted on 1 review only</option>' +
           '<option value="all">All Teams</option>' +
         '</select>' +
       '</div>';
@@ -2209,7 +2206,6 @@ screener02,AnotherPass456"></textarea>
     let filtered = rows;
     if (filter === 'needs_call') filtered = rows.filter(r =>r.decisions_count >= 1 && !outcomeByReg[r.registration_id]);
     else if (filter === 'in_progress') filtered = rows.filter(r =>r.decisions_count === 0 && !outcomeByReg[r.registration_id]);
-    else if (filter === 'single_review_shortlist') filtered = rows.filter(r =>outcomeByReg[r.registration_id] === 'shortlist' && r.decisions_count === 1);
 
     if (filtered.length === 0) {
       host.innerHTML = '<div class="empty-state">' + (filter === 'needs_call' ? 'Nothing needs your call right now.' : 'No teams match this view.') + '</div>';
@@ -2239,7 +2235,7 @@ screener02,AnotherPass456"></textarea>
             '<div>' +
               (r.disagreement ? '<span class="pill pill-late">Disagreement</span>' : '') +
               '<span class="pill ' + (r.decisions_count >= 2 ? 'pill-scored' : 'pill-unscored') + '">' + r.decisions_count + '/2 reviewed</span>' +
-              (outcome ? '<span class="pill ' + (outcome === 'shortlist' ? 'pill-pass' : 'pill-reject') + '">' + (outcome === 'shortlist' ? 'Shortlisted' : 'Rejected') + (r.decisions_count === 1 ? ' (1 review only)' : '') + '</span>' : '') +
+              (outcome ? '<span class="pill ' + (outcome === 'shortlist' ? 'pill-pass' : 'pill-reject') + '">' + (outcome === 'shortlist' ? 'Shortlisted' : 'Rejected') + '</span>' : '') +
             '</div>' +
           '</div>' +
           '<div style="margin-top:6px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">' +
