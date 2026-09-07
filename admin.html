@@ -2083,7 +2083,7 @@ screener02,AnotherPass456"></textarea>
       const result = await res.json().catch(() =>null);
       if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
       okEl.textContent = result.newAssignments + ' new judge assignment(s) across ' + result.totalShortlistedTeams + ' shortlisted team(s).' +
-        (result.shortfallTeams >0 ? '  ' + result.shortfallTeams + ' team(s) couldn\'t get all 3 judges — add more judge accounts or raise the cap.' : '');
+        (result.shortfallTeams >0 ? '  ' + result.shortfallTeams + ' team(s) couldn\'t get both judges — add more judge accounts or raise the cap.' : '');
       okEl.style.display = 'block';
     } catch (err) {
       errEl.textContent = 'Failed: ' + err.message;
