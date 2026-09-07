@@ -87,6 +87,14 @@
   <div class="tagline">Round 1 Screening — Stage 1 (pass / reject on 4 gates)</div>
 </div>
 
+<div class="login-wrap" id="closedWrap" style="display:none;">
+  <div class="card" style="text-align:center;">
+    <h2 style="margin-bottom:10px;">Screening Is Complete</h2>
+    <p style="font-size:13.5px; color:#4a1b6e; line-height:1.7;">All Round 1 submissions have been screened. This portal is now closed.</p>
+    <p style="font-size:14px; color:#6a1794; font-weight:600; margin-top:16px;">Thank you for helping in screening.</p>
+  </div>
+</div>
+
 <div class="login-wrap" id="loginWrap">
   <div class="card">
     <h2>Screener Login</h2>
@@ -162,6 +170,10 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Screening finished 2026-09-07 -- all 192 Round 1 teams resolved.
+  // Flip back to false to reopen the portal without touching anything else.
+  const SCREENING_CLOSED = true;
+
   let queue = [];
   let myDecisions = {}; // registration_id ->decision row
   let screenerId = null;
@@ -169,6 +181,7 @@
   let currentDecision = null; // 'pass' | 'reject'
 
   async function login() {
+    if (SCREENING_CLOSED) return;
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const errEl = document.getElementById('loginError');
@@ -345,6 +358,11 @@
   }
 
   window.addEventListener('DOMContentLoaded', async () =>{
+    if (SCREENING_CLOSED) {
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('closedWrap').style.display = 'block';
+      return;
+    }
     const { data } = await sb.auth.getSession();
     if (data.session) {
       const { data: profile } = await sb.from('screener_profiles').select('*').eq('user_id', data.session.user.id).maybeSingle();
