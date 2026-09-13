@@ -1015,6 +1015,19 @@
 // site-wide via the prefers-reduced-motion media query in <style>.
 const PREFERS_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// Mobile browsers fire a 'resize' event when the address bar shows/hides
+// during scroll. ScrollTrigger's default behavior treats that as a real
+// viewport change and re-measures pinned sections mid-scroll, which is
+// exactly what causes a pinned section to jump a bit then break/disappear
+// on mobile -- ignoreMobileResize tells it to disregard those spurious
+// resizes. Must run before any ScrollTrigger.create() call anywhere below.
+if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+  try {
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+  } catch (err) { console.error('ScrollTrigger mobile config failed:', err); }
+}
+
 // ============================================================
 // Swap this for the real ILS 2026 promo video source when supplied.
 // Accepts either a direct video file URL (.mp4) or an embeddable
@@ -1680,6 +1693,7 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
         if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
           ScrollTrigger.create({
             trigger: '.transform-stage', start: 'top top', end: '+=200%', pin: true, scrub: 0.6,
+            anticipatePin: 1,
             onUpdate: (self) => { scrollP = self.progress; updateLabels(); renderFrame(); },
           });
         }
