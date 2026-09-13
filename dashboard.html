@@ -794,9 +794,10 @@
   <div class="transform-stage">
     <canvas id="transformWebGL"></canvas>
     <div class="transform-labels">
-      <div class="transform-label" data-stage="0">Engineering Network</div>
-      <div class="transform-label" data-stage="1">Circuit &amp; Structure</div>
-      <div class="transform-label" data-stage="2">HackX 2026</div>
+      <div class="transform-label" data-stage="0">Women Who Engineer</div>
+      <div class="transform-label" data-stage="1">Engineering Network</div>
+      <div class="transform-label" data-stage="2">Circuit &amp; Structure</div>
+      <div class="transform-label" data-stage="3">HackX 2026</div>
     </div>
   </div>
 </section>
@@ -1271,149 +1272,333 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
   },
 });
 
-// ---------- particle transformation: network -> circuit grid -> "HackX" text ----------
-// One Points object whose positions are lerped between three precomputed
-// formations as the user scrolls through a pinned section. The text
-// formation is sampled from an offscreen 2D canvas (classic canvas-to-points
-// technique) rather than needing a font-loader/TextGeometry pipeline.
+// ---------- particle transformation: scattered -> woman's face -> network -> circuit grid -> "HackX" text ----------
+// One Points object whose positions are lerped between five precomputed
+// formations. The face and text formations are both sampled from an
+// offscreen 2D canvas (classic canvas-to-points technique): the face from
+// the real source portrait (assets/face-source.jpg, itself a stylized
+// particle-art image -- see the crop notes in the commit), the text from a
+// rendered glyph. Sample points are shuffled before picking N of them, so
+// when there are more bright pixels than particles we get even coverage
+// across the whole shape instead of only its first raster-order rows.
 (function initTransformScene(){
   if (typeof THREE === 'undefined') return;
   const canvas = document.getElementById('transformWebGL');
   const stage = document.querySelector('.transform-stage');
   if (!canvas || !stage) return;
-  try {
-    let w = stage.clientWidth, h = stage.clientHeight;
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(w, h);
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-    camera.position.z = 6;
+  const faceImg = new Image();
+  faceImg.onload = () => start(faceImg);
+  faceImg.onerror = () => start(null); // graceful: face formation just falls back to the network sphere
+  faceImg.src = 'assets/face-source.jpg';
 
-    const COUNT = w < 700 ? 900 : 1800;
-
-    function buildNetworkFormation(n) {
-      const arr = new Float32Array(n * 3);
-      for (let i = 0; i < n; i++) {
-        const r = 2.6 + Math.random() * 0.6;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos((Math.random() * 2) - 1);
-        arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-        arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        arr[i * 3 + 2] = r * Math.cos(phi);
+  function shuffle(arr, stride) {
+    const n = arr.length / stride;
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      for (let s = 0; s < stride; s++) {
+        const a = i * stride + s, b = j * stride + s;
+        const tmp = arr[a]; arr[a] = arr[b]; arr[b] = tmp;
       }
-      return arr;
     }
-    function buildGridFormation(n) {
-      const arr = new Float32Array(n * 3);
-      const cols = Math.ceil(Math.sqrt(n * 1.6));
-      const rows = Math.ceil(n / cols);
-      const spacingX = 5.4 / cols, spacingY = 3.2 / rows;
-      for (let i = 0; i < n; i++) {
-        const cx = i % cols, cy = Math.floor(i / cols);
-        arr[i * 3] = (cx - cols / 2) * spacingX + (Math.random() - 0.5) * 0.04;
-        arr[i * 3 + 1] = (cy - rows / 2) * spacingY + (Math.random() - 0.5) * 0.04;
-        arr[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+  }
+
+  function start(img) {
+    try {
+      let w = stage.clientWidth, h = stage.clientHeight;
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+      camera.position.z = 6;
+
+      const isNarrow = w < 700;
+      const COUNT = isNarrow ? 900 : 2600;
+
+      function buildScattered(n) {
+        const arr = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+          arr[i * 3] = (Math.random() - 0.5) * 14;
+          arr[i * 3 + 1] = (Math.random() - 0.5) * 10;
+          arr[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
+        }
+        return arr;
       }
-      return arr;
-    }
-    function buildTextFormation(n, text) {
-      const cw = 640, ch = 180;
-      const c = document.createElement('canvas');
-      c.width = cw; c.height = ch;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, cw, ch);
-      ctx.fillStyle = '#fff';
-      ctx.font = '800 110px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, cw / 2, ch / 2 + 8);
-      const data = ctx.getImageData(0, 0, cw, ch).data;
-      const pts = [];
-      for (let y = 0; y < ch; y += 2) {
-        for (let x = 0; x < cw; x += 2) {
-          if (data[(y * cw + x) * 4] > 128) pts.push(x, y);
+      function buildNetwork(n) {
+        const arr = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+          const r = 2.6 + Math.random() * 0.6;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos((Math.random() * 2) - 1);
+          arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+          arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+          arr[i * 3 + 2] = r * Math.cos(phi);
+        }
+        return arr;
+      }
+      function buildGrid(n) {
+        const arr = new Float32Array(n * 3);
+        const cols = Math.ceil(Math.sqrt(n * 1.6));
+        const rows = Math.ceil(n / cols);
+        const spacingX = 5.4 / cols, spacingY = 3.2 / rows;
+        for (let i = 0; i < n; i++) {
+          const cx = i % cols, cy = Math.floor(i / cols);
+          arr[i * 3] = (cx - cols / 2) * spacingX + (Math.random() - 0.5) * 0.04;
+          arr[i * 3 + 1] = (cy - rows / 2) * spacingY + (Math.random() - 0.5) * 0.04;
+          arr[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+        }
+        return arr;
+      }
+      // Samples bright pixels from a 2D canvas into shuffled (x, y, luminance)
+      // triples, then maps N of them into centered 3D points. Shared by both
+      // the face and the text formations. With opts.brightShare set, a
+      // reserved fraction of the particle budget is always filled from the
+      // brightest pixels first (before falling back to the general pool) --
+      // that's what gives facial features (rendered as the whitest, most
+      // saturated dots in the source art) a guaranteed higher density than
+      // the dimmer, more diffuse hair-trail/background particles.
+      function sampleCanvasToPoints(ctx, cw, ch, n, scale, minLum, opts) {
+        opts = opts || {};
+        const data = ctx.getImageData(0, 0, cw, ch).data;
+        const bright = [], rest = [];
+        const brightLum = opts.brightLum || 256; // 256 = unreachable, i.e. no 2-tier split
+        for (let y = 0; y < ch; y++) {
+          for (let x = 0; x < cw; x++) {
+            const idx = (y * cw + x) * 4;
+            const lum = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
+            if (lum <= minLum) continue;
+            (lum >= brightLum ? bright : rest).push(x, y, lum);
+          }
+        }
+        if (bright.length) shuffle(bright, 3);
+        if (rest.length) shuffle(rest, 3);
+        const brightCount = bright.length / 3, restCount = rest.length / 3;
+        const brightBudget = brightCount ? Math.min(brightCount, Math.round(n * (opts.brightShare || 0))) : 0;
+        const arr = new Float32Array(n * 3);
+        // Vertex colors: facial-feature (bright-tier) particles get the near-
+        // white lavender highlight the brief asks for; everything else stays
+        // in the brand's magenta/violet. Returned alongside positions so the
+        // caller can use it as a permanent per-particle color attribute.
+        const colors = new Float32Array(n * 3);
+        const brightRGB = opts.brightRGB || [0.96, 0.93, 1.0];
+        const dimRGB = opts.dimRGB || [0.63, 0.38, 0.85];
+        for (let i = 0; i < n; i++) {
+          let px, py, lum, isBright;
+          if (i < brightBudget) {
+            const p = i % brightCount;
+            px = bright[p * 3]; py = bright[p * 3 + 1]; lum = bright[p * 3 + 2]; isBright = true;
+          } else if (restCount) {
+            const p = (i - brightBudget) % restCount;
+            px = rest[p * 3]; py = rest[p * 3 + 1]; lum = rest[p * 3 + 2]; isBright = false;
+          } else if (brightCount) {
+            const p = i % brightCount;
+            px = bright[p * 3]; py = bright[p * 3 + 1]; lum = bright[p * 3 + 2]; isBright = true;
+          } else {
+            px = cw / 2; py = ch / 2; lum = 128; isBright = false;
+          }
+          arr[i * 3] = (px - cw / 2) * scale;
+          arr[i * 3 + 1] = -(py - ch / 2) * scale;
+          // brighter source pixels (the densest facial-feature particles in
+          // the source art) sit slightly forward, for a little extra depth.
+          arr[i * 3 + 2] = (Math.random() - 0.5) * 0.5 - (lum / 255) * 0.3;
+          const rgb = isBright ? brightRGB : dimRGB;
+          colors[i * 3] = rgb[0]; colors[i * 3 + 1] = rgb[1]; colors[i * 3 + 2] = rgb[2];
+        }
+        return { positions: arr, colors: colors };
+      }
+      function buildFace(n, imgEl) {
+        if (!imgEl) return { positions: buildNetwork(n), colors: null };
+        const cw = 380, ch = Math.round(380 * (imgEl.height / imgEl.width));
+        const c = document.createElement('canvas');
+        c.width = cw; c.height = ch;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(imgEl, 0, 0, cw, ch);
+        return sampleCanvasToPoints(ctx, cw, ch, n, 5.6 / cw, 30, { brightLum: 175, brightShare: 0.55 });
+      }
+      function buildText(n, text) {
+        const cw = 640, ch = 180;
+        const c = document.createElement('canvas');
+        c.width = cw; c.height = ch;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 110px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, cw / 2, ch / 2 + 8);
+        return sampleCanvasToPoints(ctx, cw, ch, n, 0.014, 128, {}).positions;
+      }
+
+      const formScattered = buildScattered(COUNT);
+      const faceSample = buildFace(COUNT, img);
+      const formFace = faceSample.positions;
+      const formNetwork = buildNetwork(COUNT);
+      const formGrid = buildGrid(COUNT);
+      const formText = buildText(COUNT, 'HACKX');
+      const displayed = new Float32Array(formScattered);
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(displayed, 3));
+      // Vertex colors come from the face sampling (bright facial-feature
+      // pixels -> near-white lavender, everything else -> magenta/violet),
+      // and stay fixed per particle-index through every later formation --
+      // a subtle visual echo of the face carrying through the whole journey.
+      const uniformDim = new Float32Array(COUNT * 3);
+      for (let i = 0; i < COUNT; i++) { uniformDim[i * 3] = 0.63; uniformDim[i * 3 + 1] = 0.38; uniformDim[i * 3 + 2] = 0.85; }
+      geo.setAttribute('color', new THREE.BufferAttribute(faceSample.colors || uniformDim, 3));
+      const points = new THREE.Points(geo, new THREE.PointsMaterial({ vertexColors: true, size: 0.034, transparent: true, opacity: 0.92, sizeAttenuation: true }));
+      scene.add(points);
+
+      // sparse connecting lines following the network formation, faded in/out
+      // around that stage of the journey
+      const linePositions = [];
+      for (let i = 0; i < COUNT; i++) {
+        if (Math.random() < 0.05) {
+          const j = Math.floor(Math.random() * COUNT);
+          linePositions.push(formNetwork[i * 3], formNetwork[i * 3 + 1], formNetwork[i * 3 + 2], formNetwork[j * 3], formNetwork[j * 3 + 1], formNetwork[j * 3 + 2]);
         }
       }
-      const arr = new Float32Array(n * 3);
-      const ptCount = pts.length / 2;
-      for (let i = 0; i < n; i++) {
-        const p = ptCount ? (i % ptCount) : 0;
-        const px = ptCount ? pts[p * 2] : cw / 2;
-        const py = ptCount ? pts[p * 2 + 1] : ch / 2;
-        arr[i * 3] = (px - cw / 2) * 0.014;
-        arr[i * 3 + 1] = -(py - ch / 2) * 0.014;
-        arr[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+      const lines = new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({ color: 0x8c3ec0, transparent: true, opacity: 0.08 }));
+      scene.add(lines);
+
+      let introT = PREFERS_REDUCED_MOTION ? 1 : 0; // 0..1: scattered -> face
+      let scrollP = 0; // 0..1: face -> network -> grid -> text
+      let mouseX = 0, mouseY = 0;
+      let hasMouse = false;
+      const tmp = [0, 0, 0];
+
+      function computeBase(i3, out) {
+        if (introT < 1) {
+          out[0] = formScattered[i3] + (formFace[i3] - formScattered[i3]) * introT;
+          out[1] = formScattered[i3 + 1] + (formFace[i3 + 1] - formScattered[i3 + 1]) * introT;
+          out[2] = formScattered[i3 + 2] + (formFace[i3 + 2] - formScattered[i3 + 2]) * introT;
+          return;
+        }
+        let from, to, t;
+        if (scrollP < 1 / 3) { t = scrollP / (1 / 3); from = formFace; to = formNetwork; }
+        else if (scrollP < 2 / 3) { t = (scrollP - 1 / 3) / (1 / 3); from = formNetwork; to = formGrid; }
+        else { t = (scrollP - 2 / 3) / (1 / 3); from = formGrid; to = formText; }
+        out[0] = from[i3] + (to[i3] - from[i3]) * t;
+        out[1] = from[i3 + 1] + (to[i3 + 1] - from[i3 + 1]) * t;
+        out[2] = from[i3 + 2] + (to[i3 + 2] - from[i3 + 2]) * t;
       }
-      return arr;
-    }
 
-    const formA = buildNetworkFormation(COUNT);
-    const formB = buildGridFormation(COUNT);
-    const formC = buildTextFormation(COUNT, 'HACKX');
-    const current = new Float32Array(formA);
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(current, 3));
-    const points = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xc060f0, size: 0.035, transparent: true, opacity: 0.9, sizeAttenuation: true }));
-    scene.add(points);
-
-    // sparse connecting lines for the network formation, faded out as it morphs away
-    const linePositions = [];
-    for (let i = 0; i < COUNT; i++) {
-      if (Math.random() < 0.05) {
-        const j = Math.floor(Math.random() * COUNT);
-        linePositions.push(formA[i * 3], formA[i * 3 + 1], formA[i * 3 + 2], formA[j * 3], formA[j * 3 + 1], formA[j * 3 + 2]);
-      }
-    }
-    const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x8c3ec0, transparent: true, opacity: 0.08 });
-    const lines = new THREE.LineSegments(lineGeo, lineMat);
-    scene.add(lines);
-
-    const labelEls = document.querySelectorAll('.transform-label');
-    function applyProgress(p) {
-      let t, from, to;
-      if (p < 0.5) { t = p / 0.5; from = formA; to = formB; }
-      else { t = (p - 0.5) / 0.5; from = formB; to = formC; }
-      for (let i = 0; i < current.length; i++) current[i] = from[i] + (to[i] - from[i]) * t;
-      geo.attributes.position.needsUpdate = true;
-      lines.material.opacity = 0.08 * (1 - Math.min(p * 2, 1));
-      if (!PREFERS_REDUCED_MOTION) points.rotation.y = p * 1.1;
-      renderer.render(scene, camera);
-      const activeStage = p < 0.4 ? 0 : (p < 0.75 ? 1 : 2);
-      labelEls.forEach((el) => el.classList.toggle('active', Number(el.dataset.stage) === activeStage));
-    }
-
-    if (PREFERS_REDUCED_MOTION) {
-      applyProgress(1); // jump straight to the meaningful end state, no scroll-jacking/motion
-    } else {
-      applyProgress(0);
-      if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-        ScrollTrigger.create({
-          trigger: '.transform-stage', start: 'top top', end: '+=200%', pin: true, scrub: 0.6,
-          onUpdate: (self) => applyProgress(self.progress),
-        });
-      }
-    }
-
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        const w2 = stage.clientWidth, h2 = stage.clientHeight;
-        if (!w2 || !h2) return;
-        camera.aspect = w2 / h2;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w2, h2);
+      function renderFrame() {
+        for (let i = 0; i < COUNT; i++) {
+          const i3 = i * 3;
+          computeBase(i3, tmp);
+          let dx = 0, dy = 0;
+          if (hasMouse && !isNarrow) {
+            const ddx = tmp[0] - mouseX, ddy = tmp[1] - mouseY;
+            const distSq = ddx * ddx + ddy * ddy;
+            if (distSq < 0.6) {
+              const dist = Math.sqrt(distSq) || 0.001;
+              const force = (0.6 - distSq) * 0.35;
+              dx = (ddx / dist) * force;
+              dy = (ddy / dist) * force;
+            }
+          }
+          displayed[i3] = tmp[0] + dx;
+          displayed[i3 + 1] = tmp[1] + dy;
+          displayed[i3 + 2] = tmp[2];
+        }
+        geo.attributes.position.needsUpdate = true;
+        // lines sit statically at the network formation's coordinates, so
+        // they should read as "connected" only while particles are actually
+        // near that formation -- i.e. around scrollP = 1/3, tapering off
+        // toward the face (before) and the grid (after).
+        const networkCloseness = introT >= 1 ? Math.max(0, 1 - Math.abs(scrollP - 1 / 3) * 4) : 0;
+        lines.material.opacity = 0.08 * networkCloseness;
         renderer.render(scene, camera);
-      }, 200);
-    });
-  } catch (err) {
-    console.error('transform scene failed to init:', err);
+      }
+
+      // Mouse reactivity: user-initiated, so it stays active even under
+      // reduced motion (same principle as the hero globe's drag-to-spin).
+      // Renders are scheduled on demand, never a free-running idle loop.
+      let renderScheduled = false;
+      function requestRender() {
+        if (renderScheduled) return;
+        renderScheduled = true;
+        requestAnimationFrame(() => { renderScheduled = false; renderFrame(); });
+      }
+      if (!isNarrow) {
+        stage.addEventListener('mousemove', (e) => {
+          const rect = stage.getBoundingClientRect();
+          mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 5.6;
+          mouseY = -((e.clientY - rect.top) / rect.height - 0.5) * 3.8;
+          hasMouse = true;
+          requestRender();
+        }, { passive: true });
+        stage.addEventListener('mouseleave', () => { hasMouse = false; requestRender(); });
+      }
+
+      const labelEls = document.querySelectorAll('.transform-label');
+      function updateLabels() {
+        let stageIdx;
+        if (introT < 1 || scrollP < 0.05) stageIdx = 0;
+        else if (scrollP < 1 / 3) stageIdx = 1;
+        else if (scrollP < 2 / 3) stageIdx = 2;
+        else stageIdx = 3;
+        labelEls.forEach((el) => el.classList.toggle('active', Number(el.dataset.stage) === stageIdx));
+      }
+
+      function startScrollPin() {
+        if (PREFERS_REDUCED_MOTION) { scrollP = 1; updateLabels(); requestRender(); return; }
+        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+          ScrollTrigger.create({
+            trigger: '.transform-stage', start: 'top top', end: '+=200%', pin: true, scrub: 0.6,
+            onUpdate: (self) => { scrollP = self.progress; updateLabels(); renderFrame(); },
+          });
+        }
+      }
+
+      function playIntro() {
+        if (introT >= 1) { startScrollPin(); return; }
+        if (typeof gsap !== 'undefined') {
+          gsap.to({}, {
+            duration: 2.2, ease: 'power2.out',
+            onUpdate: function () { introT = this.progress(); updateLabels(); renderFrame(); },
+            onComplete: () => { introT = 1; startScrollPin(); },
+          });
+        } else {
+          introT = 1;
+          startScrollPin();
+        }
+      }
+
+      renderFrame(); // first paint: scattered (or straight to face under reduced motion)
+      updateLabels();
+      if (PREFERS_REDUCED_MOTION) {
+        startScrollPin();
+      } else if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => { if (entry.isIntersecting) { playIntro(); io.disconnect(); } });
+        }, { threshold: 0.2 });
+        io.observe(stage);
+      } else {
+        playIntro();
+      }
+
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          const w2 = stage.clientWidth, h2 = stage.clientHeight;
+          if (!w2 || !h2) return;
+          camera.aspect = w2 / h2;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w2, h2);
+          renderFrame();
+        }, 200);
+      });
+    } catch (err) {
+      console.error('transform scene failed to init:', err);
+    }
   }
 })();
 
