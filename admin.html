@@ -2283,7 +2283,9 @@ screener02,AnotherPass456"></textarea>
             '<div><b>' + escapeHtml(r.team_name) + '</b><span style="font-size:11px; color:#9b7ab0;">' + escapeHtml(r.track) + '</span></div>' +
             '<div>' +
               (r.disagreement ? '<span class="pill pill-late">Disagreement</span>' : '') +
-              '<span class="pill ' + (r.decisions_count >= 2 ? 'pill-scored' : 'pill-unscored') + '">' + r.decisions_count + '/2 reviewed</span>' +
+              (outcome
+                ? '<span class="pill pill-scored">2/2 reviewed</span>'
+                : '<span class="pill ' + (r.decisions_count >= 2 ? 'pill-scored' : 'pill-unscored') + '">' + r.decisions_count + '/2 reviewed</span>') +
               (outcome ? '<span class="pill ' + (outcome === 'shortlist' ? 'pill-pass' : 'pill-reject') + '">' + (outcome === 'shortlist' ? 'Shortlisted' : 'Rejected') + '</span>' : '') +
             '</div>' +
           '</div>' +
