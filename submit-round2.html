@@ -208,18 +208,19 @@
     }
     card.style.display = 'block';
     area.innerHTML =
-      '<p style="font-size:13px; color:#2c1a40; line-height:1.6; margin-bottom:14px;">You have been selected for Round 2. You need to submit <b>both</b> of the following:</p>' +
-      '<ul style="font-size:13px; color:#2c1a40; line-height:1.8; margin:0 0 14px 18px;">' +
-      '<li>A PPT of your solution (.ppt, .pptx, or .pdf -- max 20 MB)</li>' +
-      '<li>A link to a video recording of your working prototype (upload to YouTube/Google Drive and paste the link -- do not upload the video file itself here)</li>' +
-      '</ul>' +
+      '<p style="font-size:13px; color:#2c1a40; line-height:1.6; margin-bottom:14px;">You have been selected for Round 2. You need to complete <b>both</b> steps below:</p>' +
+      '<ol style="font-size:13px; color:#2c1a40; line-height:1.85; margin:0 0 16px 18px; padding:0;">' +
+      '<li><b>Make a PPT</b> of your solution.</li>' +
+      '<li><b>Record a video (maximum 3 minutes, in English)</b> where you: (a) briefly explain your PPT, and (b) demonstrate your working prototype/portal actually functioning. Upload this video to <b>Google Drive</b>, set sharing to "Anyone with the link can view", and paste that link below.</li>' +
+      '</ol>' +
       '<div class="upload-box">' +
         '<div style="font-size:13px; color:#6a1794;">PPT / Deck</div>' +
         '<input type="file" id="deckFile" accept=".ppt,.pptx,.pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf">' +
       '</div>' +
       '<div class="field-row" style="margin-top:14px;">' +
-        '<label for="videoUrl">Prototype Video Link</label>' +
-        '<input type="url" id="videoUrl" placeholder="https://youtube.com/... or https://drive.google.com/...">' +
+        '<label for="videoUrl">Google Drive Video Link (max 3 min, English, PPT explanation + working demo)</label>' +
+        '<input type="url" id="videoUrl" placeholder="https://drive.google.com/...">' +
+        '<div style="font-size:11px; color:#9b7ab0; margin-top:4px;">Make sure link access is set to "Anyone with the link" — a private link cannot be opened by judges.</div>' +
       '</div>' +
       '<button class="btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Round 2</button>' +
       '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">Once submitted, this is locked -- double check your file and link before submitting.</div>';
@@ -244,8 +245,11 @@
     const videoUrl = document.getElementById('videoUrl').value.trim();
     if (!file) { errEl.textContent = 'Choose a file first.'; errEl.style.display = 'block'; return; }
     if (file.size > 20 * 1024 * 1024) { errEl.textContent = 'File must be under 20 MB.'; errEl.style.display = 'block'; return; }
-    if (!videoUrl) { errEl.textContent = 'Paste your prototype video link.'; errEl.style.display = 'block'; return; }
+    if (!videoUrl) { errEl.textContent = 'Paste your Google Drive video link.'; errEl.style.display = 'block'; return; }
     try { new URL(videoUrl); } catch { errEl.textContent = 'Enter a valid video link (starting with http:// or https://).'; errEl.style.display = 'block'; return; }
+    if (!videoUrl.includes('drive.google.com')) {
+      if (!confirm('This link doesn\'t look like a Google Drive link. Submit anyway?')) return;
+    }
 
     try {
       const fileBase64 = await fileToBase64(file);
