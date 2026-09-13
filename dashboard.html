@@ -317,6 +317,18 @@
     border-top:14px solid transparent; border-bottom:14px solid transparent; border-left:22px solid #fff;
   }
 
+  /* ---------- particle transformation ---------- */
+  #transform{ padding:0; }
+  .transform-stage{ position:relative; height:100vh; overflow:hidden; background:var(--bg-deep2); }
+  #transformWebGL{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .transform-labels{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; padding:0 6vw; }
+  .transform-label{
+    position:absolute; font-family:var(--font-display); font-weight:800;
+    font-size:clamp(1.5rem,5vw,3rem); letter-spacing:1px; text-transform:uppercase;
+    color:var(--ink); opacity:0; text-align:center; transition:opacity 0.5s ease;
+  }
+  .transform-label.active{ opacity:0.85; }
+
   /* ---------- stats ---------- */
   .stats-grid{
     max-width:1140px; margin:0 auto; perspective:1200px;
@@ -744,6 +756,17 @@
       </div>
       <div class="community-role">Connect</div>
       <div class="community-desc">A national network of mentors, judges, and fellow builders.</div>
+    </div>
+  </div>
+</section>
+
+<section id="transform" aria-label="From idea to HackX">
+  <div class="transform-stage">
+    <canvas id="transformWebGL"></canvas>
+    <div class="transform-labels">
+      <div class="transform-label" data-stage="0">Engineering Network</div>
+      <div class="transform-label" data-stage="1">Circuit &amp; Structure</div>
+      <div class="transform-label" data-stage="2">HackX 2026</div>
     </div>
   </div>
 </section>
@@ -1177,6 +1200,152 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
     group.add(new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({ color: 0xc060f0, transparent: true, opacity: 0.85 })));
   },
 });
+
+// ---------- particle transformation: network -> circuit grid -> "HackX" text ----------
+// One Points object whose positions are lerped between three precomputed
+// formations as the user scrolls through a pinned section. The text
+// formation is sampled from an offscreen 2D canvas (classic canvas-to-points
+// technique) rather than needing a font-loader/TextGeometry pipeline.
+(function initTransformScene(){
+  if (typeof THREE === 'undefined') return;
+  const canvas = document.getElementById('transformWebGL');
+  const stage = document.querySelector('.transform-stage');
+  if (!canvas || !stage) return;
+  try {
+    let w = stage.clientWidth, h = stage.clientHeight;
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+    camera.position.z = 6;
+
+    const COUNT = w < 700 ? 900 : 1800;
+
+    function buildNetworkFormation(n) {
+      const arr = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const r = 2.6 + Math.random() * 0.6;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        arr[i * 3 + 2] = r * Math.cos(phi);
+      }
+      return arr;
+    }
+    function buildGridFormation(n) {
+      const arr = new Float32Array(n * 3);
+      const cols = Math.ceil(Math.sqrt(n * 1.6));
+      const rows = Math.ceil(n / cols);
+      const spacingX = 5.4 / cols, spacingY = 3.2 / rows;
+      for (let i = 0; i < n; i++) {
+        const cx = i % cols, cy = Math.floor(i / cols);
+        arr[i * 3] = (cx - cols / 2) * spacingX + (Math.random() - 0.5) * 0.04;
+        arr[i * 3 + 1] = (cy - rows / 2) * spacingY + (Math.random() - 0.5) * 0.04;
+        arr[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+      }
+      return arr;
+    }
+    function buildTextFormation(n, text) {
+      const cw = 640, ch = 180;
+      const c = document.createElement('canvas');
+      c.width = cw; c.height = ch;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.fillStyle = '#fff';
+      ctx.font = '800 110px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, cw / 2, ch / 2 + 8);
+      const data = ctx.getImageData(0, 0, cw, ch).data;
+      const pts = [];
+      for (let y = 0; y < ch; y += 2) {
+        for (let x = 0; x < cw; x += 2) {
+          if (data[(y * cw + x) * 4] > 128) pts.push(x, y);
+        }
+      }
+      const arr = new Float32Array(n * 3);
+      const ptCount = pts.length / 2;
+      for (let i = 0; i < n; i++) {
+        const p = ptCount ? (i % ptCount) : 0;
+        const px = ptCount ? pts[p * 2] : cw / 2;
+        const py = ptCount ? pts[p * 2 + 1] : ch / 2;
+        arr[i * 3] = (px - cw / 2) * 0.014;
+        arr[i * 3 + 1] = -(py - ch / 2) * 0.014;
+        arr[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+      }
+      return arr;
+    }
+
+    const formA = buildNetworkFormation(COUNT);
+    const formB = buildGridFormation(COUNT);
+    const formC = buildTextFormation(COUNT, 'HACKX');
+    const current = new Float32Array(formA);
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(current, 3));
+    const points = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xc060f0, size: 0.035, transparent: true, opacity: 0.9, sizeAttenuation: true }));
+    scene.add(points);
+
+    // sparse connecting lines for the network formation, faded out as it morphs away
+    const linePositions = [];
+    for (let i = 0; i < COUNT; i++) {
+      if (Math.random() < 0.05) {
+        const j = Math.floor(Math.random() * COUNT);
+        linePositions.push(formA[i * 3], formA[i * 3 + 1], formA[i * 3 + 2], formA[j * 3], formA[j * 3 + 1], formA[j * 3 + 2]);
+      }
+    }
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x8c3ec0, transparent: true, opacity: 0.08 });
+    const lines = new THREE.LineSegments(lineGeo, lineMat);
+    scene.add(lines);
+
+    const labelEls = document.querySelectorAll('.transform-label');
+    function applyProgress(p) {
+      let t, from, to;
+      if (p < 0.5) { t = p / 0.5; from = formA; to = formB; }
+      else { t = (p - 0.5) / 0.5; from = formB; to = formC; }
+      for (let i = 0; i < current.length; i++) current[i] = from[i] + (to[i] - from[i]) * t;
+      geo.attributes.position.needsUpdate = true;
+      lines.material.opacity = 0.08 * (1 - Math.min(p * 2, 1));
+      if (!PREFERS_REDUCED_MOTION) points.rotation.y = p * 1.1;
+      renderer.render(scene, camera);
+      const activeStage = p < 0.4 ? 0 : (p < 0.75 ? 1 : 2);
+      labelEls.forEach((el) => el.classList.toggle('active', Number(el.dataset.stage) === activeStage));
+    }
+
+    if (PREFERS_REDUCED_MOTION) {
+      applyProgress(1); // jump straight to the meaningful end state, no scroll-jacking/motion
+    } else {
+      applyProgress(0);
+      if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+        ScrollTrigger.create({
+          trigger: '.transform-stage', start: 'top top', end: '+=200%', pin: true, scrub: 0.6,
+          onUpdate: (self) => applyProgress(self.progress),
+        });
+      }
+    }
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const w2 = stage.clientWidth, h2 = stage.clientHeight;
+        if (!w2 || !h2) return;
+        camera.aspect = w2 / h2;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w2, h2);
+        renderer.render(scene, camera);
+      }, 200);
+    });
+  } catch (err) {
+    console.error('transform scene failed to init:', err);
+  }
+})();
 
 // ---------- scroll-triggered 3D reveal animations (GSAP) ----------
 (function initScrollAnimations(){
