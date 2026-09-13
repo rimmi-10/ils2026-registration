@@ -357,6 +357,7 @@
   }
   .community-card:hover{ transform:translateY(-6px); border-color:rgba(200,120,240,0.55); }
   .community-badge{
+    position:relative;
     width:90px; height:90px; margin:0 auto 20px; border-radius:50%;
     background:radial-gradient(circle, rgba(180,90,220,0.16), transparent 70%);
     display:flex; align-items:center; justify-content:center;
@@ -366,8 +367,14 @@
   .community-card:nth-child(3) .community-badge{ animation-delay:0.6s; }
   .community-card:nth-child(4) .community-badge{ animation-delay:0.9s; }
   @keyframes communityFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
-  .wie-icon{ width:64px; height:64px; }
-  .wie-icon path, .wie-icon circle{ stroke-dasharray:220; }
+  .wie-icon{ width:62px; height:62px; }
+  .wie-icon path, .wie-icon circle{ stroke-dasharray:300; }
+  .community-accent{
+    position:absolute; bottom:2px; right:2px; width:30px; height:30px; border-radius:50%;
+    background:var(--card); border:1.5px solid rgba(180,120,220,0.4);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .community-accent svg{ width:17px; height:17px; }
   .community-role{ font-family:var(--font-display); font-size:1.05rem; font-weight:800; margin-bottom:8px; }
   .community-desc{ color:var(--ink-dim); font-size:0.88rem; line-height:1.55; }
   @media(max-width:520px){
@@ -504,17 +511,15 @@
 
 <section id="community">
   <div class="community-bg-icon community-bg-icon-1" aria-hidden="true">
-    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 92 C20 70 32 58 50 58 C68 58 80 70 80 92"></path>
-      <circle cx="50" cy="34" r="20"></circle>
-      <circle cx="50" cy="14" r="7"></circle>
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="50" cy="27" r="14"></circle>
+      <path d="M37 44 L63 44 L78 88 L22 88 Z"></path>
     </svg>
   </div>
   <div class="community-bg-icon community-bg-icon-2" aria-hidden="true">
-    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 92 C20 70 32 58 50 58 C68 58 80 70 80 92"></path>
-      <circle cx="50" cy="34" r="20"></circle>
-      <circle cx="50" cy="14" r="7"></circle>
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="50" cy="27" r="14"></circle>
+      <path d="M37 44 L63 44 L78 88 L22 88 Z"></path>
     </svg>
   </div>
   <div class="section-head">
@@ -525,53 +530,65 @@
   <div class="community-grid">
     <div class="community-card">
       <div class="community-badge">
-        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 92 C20 70 32 58 50 58 C68 58 80 70 80 92"></path>
-          <circle cx="50" cy="34" r="20"></circle>
-          <circle cx="50" cy="14" r="7"></circle>
-          <circle cx="76" cy="76" r="8" stroke-width="2.6"></circle>
-          <path d="M76 65 v4 M76 83 v4 M65 76 h4 M83 76 h4 M68.5 68.5 l2.8 2.8 M80.7 80.7 l2.8 2.8 M68.5 83.5 l2.8 -2.8 M80.7 71.3 l2.8 -2.8" stroke-width="2.6"></path>
+        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="27" r="14"></circle>
+          <path d="M37 44 L63 44 L78 88 L22 88 Z"></path>
         </svg>
+        <div class="community-accent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="url(#wieGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.4"></circle>
+            <path d="M12 3 v2.4 M12 18.6 v2.4 M3 12 h2.4 M18.6 12 h2.4 M5.6 5.6 l1.7 1.7 M16.7 16.7 l1.7 1.7 M5.6 18.4 l1.7 -1.7 M16.7 7.3 l1.7 -1.7"></path>
+          </svg>
+        </div>
       </div>
       <div class="community-role">Build</div>
       <div class="community-desc">Hands-on engineering, from first prototype to a working demo.</div>
     </div>
     <div class="community-card">
       <div class="community-badge">
-        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 92 C20 70 32 58 50 58 C68 58 80 70 80 92"></path>
-          <circle cx="50" cy="34" r="20"></circle>
-          <circle cx="50" cy="14" r="7"></circle>
-          <circle cx="76" cy="70" r="7" stroke-width="2.6"></circle>
-          <path d="M72 76 h8 M73 79 h6 M76 60 v3" stroke-width="2.6"></path>
+        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="27" r="14"></circle>
+          <path d="M37 44 L63 44 L78 88 L22 88 Z"></path>
         </svg>
+        <div class="community-accent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="url(#wieGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4.5"></circle>
+            <path d="M9.5 15 h5 M10 18 h4 M12 3.5 v1.5"></path>
+          </svg>
+        </div>
       </div>
       <div class="community-role">Innovate</div>
       <div class="community-desc">Original problem-solving across sustainability, health, and industry.</div>
     </div>
     <div class="community-card">
       <div class="community-badge">
-        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 92 C20 70 32 58 50 58 C68 58 80 70 80 92"></path>
-          <circle cx="50" cy="34" r="20"></circle>
-          <circle cx="50" cy="14" r="7"></circle>
-          <path d="M76 62 L79 72 L89 75 L79 78 L76 88 L73 78 L63 75 L73 72 Z" stroke-width="2.6" stroke-linejoin="round"></path>
+        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="27" r="14"></circle>
+          <path d="M37 44 L63 44 L78 88 L22 88 Z"></path>
         </svg>
+        <div class="community-accent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="url(#wieGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3 L14 9 L20 11 L14 13 L12 19 L10 13 L4 11 L10 9 Z" stroke-linejoin="round"></path>
+          </svg>
+        </div>
       </div>
       <div class="community-role">Lead</div>
       <div class="community-desc">Organizing, screening, and judging the entire hackathon end to end.</div>
     </div>
     <div class="community-card">
       <div class="community-badge">
-        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 92 C20 70 32 58 50 58 C68 58 80 70 80 92"></path>
-          <circle cx="50" cy="34" r="20"></circle>
-          <circle cx="50" cy="14" r="7"></circle>
-          <circle cx="66" cy="80" r="3" stroke-width="2.6"></circle>
-          <circle cx="84" cy="80" r="3" stroke-width="2.6"></circle>
-          <circle cx="75" cy="64" r="3" stroke-width="2.6"></circle>
-          <path d="M66 80 L75 64 L84 80 M66 80 L84 80" stroke-width="2.6"></path>
+        <svg class="wie-icon" viewBox="0 0 100 100" fill="none" stroke="url(#wieGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="27" r="14"></circle>
+          <path d="M37 44 L63 44 L78 88 L22 88 Z"></path>
         </svg>
+        <div class="community-accent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="url(#wieGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="16" r="2.2"></circle>
+            <circle cx="18" cy="16" r="2.2"></circle>
+            <circle cx="13" cy="7" r="2.2"></circle>
+            <path d="M8 16 L13 7 L18 16 M8 16 L18 16"></path>
+          </svg>
+        </div>
       </div>
       <div class="community-role">Connect</div>
       <div class="community-desc">A national network of mentors, judges, and fellow builders.</div>
