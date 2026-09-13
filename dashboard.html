@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HackX 2026 — IEEE WIE ILS National Hackathon</title>
-<meta name="description" content="HackX 2026 — the IEEE WIE International Leadership Summit National Hackathon. Surat, 24-25 October 2026.">
+<title>HackX 2026: IEEE WIE ILS National Hackathon</title>
+<meta name="description" content="HackX 2026, the IEEE WIE International Leadership Summit National Hackathon. Surat, 24-25 October 2026.">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <style>
@@ -36,61 +36,57 @@
   ::selection{background:var(--magenta-soft);color:#fff;}
   .ic-svg{ width:16px; height:16px; vertical-align:-3px; flex-shrink:0; }
 
-  /* ---------- preloader: a gate that opens over the particle-face portrait ---------- */
+  /* ---------- preloader: the particle portrait fading up behind the loader ---------- */
   #preloader{
     position:fixed; inset:0; z-index:9999;
     background:var(--bg-deep);
     overflow:hidden;
-    transition:opacity 0.6s ease, visibility 0.6s ease;
+    display:flex; flex-direction:column;
+    transition:opacity 0.7s ease, visibility 0.7s ease;
   }
   #preloader.hide{ opacity:0; visibility:hidden; pointer-events:none; }
-  .preloader-image{
+  .preloader-frame{
     position:absolute; inset:0; z-index:1;
-    background-image:url('assets/face-source.jpg');
-    background-size:contain; background-repeat:no-repeat; background-position:center center;
-    filter:brightness(0.75) saturate(1.05);
-  }
-  .preloader-image::after{
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(180deg, rgba(18,10,30,0.25), rgba(18,10,30,0.55));
-  }
-  .preloader-gate{
-    position:absolute; top:0; bottom:0; width:50%; z-index:2;
-    background:var(--bg-deep);
-    transition:transform 0.9s cubic-bezier(.76,0,.24,1);
-  }
-  .preloader-gate-left{ left:0; }
-  .preloader-gate-right{ right:0; }
-  #preloader.gate-open .preloader-gate-left{ transform:translateX(-100%); }
-  #preloader.gate-open .preloader-gate-right{ transform:translateX(100%); }
-  .preloader-lock{
-    position:absolute; top:50%; left:50%; z-index:4;
-    width:40px; height:40px; margin:-84px 0 0 -20px;
-  }
-  .preloader-lock svg{ position:absolute; inset:0; transition:opacity 0.35s ease, transform 0.35s ease; }
-  .lock-open{ opacity:0; transform:scale(0.85); }
-  .lock-closed{ opacity:1; transform:scale(1); }
-  #preloader.gate-open .lock-closed{ opacity:0; transform:scale(0.85) rotate(-10deg); }
-  #preloader.gate-open .lock-open{ opacity:1; transform:scale(1); }
-  .loader-content{
-    position:relative; z-index:3; width:100%; height:100%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
-    transition:opacity 0.4s ease;
-  }
-  #preloader.gate-open .loader-content{ opacity:0; }
-  .loader-badge{
-    width:60px; height:60px; border-radius:16px;
-    background:linear-gradient(135deg,var(--violet),var(--magenta));
     display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-display); font-weight:800; color:#fff; font-size:1.05rem;
-    box-shadow:0 0 40px rgba(184,0,94,0.5);
-    animation:loaderSpin 1.6s ease-in-out infinite;
+    opacity:0; transform:scale(1.04);
+    transition:opacity 1.1s ease, transform 1.3s ease;
   }
-  @keyframes loaderSpin{ 0%,100%{ transform:rotate(0deg) scale(1); } 50%{ transform:rotate(180deg) scale(1.08); } }
-  .loader-bar{ width:180px; height:3px; border-radius:2px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  #preloader.image-ready .preloader-frame{ opacity:1; transform:scale(1); }
+  .preloader-portrait{
+    max-width:88%; max-height:75%; object-fit:contain;
+    filter:drop-shadow(0 0 70px rgba(184,0,94,0.3));
+  }
+  .preloader-frame::after{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 35%, var(--bg-deep) 100%);
+  }
+  .loader-content{
+    position:relative; z-index:2; margin-top:auto; align-self:center;
+    padding-bottom:64px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  .loader-text{
+    font-family:var(--font-display); font-weight:800; font-size:1.05rem;
+    letter-spacing:3px; color:#fff;
+  }
+  .loader-bar{ width:180px; height:2px; border-radius:2px; background:rgba(255,255,255,0.12); overflow:hidden; }
   .loader-bar::after{ content:''; display:block; height:100%; width:40%; background:linear-gradient(90deg,var(--violet),var(--magenta),var(--glow)); animation:loaderBar 1.1s ease-in-out infinite; }
   @keyframes loaderBar{ 0%{ transform:translateX(-120%); } 100%{ transform:translateX(350%); } }
-  .loader-text{ font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--ink-dim); }
+  .loader-sub{ font-size:0.66rem; letter-spacing:2px; text-transform:uppercase; color:var(--ink-dim); }
+  .preloader-greet{
+    position:absolute; z-index:2; top:26px;
+    font-family:var(--font-display); font-style:italic; font-size:0.9rem;
+    color:var(--ink-dim); opacity:0; letter-spacing:0.5px;
+    transition:opacity 0.8s ease 0.3s;
+  }
+  #preloader.image-ready .preloader-greet{ opacity:0.65; }
+  .greet-tl{ left:28px; }
+  .greet-tr{ right:28px; }
+  @media(max-width:520px){
+    .preloader-greet{ font-size:0.75rem; top:18px; }
+    .greet-tl{ left:18px; }
+    .greet-tr{ right:18px; }
+  }
 
   /* ---------- custom cursor ---------- */
   @media (hover:hover) and (pointer:fine){
@@ -136,15 +132,13 @@
   nav.scrolled{ padding:10px 5vw; background:rgba(18,10,30,0.85); }
   .brand{ display:flex; align-items:center; gap:12px; font-family:var(--font-display); font-weight:800; letter-spacing:0.5px; font-size:1.05rem; color:var(--ink); text-decoration:none; }
   .brand-logo{
-    height:64px; width:auto; border-radius:9px;
-    background:#fff; padding:4px 7px;
+    height:72px; width:auto; border-radius:9px;
+    background:#fff; padding:0;
     box-shadow:0 0 22px rgba(184,0,94,0.4);
     transition:height 0.3s ease;
   }
-  .brand-logo-secondary{ height:54px; opacity:0.95; }
   .brand-text{ white-space:nowrap; }
-  nav.scrolled .brand-logo-primary{ height:48px; }
-  nav.scrolled .brand-logo-secondary{ height:40px; }
+  nav.scrolled .brand-logo{ height:56px; }
   .nav-links{ display:flex; gap:28px; }
   .nav-links a{ color:var(--ink-dim); text-decoration:none; font-size:0.92rem; font-weight:600; transition:color 0.2s; }
   .nav-links a:hover{ color:#fff; }
@@ -454,11 +448,11 @@
   /* ---------- engineering dna ---------- */
   .dna-track{ position:relative; max-width:1200px; margin:0 auto; padding-top:50px; }
   .dna-line{ position:absolute; top:0; left:0; width:100%; height:120px; }
-  #dnaPathLit{ stroke-dasharray:1080; stroke-dashoffset:1080; }
+  .dna-line-mobile{ display:none; }
   .dna-particle{
     position:absolute; top:0; left:0; width:10px; height:10px; border-radius:50%;
     background:var(--glow); box-shadow:0 0 14px var(--glow); opacity:0;
-    offset-path: path('M60 60 L1140 60'); offset-distance:0%;
+    offset-path: path('M60 60 Q 250 15, 440 60 T 820 60 T 1140 55'); offset-distance:0%;
   }
   .dna-nodes{ position:relative; z-index:2; display:flex; justify-content:space-between; padding-top:44px; }
   .dna-node{ display:flex; flex-direction:column; align-items:center; gap:12px; opacity:0.4; transition:opacity 0.4s ease; }
@@ -476,10 +470,7 @@
     .dna-line, .dna-particle{ display:none; }
     .dna-track{ padding-top:10px; }
     .dna-nodes{ flex-direction:column; align-items:flex-start; gap:26px; padding-top:0; position:relative; padding-left:32px; }
-    .dna-nodes::before{
-      content:''; position:absolute; left:22px; top:10px; bottom:10px; width:2px;
-      background:linear-gradient(180deg,var(--violet),var(--magenta),transparent);
-    }
+    .dna-line-mobile{ display:block; position:absolute; left:0; top:10px; bottom:10px; width:44px; height:auto; }
     .dna-node{ flex-direction:row; gap:16px; opacity:1; margin-left:-32px; }
     .dna-dot{ border-color:var(--magenta-soft); color:#fff; }
     .dna-label{ color:var(--ink); font-size:0.95rem; }
@@ -613,8 +604,7 @@
     section{ padding:72px 6vw; }
     .meta-chip{ font-size:0.8rem; padding:8px 14px; }
     .brand-text{ display:none; }
-    .brand-logo-primary{ height:48px; }
-    .brand-logo-secondary{ height:40px; }
+    .brand-logo{ height:52px; }
   }
 
   /* ---------- reduced motion ---------- */
@@ -629,17 +619,18 @@
 <body>
 
 <div id="preloader">
-  <div class="preloader-image" aria-hidden="true"></div>
-  <div class="preloader-gate preloader-gate-left" aria-hidden="true"></div>
-  <div class="preloader-gate preloader-gate-right" aria-hidden="true"></div>
-  <div class="preloader-lock" aria-hidden="true">
-    <svg class="lock-closed" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path><circle cx="12" cy="15.5" r="1.3" fill="#fff" stroke="none"></circle></svg>
-    <svg class="lock-open" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.6-2.3"></path><circle cx="12" cy="15.5" r="1.3" fill="#fff" stroke="none"></circle></svg>
+  <div class="preloader-frame" aria-hidden="true">
+    <picture>
+      <source media="(max-width:700px)" srcset="assets/face-source-mobile.jpg">
+      <img class="preloader-portrait" id="preloaderPortrait" alt="" src="assets/face-source.jpg">
+    </picture>
   </div>
+  <div class="preloader-greet greet-tl" aria-hidden="true">નમસ્તે</div>
+  <div class="preloader-greet greet-tr" aria-hidden="true">नमस्ते</div>
   <div class="loader-content">
-    <div class="loader-badge">WIE</div>
+    <div class="loader-text">HACKX 2026</div>
     <div class="loader-bar"></div>
-    <div class="loader-text">Loading ILS 2026</div>
+    <div class="loader-sub">Loading ILS 2026</div>
   </div>
 </div>
 
@@ -667,8 +658,8 @@
 
 <nav id="mainNav">
   <a class="brand" href="https://wieils.ieee.org/2026-suratindia/">
-    <img src="assets/logo-wie-gujarat.jpg" alt="IEEE WIE Gujarat Section" class="brand-logo brand-logo-primary">
-    <img src="assets/logo-ieee-gujarat.jpg" alt="IEEE Gujarat Section" class="brand-logo brand-logo-secondary">
+    <img src="assets/logo-wie-gujarat.jpg" alt="IEEE WIE Gujarat Section" class="brand-logo">
+    <img src="assets/logo-ieee-gujarat.jpg" alt="IEEE Gujarat Section" class="brand-logo">
     <span class="brand-text">ILS 2026 &middot; Hackathon</span>
   </a>
   <div class="nav-links">
@@ -691,7 +682,7 @@
   <div class="hero-content">
     <div class="eyebrow"><span class="pulse-dot"></span> HackX 2026 &middot; IEEE WIE International Leadership Summit</div>
     <h1 class="title">National Hackathon<br><span class="grad">Built by Women in Engineering</span></h1>
-    <p class="subtitle">A national-level hackathon under IEEE WIE ILS 2026 — two days of building, mentorship, and real problem-solving, hosted at Sarvajanik University &amp; SVNIT Surat.</p>
+    <p class="subtitle">A national-level hackathon under IEEE WIE ILS 2026, two days of building, mentorship, and real problem-solving, hosted at Sarvajanik University &amp; SVNIT Surat.</p>
     <p class="hero-tagline">&ldquo;Empower to Inspire: Thriving Together for an Inclusive and Sustainable Future&rdquo;</p>
     <div class="hero-meta">
       <div class="meta-chip"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="9.5" x2="21" y2="9.5"></line><line x1="8" y1="2.5" x2="8" y2="6.5"></line><line x1="16" y1="2.5" x2="16" y2="6.5"></line></svg></span> 24&ndash;25 October 2026</div>
@@ -710,7 +701,7 @@
   <div class="section-head">
     <div class="section-tag">The Story So Far</div>
     <h2>Where it all begins</h2>
-    <p>From an idea to a national stage — this is IEEE WIE ILS 2026.</p>
+    <p>From an idea to a national stage: this is IEEE WIE ILS 2026.</p>
   </div>
   <div class="video-wrap">
     <div class="video-frame" id="videoFrame">
@@ -730,8 +721,11 @@
   </div>
   <div class="dna-track">
     <svg class="dna-line" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M60 60 L1140 60" fill="none" stroke="rgba(180,120,220,0.22)" stroke-width="2"></path>
-      <path id="dnaPathLit" d="M60 60 L1140 60" fill="none" stroke="url(#wieGrad)" stroke-width="2.5"></path>
+      <path d="M60 60 Q 250 15, 440 60 T 820 60 T 1140 55" fill="none" stroke="rgba(180,120,220,0.22)" stroke-width="2"></path>
+      <path id="dnaPathLit" d="M60 60 Q 250 15, 440 60 T 820 60 T 1140 55" fill="none" stroke="url(#wieGrad)" stroke-width="2.5"></path>
+    </svg>
+    <svg class="dna-line-mobile" viewBox="0 0 44 800" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M22 6 Q 40 100, 22 200 T 22 400 T 22 600 T 22 794" fill="none" stroke="url(#wieGrad)" stroke-width="2" opacity="0.5"></path>
     </svg>
     <div class="dna-particle" aria-hidden="true"></div>
     <div class="dna-nodes">
@@ -849,7 +843,7 @@
   <div class="section-head">
     <div class="section-tag">Real-Time</div>
     <h2>The Numbers Behind the Movement</h2>
-    <p>Pulled live from the ILS 2026 database — no placeholders, no guesses.</p>
+    <p>Live numbers from the ILS 2026 database, refreshed every minute.</p>
   </div>
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-num" id="statRegistrations">0</div><div class="stat-label">Teams Registered</div><div class="stat-sub">across all tracks</div></div>
@@ -1029,15 +1023,22 @@ const VIDEO_IS_IFRAME = false; // set true if VIDEO_SRC is a YouTube/Drive embed
 // fallback timer call this.
 function hidePreloader() {
   const pre = document.getElementById('preloader');
-  if (!pre || pre.classList.contains('gate-open')) return;
-  pre.classList.add('gate-open');
-  // Gates take 0.9s to fully part -- wait for that, then hold on the fully
-  // open, fully visible portrait for a beat before fading, so it's actually
-  // seen rather than glimpsed mid-slide.
-  setTimeout(() => pre.classList.add('hide'), 1450);
+  if (pre) pre.classList.add('hide');
 }
-window.addEventListener('load', () => setTimeout(hidePreloader, 400));
+window.addEventListener('load', () => setTimeout(hidePreloader, 500));
 setTimeout(hidePreloader, 3500); // fallback in case a CDN asset stalls
+
+// The portrait fades in the moment it actually finishes loading (or
+// immediately if it was already cached) -- independent of the timers
+// above, so a slow/failed image load never blocks the loader itself.
+(function initPreloaderPortrait(){
+  const pre = document.getElementById('preloader');
+  const img = document.getElementById('preloaderPortrait');
+  if (!pre || !img) return;
+  const reveal = () => pre.classList.add('image-ready');
+  if (img.complete && img.naturalWidth > 0) reveal();
+  else img.addEventListener('load', reveal);
+})();
 
 // ---------- nav scroll state ----------
 const navEl = document.getElementById('mainNav');
@@ -1100,7 +1101,7 @@ async function loadStats() {
     statsRetryDelay = 5000;
   } catch (err) {
     clearTimeout(timeoutId);
-    updatedEl.textContent = 'stats temporarily unavailable — retrying';
+    updatedEl.textContent = 'stats temporarily unavailable, retrying';
     console.error('stats fetch failed:', err);
     if (statsRetryTimer) clearTimeout(statsRetryTimer);
     statsRetryTimer = setTimeout(loadStats, statsRetryDelay);
@@ -1342,7 +1343,10 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
   const faceImg = new Image();
   faceImg.onload = () => start(faceImg);
   faceImg.onerror = () => start(null); // graceful: face formation just falls back to the network sphere
-  faceImg.src = 'assets/face-source.jpg';
+  // Two source portraits, purpose-composed for their aspect ratio (wide with
+  // the subject on the right + left negative space for desktop; tall/portrait
+  // for mobile) rather than one image stretched or letterboxed for both.
+  faceImg.src = window.innerWidth < 700 ? 'assets/face-source-mobile.jpg' : 'assets/face-source.jpg';
 
   function shuffle(arr, stride) {
     const n = arr.length / stride;
@@ -1368,11 +1372,22 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
 
       const isNarrow = w < 700;
       const COUNT = isNarrow ? 900 : 2600;
+      // At the fixed camera distance, a narrow/mobile aspect ratio has a much
+      // narrower horizontal frustum than desktop -- the network/grid/text
+      // formations (widest is text at ~8.96 world units) were sized for
+      // desktop's ~9-unit-wide view and would clip off-screen on a phone's
+      // much narrower frustum. Compute the actual frustum width at this
+      // camera distance/aspect and derive the scale from it, rather than
+      // guessing a fixed constant that only happens to fit some devices.
+      const vFovRad = (50 * Math.PI) / 180;
+      const frustumWidthAtCam = 2 * 6 * Math.tan(vFovRad / 2) * (w / h);
+      const widestFormationSpan = 8.96; // the text formation's natural width
+      const spanScale = isNarrow ? Math.min(1, (frustumWidthAtCam * 0.6) / widestFormationSpan) : 1;
 
       function buildScattered(n) {
         const arr = new Float32Array(n * 3);
         for (let i = 0; i < n; i++) {
-          arr[i * 3] = (Math.random() - 0.5) * 14;
+          arr[i * 3] = (Math.random() - 0.5) * 14 * spanScale;
           arr[i * 3 + 1] = (Math.random() - 0.5) * 10;
           arr[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
         }
@@ -1381,7 +1396,7 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
       function buildNetwork(n) {
         const arr = new Float32Array(n * 3);
         for (let i = 0; i < n; i++) {
-          const r = 2.6 + Math.random() * 0.6;
+          const r = (2.6 + Math.random() * 0.6) * spanScale;
           const theta = Math.random() * Math.PI * 2;
           const phi = Math.acos((Math.random() * 2) - 1);
           arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -1394,7 +1409,7 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
         const arr = new Float32Array(n * 3);
         const cols = Math.ceil(Math.sqrt(n * 1.6));
         const rows = Math.ceil(n / cols);
-        const spacingX = 5.4 / cols, spacingY = 3.2 / rows;
+        const spacingX = (5.4 * spanScale) / cols, spacingY = 3.2 / rows;
         for (let i = 0; i < n; i++) {
           const cx = i % cols, cy = Math.floor(i / cols);
           arr[i * 3] = (cx - cols / 2) * spacingX + (Math.random() - 0.5) * 0.04;
@@ -1467,7 +1482,13 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
         c.width = cw; c.height = ch;
         const ctx = c.getContext('2d');
         ctx.drawImage(imgEl, 0, 0, cw, ch);
-        return sampleCanvasToPoints(ctx, cw, ch, n, 5.6 / cw, 30, { brightLum: 175, brightShare: 0.55 });
+        // Scale by whichever dimension is larger, not always width -- the
+        // mobile portrait is tall (portrait aspect ~0.56) while the desktop
+        // one is wide (~1.77). Scaling both off a fixed width alone made the
+        // tall mobile image roughly 2x the camera's visible height, pushing
+        // most of the face outside the frustum (the "breaks on phone" bug).
+        const scale = 5.2 / Math.max(cw, ch);
+        return sampleCanvasToPoints(ctx, cw, ch, n, scale, 30, { brightLum: 175, brightShare: 0.55 });
       }
       function buildText(n, text) {
         const cw = 640, ch = 180;
@@ -1481,7 +1502,7 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(text, cw / 2, ch / 2 + 8);
-        return sampleCanvasToPoints(ctx, cw, ch, n, 0.014, 128, {}).positions;
+        return sampleCanvasToPoints(ctx, cw, ch, n, 0.014 * spanScale, 128, {}).positions;
       }
 
       const formScattered = buildScattered(COUNT);
@@ -1841,7 +1862,7 @@ document.querySelectorAll('.btn-primary').forEach((btn) => {
 // index.html's registration form (problemsByTrack) -- nothing invented here. ----------
 const TRACK_PROBLEMS = {
   track1: {
-    tag: 'Track 01', title: 'Bharat Rising — Rural India & EdTech',
+    tag: 'Track 01', title: 'Bharat Rising (Rural India & EdTech)',
     problems: [
       { id: 'P1', title: 'The Middleman Killer', desc: 'Build a real-time price discovery and auction platform to help farmers get fair prices directly by eliminating middlemen. Must work in low-connectivity areas and be simple enough for first-time smartphone users.' },
       { id: 'P2', title: 'Disaster Response Without Infrastructure', desc: 'Develop a mesh-network emergency communication system for disaster-hit rural areas with no internet or power. Must support location-tagged SOS signals, rescue coordination, and a shared resource map offline.' },
@@ -1855,10 +1876,10 @@ const TRACK_PROBLEMS = {
     ],
   },
   track3: {
-    tag: 'Track 03', title: 'SheLeads — WIE Special Track',
+    tag: 'Track 03', title: 'SheLeads (WIE Special Track)',
     problems: [
       { id: 'P5', title: 'Safe Route Navigator', desc: 'Build an app that suggests the safest routes for women travelling alone based on crime data, crowd density, lighting, and community reports.' },
-      { id: 'P6', title: 'SheShield Wearable', desc: 'Create a wearable that detects distress and silently alerts emergency contacts with live location, audio, and video evidence — even without a phone.' },
+      { id: 'P6', title: 'SheShield Wearable', desc: 'Create a wearable that detects distress and silently alerts emergency contacts with live location, audio, and video evidence, even without a phone.' },
       { id: 'P7', title: 'Skill to Income Platform', desc: 'Build a platform for women to learn market-relevant skills, showcase work and connect with real income opportunities, usable in at least three Indian languages.' },
       { id: 'P8', title: 'Nutrition Tracker for Women & Girls', desc: 'Develop a simple app that tracks nutrition and health to help women and girls stay healthy, with WHO-aligned meal plans based on local produce and budget.' },
     ],
