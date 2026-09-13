@@ -100,7 +100,7 @@
     transition:padding 0.3s ease, background 0.3s ease;
   }
   nav.scrolled{ padding:10px 5vw; background:rgba(18,10,30,0.85); }
-  .brand{ display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:800; letter-spacing:0.5px; font-size:1.05rem; }
+  .brand{ display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:800; letter-spacing:0.5px; font-size:1.05rem; color:var(--ink); text-decoration:none; }
   .brand-badge{
     width:34px; height:34px; border-radius:10px;
     background:linear-gradient(135deg,var(--violet),var(--magenta));
@@ -246,7 +246,7 @@
   .video-placeholder{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
     background:radial-gradient(circle at 50% 50%, rgba(10,5,20,0.2), rgba(10,5,20,0.55));
-    color:var(--ink-dim); text-align:center; padding:20px; cursor:pointer;
+    color:var(--ink-dim); text-align:center; padding:20px;
     transition:background 0.25s;
   }
   .video-placeholder:hover{ background:radial-gradient(circle at 50% 50%, rgba(10,5,20,0.1), rgba(10,5,20,0.4)); }
@@ -255,7 +255,6 @@
     background:linear-gradient(135deg,var(--violet),var(--magenta));
     display:flex; align-items:center; justify-content:center;
     animation:ringPulse 2.4s infinite;
-    cursor:pointer;
   }
   @keyframes ringPulse{
     0%{ box-shadow:0 0 0 0 rgba(184,0,94,0.55); }
@@ -390,14 +389,14 @@
 <div class="noise"></div>
 
 <nav id="mainNav">
-  <div class="brand"><span class="brand-badge">WIE</span> ILS 2026 &middot; Hackathon</div>
+  <a class="brand" href="https://wieils.ieee.org/2026-suratindia/"><span class="brand-badge">WIE</span> ILS 2026 &middot; Hackathon</a>
   <div class="nav-links">
     <a href="#stats">Live Stats</a>
     <a href="#timeline">Timeline</a>
     <a href="#tracks">Tracks</a>
-    <a href="#venue">Venue</a>
+    <a href="index.html">Check Status</a>
   </div>
-  <a class="nav-cta" href="index.html">Register / Portal</a>
+  <a class="nav-cta" href="https://wieils.ieee.org/2026-suratindia/">Register</a>
 </nav>
 
 <header class="hero">
@@ -412,8 +411,8 @@
       <div class="meta-chip"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.4"></rect><rect x="14" y="3" width="7" height="7" rx="1.4"></rect><rect x="3" y="14" width="7" height="7" rx="1.4"></rect><rect x="14" y="14" width="7" height="7" rx="1.4"></rect></svg></span> 4 Problem Tracks</div>
     </div>
     <div class="hero-ctas">
-      <a class="btn-primary" href="index.html">Enter Registration Portal &rarr;</a>
-      <a class="btn-ghost" href="#video">Watch the Story</a>
+      <a class="btn-primary" href="https://wieils.ieee.org/2026-suratindia/">Register Now &rarr;</a>
+      <a class="btn-ghost" href="index.html">Check Team Status</a>
     </div>
   </div>
   <div class="scroll-cue">Scroll<div class="arrow"></div></div>
@@ -429,8 +428,7 @@
     <div class="video-frame" id="videoFrame">
       <div class="video-placeholder" id="videoPlaceholder">
         <div class="play-ring" id="playRing"></div>
-        <div style="font-weight:700; font-size:1rem; color:#fff;">ILS 2026 Promo Video</div>
-        <div style="font-size:0.85rem; max-width:340px;">Video coming soon — drop the file or link into the <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:6px;">VIDEO_SRC</code> constant in this page's script to go live.</div>
+        <div style="font-weight:700; font-size:1rem; color:#fff;">Watch the ILS 2026 Reel</div>
       </div>
     </div>
   </div>
@@ -508,14 +506,14 @@
     <div class="venue-inner">
       <h3>See You in Surat</h3>
       <p>Sarvajanik University &amp; SVNIT Surat host the national finale of IEEE WIE ILS 2026 on 24&ndash;25 October 2026 &mdash; two days of building, mentorship, and celebrating women-led engineering.</p>
-      <a class="btn-primary" href="index.html">Go to Registration Portal &rarr;</a>
+      <a class="btn-primary" href="https://wieils.ieee.org/2026-suratindia/">Register Now &rarr;</a>
     </div>
   </div>
 </section>
 
 <footer>
   IEEE Women in Engineering &middot; International Leadership Summit 2026 &middot; National Hackathon<br>
-  Surat, India &middot; <a href="index.html">Registration Portal</a>
+  Surat, India &middot; <a href="https://wieils.ieee.org/2026-suratindia/">Register</a> &middot; <a href="index.html">Check Team Status</a>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -546,13 +544,12 @@ const VIDEO_IS_IFRAME = false; // set true if VIDEO_SRC is a YouTube/Drive embed
   } else {
     const video = document.createElement('video');
     video.src = VIDEO_SRC;
-    video.controls = true;
+    video.controls = false;
     video.playsInline = true;
     video.preload = 'metadata';
     if (VIDEO_POSTER) video.poster = VIDEO_POSTER;
     frame.insertBefore(video, placeholder);
-    placeholder.innerHTML = '<div class="play-ring" id="playRing"></div>';
-    const startPlayback = () => { video.play(); placeholder.style.display = 'none'; };
+    const startPlayback = () => { video.controls = true; video.play(); placeholder.style.display = 'none'; };
     placeholder.addEventListener('click', startPlayback);
     video.addEventListener('play', () => { placeholder.style.display = 'none'; });
   }
@@ -740,29 +737,32 @@ setInterval(loadStats, 60000);
     if (typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
 
     gsap.utils.toArray('.section-head').forEach((el) => {
-      gsap.from(el, { opacity: 0, y: 40, duration: 0.8, ease: 'power3.out',
+      gsap.from(el, { opacity: 0, y: 40, duration: 0.8, ease: 'power3.out', clearProps: 'all',
         scrollTrigger: { trigger: el, start: 'top 85%' } });
     });
 
+    // clearProps:'all' is essential here -- without it GSAP leaves an inline
+    // transform on each card after the tween ends, which (via CSS specificity)
+    // permanently overrides the .stat-card:hover / .track-card:hover lift+tilt.
     gsap.from('.stat-card', {
-      opacity: 0, rotateY: -90, y: 20, duration: 0.9, stagger: 0.1, ease: 'power3.out',
+      opacity: 0, rotateY: -90, y: 20, duration: 0.9, stagger: 0.1, ease: 'power3.out', clearProps: 'all',
       scrollTrigger: { trigger: '.stats-grid', start: 'top 80%' },
     });
 
     gsap.from('.track-card', {
-      opacity: 0, rotateY: 90, y: 20, duration: 0.9, stagger: 0.12, ease: 'power3.out',
+      opacity: 0, rotateY: 90, y: 20, duration: 0.9, stagger: 0.12, ease: 'power3.out', clearProps: 'all',
       scrollTrigger: { trigger: '.tracks-grid', start: 'top 80%' },
     });
 
     gsap.utils.toArray('.t-item').forEach((el) => {
-      gsap.from(el, { opacity: 0, x: -40, duration: 0.7, ease: 'power3.out',
+      gsap.from(el, { opacity: 0, x: -40, duration: 0.7, ease: 'power3.out', clearProps: 'all',
         scrollTrigger: { trigger: el, start: 'top 88%' } });
     });
 
-    gsap.from('.video-wrap', { opacity: 0, scale: 0.92, y: 30, duration: 0.9, ease: 'power3.out',
+    gsap.from('.video-wrap', { opacity: 0, scale: 0.92, y: 30, duration: 0.9, ease: 'power3.out', clearProps: 'all',
       scrollTrigger: { trigger: '.video-wrap', start: 'top 82%' } });
 
-    gsap.from('.venue-card', { opacity: 0, y: 40, duration: 0.9, ease: 'power3.out',
+    gsap.from('.venue-card', { opacity: 0, y: 40, duration: 0.9, ease: 'power3.out', clearProps: 'all',
       scrollTrigger: { trigger: '.venue-card', start: 'top 85%' } });
   } catch (err) {
     console.error('scroll animation init failed:', err);
@@ -818,7 +818,7 @@ setInterval(loadStats, 60000);
   }
   ringLoop();
 
-  document.querySelectorAll('a, button').forEach((el) => {
+  document.querySelectorAll('a, button, .video-placeholder').forEach((el) => {
     el.addEventListener('mouseenter', () => ring.classList.add('active'));
     el.addEventListener('mouseleave', () => ring.classList.remove('active'));
   });
