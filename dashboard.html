@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE WIE ILS 2026 — National Hackathon</title>
+<meta name="description" content="IEEE Women in Engineering International Leadership Summit 2026 — National Hackathon. Surat, 24-25 October 2026.">
+<style>
+  :root{
+    --violet:#6a1794;
+    --magenta:#b8005e;
+    --violet-soft:#8c3ec0;
+    --magenta-soft:#d6247e;
+    --bg-deep:#120a1e;
+    --bg-deep2:#1c0f2e;
+    --ink:#f5ecff;
+    --ink-dim:#c9b3e0;
+    --card:#1c1030;
+    --card-border:rgba(180,120,220,0.25);
+    --glow:#c060f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg-deep);
+    color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+  ::selection{background:var(--magenta-soft);color:#fff;}
+
+  /* ---------- background field ---------- */
+  #bgCanvas{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+  }
+  .bg-gradient{
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 800px 500px at 15% 10%, rgba(106,23,148,0.45), transparent 60%),
+      radial-gradient(ellipse 700px 600px at 90% 25%, rgba(184,0,94,0.35), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 50% 90%, rgba(140,62,192,0.30), transparent 60%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep2) 100%);
+    pointer-events:none;
+  }
+  .noise{
+    position:fixed; inset:0; z-index:1; opacity:0.035; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- nav ---------- */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 5vw;
+    background:rgba(18,10,30,0.55);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    transition:padding 0.3s ease, background 0.3s ease;
+  }
+  nav.scrolled{ padding:10px 5vw; background:rgba(18,10,30,0.85); }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:0.5px; font-size:1.05rem; }
+  .brand-badge{
+    width:34px; height:34px; border-radius:10px;
+    background:linear-gradient(135deg,var(--violet),var(--magenta));
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.85rem; font-weight:900; color:#fff;
+    box-shadow:0 0 18px rgba(184,0,94,0.5);
+  }
+  .nav-links{ display:flex; gap:28px; }
+  .nav-links a{ color:var(--ink-dim); text-decoration:none; font-size:0.92rem; font-weight:600; transition:color 0.2s; }
+  .nav-links a:hover{ color:#fff; }
+  .nav-cta{
+    padding:9px 20px; border-radius:999px; text-decoration:none;
+    background:linear-gradient(135deg,var(--violet),var(--magenta));
+    color:#fff; font-weight:700; font-size:0.88rem;
+    box-shadow:0 4px 20px rgba(184,0,94,0.35);
+    transition:transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover{ transform:translateY(-2px); box-shadow:0 8px 28px rgba(184,0,94,0.5); }
+  .nav-toggle{ display:none; }
+
+  /* ---------- hero ---------- */
+  header.hero{
+    position:relative; z-index:5;
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+    padding:120px 6vw 60px;
+    perspective:1200px;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 18px; border-radius:999px;
+    background:rgba(140,62,192,0.15);
+    border:1px solid rgba(180,120,220,0.35);
+    font-size:0.78rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+    color:#e8c9ff;
+    margin-bottom:28px;
+    animation:fadeUp 0.9s ease both;
+  }
+  .pulse-dot{
+    width:8px; height:8px; border-radius:50%; background:var(--magenta-soft);
+    box-shadow:0 0 0 rgba(214,36,126,0.6);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(214,36,126,0.6); }
+    70%{ box-shadow:0 0 0 10px rgba(214,36,126,0); }
+    100%{ box-shadow:0 0 0 0 rgba(214,36,126,0); }
+  }
+  h1.title{
+    font-size:clamp(2.6rem, 7.5vw, 5.6rem);
+    font-weight:900; line-height:1.02; letter-spacing:-2px;
+    margin-bottom:22px;
+    animation:fadeUp 0.9s ease 0.1s both;
+  }
+  h1.title .grad{
+    background:linear-gradient(120deg, #ffffff 0%, #e8c9ff 25%, var(--glow) 50%, var(--magenta-soft) 75%, #ffffff 100%);
+    background-size:300% auto;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:shine 6s linear infinite;
+  }
+  @keyframes shine{ to{ background-position:300% center; } }
+  .subtitle{
+    max-width:680px; font-size:clamp(1rem,2.2vw,1.25rem); color:var(--ink-dim);
+    line-height:1.6; margin-bottom:38px;
+    animation:fadeUp 0.9s ease 0.2s both;
+  }
+  .hero-meta{
+    display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin-bottom:44px;
+    animation:fadeUp 0.9s ease 0.3s both;
+  }
+  .meta-chip{
+    display:flex; align-items:center; gap:8px;
+    padding:10px 18px; border-radius:14px;
+    background:var(--card); border:1px solid var(--card-border);
+    font-size:0.88rem; font-weight:600; color:var(--ink);
+  }
+  .meta-chip .ic{ font-size:1rem; opacity:0.85; }
+  .hero-ctas{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; animation:fadeUp 0.9s ease 0.4s both; }
+  .btn-primary, .btn-ghost{
+    padding:15px 32px; border-radius:14px; font-weight:700; font-size:1rem;
+    text-decoration:none; display:inline-flex; align-items:center; gap:10px;
+    transition:transform 0.25s cubic-bezier(.2,.9,.3,1.3), box-shadow 0.25s;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--violet),var(--magenta));
+    color:#fff; box-shadow:0 10px 40px rgba(184,0,94,0.4);
+  }
+  .btn-primary:hover{ transform:translateY(-4px) scale(1.02); box-shadow:0 16px 50px rgba(184,0,94,0.55); }
+  .btn-ghost{
+    background:rgba(255,255,255,0.04); color:var(--ink);
+    border:1px solid rgba(255,255,255,0.18);
+  }
+  .btn-ghost:hover{ transform:translateY(-4px); background:rgba(255,255,255,0.09); }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(26px); } to{ opacity:1; transform:translateY(0); } }
+
+  .scroll-cue{
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    color:var(--ink-dim); font-size:0.72rem; letter-spacing:2px; text-transform:uppercase;
+    animation:fadeUp 0.9s ease 0.6s both;
+  }
+  .scroll-cue .arrow{
+    width:22px; height:22px; border-right:2px solid var(--ink-dim); border-bottom:2px solid var(--ink-dim);
+    transform:rotate(45deg); animation:bounce 1.8s infinite;
+  }
+  @keyframes bounce{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:0.5; } 50%{ transform:rotate(45deg) translate(6px,6px); opacity:1; } }
+
+  section{ position:relative; z-index:5; padding:100px 6vw; }
+  .section-head{ text-align:center; max-width:700px; margin:0 auto 56px; }
+  .section-tag{
+    font-size:0.78rem; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+    color:var(--glow); margin-bottom:14px;
+  }
+  .section-head h2{ font-size:clamp(1.9rem,4vw,2.9rem); font-weight:900; letter-spacing:-1px; margin-bottom:16px; }
+  .section-head p{ color:var(--ink-dim); font-size:1.05rem; line-height:1.6; }
+
+  /* ---------- video hero ---------- */
+  .video-wrap{
+    max-width:980px; margin:0 auto;
+    border-radius:24px; overflow:hidden;
+    border:1px solid var(--card-border);
+    background:var(--card);
+    box-shadow:0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(180,120,220,0.1);
+    transform-style:preserve-3d;
+    transition:transform 0.4s ease;
+  }
+  .video-frame{ position:relative; width:100%; aspect-ratio:16/9; background:#000; }
+  .video-frame video, .video-frame iframe{
+    position:absolute; inset:0; width:100%; height:100%; border:0; object-fit:cover;
+  }
+  .video-placeholder{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(140,62,192,0.35), transparent 55%),
+      radial-gradient(circle at 75% 80%, rgba(184,0,94,0.3), transparent 55%),
+      #150a24;
+    color:var(--ink-dim); text-align:center; padding:20px;
+  }
+  .play-ring{
+    width:84px; height:84px; border-radius:50%;
+    background:linear-gradient(135deg,var(--violet),var(--magenta));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 0 rgba(184,0,94,0.5);
+    animation:ringPulse 2.4s infinite;
+    cursor:pointer;
+  }
+  @keyframes ringPulse{
+    0%{ box-shadow:0 0 0 0 rgba(184,0,94,0.55); }
+    70%{ box-shadow:0 0 0 22px rgba(184,0,94,0); }
+    100%{ box-shadow:0 0 0 0 rgba(184,0,94,0); }
+  }
+  .play-ring::after{
+    content:''; width:0; height:0; margin-left:5px;
+    border-top:14px solid transparent; border-bottom:14px solid transparent; border-left:22px solid #fff;
+  }
+
+  /* ---------- stats ---------- */
+  .stats-grid{
+    max-width:1140px; margin:0 auto;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:22px;
+  }
+  .stat-card{
+    position:relative;
+    background:var(--card); border:1px solid var(--card-border);
+    border-radius:20px; padding:32px 26px;
+    overflow:hidden;
+    transition:transform 0.35s cubic-bezier(.2,.9,.3,1.2), border-color 0.3s;
+  }
+  .stat-card::before{
+    content:''; position:absolute; inset:0; opacity:0;
+    background:radial-gradient(circle at 50% 0%, rgba(180,90,220,0.25), transparent 70%);
+    transition:opacity 0.3s;
+  }
+  .stat-card:hover{ transform:translateY(-8px); border-color:rgba(200,120,240,0.55); }
+  .stat-card:hover::before{ opacity:1; }
+  .stat-num{
+    font-size:clamp(2.2rem,4.5vw,3.2rem); font-weight:900; letter-spacing:-1px;
+    background:linear-gradient(120deg,#fff,#e8c9ff 40%,var(--glow));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    line-height:1; margin-bottom:10px;
+  }
+  .stat-label{ font-size:0.92rem; font-weight:700; color:var(--ink); margin-bottom:4px; }
+  .stat-sub{ font-size:0.8rem; color:var(--ink-dim); }
+  .stats-note{ text-align:center; margin-top:28px; color:var(--ink-dim); font-size:0.82rem; }
+  .live-badge{ display:inline-flex; align-items:center; gap:6px; font-weight:700; color:#7ee787; }
+  .live-badge .dot{ width:7px; height:7px; border-radius:50%; background:#7ee787; box-shadow:0 0 8px #7ee787; animation:pulse 1.6s infinite; }
+
+  /* ---------- timeline ---------- */
+  .timeline{ max-width:820px; margin:0 auto; position:relative; }
+  .timeline::before{
+    content:''; position:absolute; left:22px; top:8px; bottom:8px; width:2px;
+    background:linear-gradient(180deg,var(--violet),var(--magenta),transparent);
+  }
+  .t-item{ position:relative; padding:0 0 42px 66px; }
+  .t-item:last-child{ padding-bottom:0; }
+  .t-dot{
+    position:absolute; left:12px; top:2px; width:22px; height:22px; border-radius:50%;
+    background:var(--bg-deep); border:3px solid var(--magenta-soft);
+    box-shadow:0 0 16px rgba(214,36,126,0.5);
+  }
+  .t-item.done .t-dot{ background:linear-gradient(135deg,var(--violet),var(--magenta)); border-color:transparent; }
+  .t-stage{ font-size:0.74rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--glow); margin-bottom:6px; }
+  .t-title{ font-size:1.15rem; font-weight:800; margin-bottom:6px; }
+  .t-desc{ color:var(--ink-dim); font-size:0.92rem; line-height:1.55; }
+  .t-tag{
+    display:inline-block; margin-top:10px; padding:4px 12px; border-radius:999px;
+    font-size:0.72rem; font-weight:700; letter-spacing:0.5px;
+  }
+  .t-tag.complete{ background:rgba(126,231,135,0.15); color:#7ee787; border:1px solid rgba(126,231,135,0.35); }
+  .t-tag.active{ background:rgba(214,36,126,0.18); color:#ff8fc0; border:1px solid rgba(214,36,126,0.4); }
+  .t-tag.upcoming{ background:rgba(255,255,255,0.06); color:var(--ink-dim); border:1px solid rgba(255,255,255,0.15); }
+
+  /* ---------- tracks ---------- */
+  .tracks-grid{
+    max-width:1140px; margin:0 auto;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px;
+  }
+  .track-card{
+    background:var(--card); border:1px solid var(--card-border); border-radius:18px;
+    padding:26px 22px; transition:transform 0.3s, border-color 0.3s;
+  }
+  .track-card:hover{ transform:translateY(-6px) rotateX(2deg); border-color:rgba(200,120,240,0.5); }
+  .track-num{ font-size:0.75rem; font-weight:800; color:var(--glow); letter-spacing:1.5px; margin-bottom:10px; }
+  .track-name{ font-size:1.08rem; font-weight:800; line-height:1.35; }
+
+  /* ---------- venue / CTA ---------- */
+  .venue-card{
+    max-width:900px; margin:0 auto;
+    background:linear-gradient(135deg, rgba(106,23,148,0.35), rgba(184,0,94,0.25));
+    border:1px solid rgba(200,120,240,0.35);
+    border-radius:26px; padding:52px 6vw; text-align:center;
+    position:relative; overflow:hidden;
+  }
+  .venue-card::before{
+    content:''; position:absolute; inset:-40%;
+    background:conic-gradient(from 0deg, transparent, rgba(255,255,255,0.06), transparent 40%);
+    animation:spin 12s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .venue-inner{ position:relative; z-index:2; }
+  .venue-card h3{ font-size:clamp(1.5rem,3vw,2.1rem); font-weight:900; margin-bottom:14px; }
+  .venue-card p{ color:var(--ink-dim); font-size:1rem; margin-bottom:30px; line-height:1.6; }
+
+  footer{
+    position:relative; z-index:5; padding:44px 6vw 34px; text-align:center;
+    border-top:1px solid rgba(255,255,255,0.07); color:var(--ink-dim); font-size:0.85rem;
+  }
+  footer a{ color:#e8c9ff; text-decoration:none; }
+
+  [data-reveal]{ opacity:0; transform:translateY(30px); transition:opacity 0.7s ease, transform 0.7s ease; }
+  [data-reveal].in{ opacity:1; transform:translateY(0); }
+
+  @media(max-width:900px){
+    .nav-links{ display:none; }
+    .stats-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media(max-width:520px){
+    .stats-grid{ grid-template-columns:1fr; }
+    section{ padding:72px 6vw; }
+    .meta-chip{ font-size:0.8rem; padding:8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="noise"></div>
+
+<nav id="mainNav">
+  <div class="brand"><span class="brand-badge">WIE</span> ILS 2026 · Hackathon</div>
+  <div class="nav-links">
+    <a href="#stats">Live Stats</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#tracks">Tracks</a>
+    <a href="#venue">Venue</a>
+  </div>
+  <a class="nav-cta" href="index.html">Register / Portal</a>
+</nav>
+
+<header class="hero">
+  <div class="eyebrow"><span class="pulse-dot"></span> IEEE WIE International Leadership Summit &middot; 2026</div>
+  <h1 class="title">National Hackathon<br><span class="grad">Built by Women in Engineering</span></h1>
+  <p class="subtitle">A national-level hackathon under IEEE WIE ILS 2026 — two days of building, mentorship, and real problem-solving, hosted at Sarvajanik University &amp; SVNIT Surat.</p>
+  <div class="hero-meta">
+    <div class="meta-chip"><span class="ic">&#128197;</span> 24&ndash;25 October 2026</div>
+    <div class="meta-chip"><span class="ic">&#128205;</span> Sarvajanik University &amp; SVNIT, Surat</div>
+    <div class="meta-chip"><span class="ic">&#127942;</span> 4 Problem Tracks</div>
+  </div>
+  <div class="hero-ctas">
+    <a class="btn-primary" href="index.html">Enter Registration Portal &rarr;</a>
+    <a class="btn-ghost" href="#video">Watch the Story</a>
+  </div>
+  <div class="scroll-cue">Scroll<div class="arrow"></div></div>
+</header>
+
+<section id="video">
+  <div class="section-head" data-reveal>
+    <div class="section-tag">The Story So Far</div>
+    <h2>Where it all begins</h2>
+    <p>From an idea to a national stage — this is IEEE WIE ILS 2026.</p>
+  </div>
+  <div class="video-wrap" data-reveal>
+    <div class="video-frame" id="videoFrame">
+      <div class="video-placeholder" id="videoPlaceholder">
+        <div class="play-ring" id="playRing"></div>
+        <div style="font-weight:700; font-size:1rem; color:#fff;">ILS 2026 Promo Video</div>
+        <div style="font-size:0.85rem; max-width:340px;">Video coming soon — drop the file or link into the <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:6px;">VIDEO_SRC</code> constant in this page's script to go live.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stats">
+  <div class="section-head" data-reveal>
+    <div class="section-tag">Real-Time</div>
+    <h2>The Numbers Behind the Movement</h2>
+    <p>Pulled live from the ILS 2026 database — no placeholders, no guesses.</p>
+  </div>
+  <div class="stats-grid" data-reveal>
+    <div class="stat-card"><div class="stat-num" id="statRegistrations">0</div><div class="stat-label">Teams Registered</div><div class="stat-sub">across all tracks</div></div>
+    <div class="stat-card"><div class="stat-num" id="statSubmitted">0</div><div class="stat-label">Round 1 Submissions</div><div class="stat-sub">solutions submitted for screening</div></div>
+    <div class="stat-card"><div class="stat-num" id="statShortlisted">0</div><div class="stat-label">Teams Shortlisted</div><div class="stat-sub">advanced past Round 1</div></div>
+    <div class="stat-card"><div class="stat-num" id="statTracks">0</div><div class="stat-label">Problem Tracks</div><div class="stat-sub">live problem statements</div></div>
+    <div class="stat-card"><div class="stat-num" id="statJudges">0</div><div class="stat-label">Judges Onboard</div><div class="stat-sub">industry &amp; academia experts</div></div>
+    <div class="stat-card"><div class="stat-num" id="statScreeners">0</div><div class="stat-label">Screeners</div><div class="stat-sub">reviewing every submission</div></div>
+  </div>
+  <div class="stats-note" data-reveal><span class="live-badge"><span class="dot"></span> LIVE</span> &nbsp;&middot;&nbsp; <span id="statsUpdated">syncing…</span></div>
+</section>
+
+<section id="timeline">
+  <div class="section-head" data-reveal>
+    <div class="section-tag">The Journey</div>
+    <h2>From Registration to the Final Stage</h2>
+  </div>
+  <div class="timeline" data-reveal>
+    <div class="t-item done">
+      <div class="t-dot"></div>
+      <div class="t-stage">Stage 01</div>
+      <div class="t-title">Registrations Open</div>
+      <div class="t-desc">Teams across India registered across four problem tracks for IEEE WIE ILS 2026.</div>
+      <span class="t-tag complete">Complete</span>
+    </div>
+    <div class="t-item done">
+      <div class="t-dot"></div>
+      <div class="t-stage">Stage 02</div>
+      <div class="t-title">Round 1 &mdash; Solution Submission &amp; Screening</div>
+      <div class="t-desc">Registered teams submitted their initial solution documents, independently screened by a panel of trained reviewers.</div>
+      <span class="t-tag active">In Progress</span>
+    </div>
+    <div class="t-item">
+      <div class="t-dot"></div>
+      <div class="t-stage">Stage 03</div>
+      <div class="t-title">Round 2 &mdash; Prototype &amp; Demo Evaluation</div>
+      <div class="t-desc">Shortlisted teams build a working prototype, present a deck, and submit a live demonstration video for judge evaluation.</div>
+      <span class="t-tag upcoming">Results reveal &middot; 15 Sep 2026</span>
+    </div>
+    <div class="t-item">
+      <div class="t-dot"></div>
+      <div class="t-stage">Stage 04</div>
+      <div class="t-title">National Finale</div>
+      <div class="t-desc">Finalists present on-ground at Sarvajanik University &amp; SVNIT Surat, in front of judges and the WIE community.</div>
+      <span class="t-tag upcoming">24&ndash;25 Oct 2026</span>
+    </div>
+  </div>
+</section>
+
+<section id="tracks">
+  <div class="section-head" data-reveal>
+    <div class="section-tag">Problem Tracks</div>
+    <h2>Build For What Matters</h2>
+  </div>
+  <div class="tracks-grid" data-reveal>
+    <div class="track-card"><div class="track-num">Track 01</div><div class="track-name">Sustainability &amp; Climate Tech</div></div>
+    <div class="track-card"><div class="track-num">Track 02</div><div class="track-name">Health &amp; Assistive Technology</div></div>
+    <div class="track-card"><div class="track-num">Track 03</div><div class="track-name">Smart Systems &amp; Automation</div></div>
+    <div class="track-card"><div class="track-num">Track 04</div><div class="track-name">Open Industry Problems</div></div>
+  </div>
+</section>
+
+<section id="venue">
+  <div class="venue-card" data-reveal>
+    <div class="venue-inner">
+      <h3>See You in Surat</h3>
+      <p>Sarvajanik University &amp; SVNIT Surat host the national finale of IEEE WIE ILS 2026 on 24&ndash;25 October 2026 &mdash; two days of building, mentorship, and celebrating women-led engineering.</p>
+      <a class="btn-primary" href="index.html">Go to Registration Portal &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  IEEE Women in Engineering &middot; International Leadership Summit 2026 &middot; National Hackathon<br>
+  Surat, India &middot; <a href="index.html">Registration Portal</a>
+</footer>
+
+<script>
+// ============================================================
+// Swap this for the real ILS 2026 promo video source when supplied.
+// Accepts either a direct video file URL (.mp4) or an embeddable
+// iframe URL (YouTube/Drive "preview" link).
+// ============================================================
+const VIDEO_SRC = ""; // e.g. "https://example.com/ils2026-promo.mp4" or a YouTube embed URL
+const VIDEO_IS_IFRAME = false; // set true if VIDEO_SRC is a YouTube/Drive embed URL
+
+(function initVideo(){
+  if (!VIDEO_SRC) return;
+  const frame = document.getElementById('videoFrame');
+  const placeholder = document.getElementById('videoPlaceholder');
+  if (VIDEO_IS_IFRAME) {
+    const iframe = document.createElement('iframe');
+    iframe.src = VIDEO_SRC;
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    frame.appendChild(iframe);
+    placeholder.remove();
+  } else {
+    const video = document.createElement('video');
+    video.src = VIDEO_SRC;
+    video.controls = true;
+    video.playsInline = true;
+    video.poster = '';
+    frame.appendChild(video);
+    document.getElementById('playRing').addEventListener('click', () => video.play());
+    placeholder.style.pointerEvents = 'none';
+    document.getElementById('playRing').style.pointerEvents = 'auto';
+  }
+})();
+
+// ---------- nav scroll state ----------
+const navEl = document.getElementById('mainNav');
+window.addEventListener('scroll', () => {
+  navEl.classList.toggle('scrolled', window.scrollY > 30);
+}, { passive: true });
+
+// ---------- reveal on scroll ----------
+const revealEls = document.querySelectorAll('[data-reveal]');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.15 });
+revealEls.forEach(el => revealObserver.observe(el));
+
+// ---------- animated counters ----------
+function animateCount(el, target, duration) {
+  if (!el) return;
+  target = Number(target) || 0;
+  const start = 0;
+  const startTime = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(start + (target - start) * eased).toLocaleString('en-IN');
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ---------- live stats fetch ----------
+const STATS_URL = "https://gfoclvqlkylujopcvuht.supabase.co/functions/v1/public-event-stats";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
+
+async function loadStats() {
+  const updatedEl = document.getElementById('statsUpdated');
+  try {
+    const res = await fetch(STATS_URL, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Failed to load stats');
+    animateCount(document.getElementById('statRegistrations'), data.totalRegistrations, 1400);
+    animateCount(document.getElementById('statSubmitted'), data.round1Submitted, 1400);
+    animateCount(document.getElementById('statShortlisted'), data.totalShortlisted, 1400);
+    animateCount(document.getElementById('statTracks'), data.tracksCount, 1000);
+    animateCount(document.getElementById('statJudges'), data.judgeCount, 1400);
+    animateCount(document.getElementById('statScreeners'), data.screenerCount, 1400);
+    updatedEl.textContent = 'last synced ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  } catch (err) {
+    updatedEl.textContent = 'stats temporarily unavailable';
+    console.error('stats fetch failed:', err);
+  }
+}
+loadStats();
+setInterval(loadStats, 60000);
+
+// ---------- particle background ----------
+(function particles(){
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, dpr;
+  let particlesArr = [];
+  const COLORS = ['rgba(200,120,240,', 'rgba(214,36,126,', 'rgba(140,62,192,'];
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function initParticles() {
+    const count = Math.min(70, Math.floor((w * h) / 18000));
+    particlesArr = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.8 + 0.6,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      c: COLORS[Math.floor(Math.random() * COLORS.length)],
+      a: Math.random() * 0.5 + 0.15,
+    }));
+  }
+  function step() {
+    ctx.clearRect(0, 0, w, h);
+    particlesArr.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.c + p.a + ')';
+      ctx.fill();
+    });
+    requestAnimationFrame(step);
+  }
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { resize(); initParticles(); }, 200);
+  });
+  resize(); initParticles(); step();
+})();
+
+// ---------- subtle 3D tilt on the video card ----------
+(function tilt(){
+  const wrap = document.querySelector('.video-wrap');
+  if (!wrap || window.matchMedia('(max-width: 700px)').matches) return;
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    wrap.style.transform = `rotateY(${x * 5}deg) rotateX(${-y * 5}deg)`;
+  });
+  wrap.addEventListener('mouseleave', () => { wrap.style.transform = 'rotateY(0) rotateX(0)'; });
+})();
+</script>
+
+</body>
+</html>
