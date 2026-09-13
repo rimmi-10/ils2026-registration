@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IEEE WIE ILS 2026 — National Hackathon</title>
-<meta name="description" content="IEEE Women in Engineering International Leadership Summit 2026 — National Hackathon. Surat, 24-25 October 2026.">
+<title>HackX 2026 — IEEE WIE ILS National Hackathon</title>
+<meta name="description" content="HackX 2026 — the IEEE WIE International Leadership Summit National Hackathon. Surat, 24-25 October 2026.">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <style>
@@ -176,8 +176,13 @@
   }
   .subtitle{
     max-width:680px; font-size:clamp(1rem,2.2vw,1.25rem); color:var(--ink-dim);
-    line-height:1.6; margin-bottom:38px;
+    line-height:1.6; margin-bottom:20px;
     animation:fadeUp 0.9s ease 0.2s both;
+  }
+  .hero-tagline{
+    max-width:560px; font-size:0.95rem; font-style:italic; color:var(--glow);
+    line-height:1.5; margin-bottom:38px; opacity:0.9;
+    animation:fadeUp 0.9s ease 0.25s both;
   }
   .hero-meta{
     display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin-bottom:44px;
@@ -381,7 +386,8 @@
   }
   .track-card:hover{ transform:translateY(-6px) rotateX(4deg); border-color:rgba(200,120,240,0.5); }
   .track-num{ font-family:var(--font-display); font-size:0.75rem; font-weight:800; color:var(--glow); letter-spacing:1.5px; margin-bottom:10px; }
-  .track-name{ font-family:var(--font-display); font-size:1.08rem; font-weight:800; line-height:1.35; }
+  .track-name{ font-family:var(--font-display); font-size:1.08rem; font-weight:800; line-height:1.35; margin-bottom:8px; }
+  .track-desc{ color:var(--ink-dim); font-size:0.85rem; line-height:1.5; }
 
   /* ---------- venue / CTA ---------- */
   .venue-card{
@@ -463,9 +469,10 @@
 <header class="hero">
   <canvas id="heroWebGL"></canvas>
   <div class="hero-content">
-    <div class="eyebrow"><span class="pulse-dot"></span> IEEE WIE International Leadership Summit &middot; 2026</div>
+    <div class="eyebrow"><span class="pulse-dot"></span> HackX 2026 &middot; IEEE WIE International Leadership Summit</div>
     <h1 class="title">National Hackathon<br><span class="grad">Built by Women in Engineering</span></h1>
     <p class="subtitle">A national-level hackathon under IEEE WIE ILS 2026 — two days of building, mentorship, and real problem-solving, hosted at Sarvajanik University &amp; SVNIT Surat.</p>
+    <p class="hero-tagline">&ldquo;Empower to Inspire: Thriving Together for an Inclusive and Sustainable Future&rdquo;</p>
     <div class="hero-meta">
       <div class="meta-chip"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="9.5" x2="21" y2="9.5"></line><line x1="8" y1="2.5" x2="8" y2="6.5"></line><line x1="16" y1="2.5" x2="16" y2="6.5"></line></svg></span> 24&ndash;25 October 2026</div>
       <div class="meta-chip"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z"></path><circle cx="12" cy="9" r="2.4"></circle></svg></span> Sarvajanik University &amp; SVNIT, Surat</div>
@@ -628,14 +635,14 @@
 
 <section id="tracks">
   <div class="section-head">
-    <div class="section-tag">Problem Tracks</div>
+    <div class="section-tag">HackX 2026 &middot; Problem Tracks</div>
     <h2>Build For What Matters</h2>
   </div>
   <div class="tracks-grid">
-    <div class="track-card"><div class="track-num">Track 01</div><div class="track-name">Sustainability &amp; Climate Tech</div></div>
-    <div class="track-card"><div class="track-num">Track 02</div><div class="track-name">Health &amp; Assistive Technology</div></div>
-    <div class="track-card"><div class="track-num">Track 03</div><div class="track-name">Smart Systems &amp; Automation</div></div>
-    <div class="track-card"><div class="track-num">Track 04</div><div class="track-name">Open Industry Problems</div></div>
+    <div class="track-card"><div class="track-num">Track 01</div><div class="track-name">Bharat Rising</div><div class="track-desc">Rural India &amp; EdTech &mdash; solutions built for the next billion.</div></div>
+    <div class="track-card"><div class="track-num">Track 02</div><div class="track-name">HealthTech</div><div class="track-desc">Accessible healthcare and medical technology innovation.</div></div>
+    <div class="track-card"><div class="track-num">Track 03</div><div class="track-name">SheLeads</div><div class="track-desc">IEEE WIE special track &mdash; safety, equity, and empowerment tech.</div></div>
+    <div class="track-card"><div class="track-num">Track 04</div><div class="track-name">Open Industry Problems</div><div class="track-desc">Real-world problem statements submitted by industry partners.</div></div>
   </div>
 </section>
 
@@ -650,7 +657,7 @@
 </section>
 
 <footer>
-  IEEE Women in Engineering &middot; International Leadership Summit 2026 &middot; National Hackathon<br>
+  HackX 2026 &middot; IEEE Women in Engineering International Leadership Summit &middot; National Hackathon<br>
   Surat, India &middot; <a href="https://wieils.ieee.org/2026-suratindia/">Register</a> &middot; <a href="submit-round2.html">Check Team Status</a>
 </footer>
 
