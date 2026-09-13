@@ -552,6 +552,26 @@
     .community-bg-icon{ width:220px; height:220px; }
   }
 
+  /* ---------- participant portals ---------- */
+  .links-grid{
+    max-width:1140px; margin:0 auto;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:20px;
+  }
+  .link-card{
+    display:flex; flex-direction:column; gap:8px; text-decoration:none; color:inherit;
+    background:var(--card); border:1px solid var(--card-border); border-radius:18px;
+    padding:26px 22px; transition:transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+  .link-card:hover, .link-card:focus-visible{
+    transform:translateY(-6px); border-color:rgba(200,120,240,0.55);
+    box-shadow:0 18px 40px rgba(0,0,0,0.35);
+  }
+  .link-card:focus-visible{ outline:2px solid var(--glow); outline-offset:3px; }
+  .link-step{ font-family:var(--font-display); font-size:0.72rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--glow); }
+  .link-title{ font-family:var(--font-display); font-size:1.08rem; font-weight:800; line-height:1.3; }
+  .link-desc{ color:var(--ink-dim); font-size:0.86rem; line-height:1.5; flex:1; }
+  .link-go{ margin-top:6px; font-size:0.8rem; font-weight:700; color:var(--magenta-soft); }
+
   /* ---------- tracks ---------- */
   .tracks-grid{
     max-width:1140px; margin:0 auto; perspective:1200px;
@@ -621,6 +641,8 @@
     border-top:1px solid rgba(255,255,255,0.07); color:var(--ink-dim); font-size:0.85rem;
   }
   footer a{ color:#e8c9ff; text-decoration:none; }
+  footer a:hover{ color:#fff; }
+  .footer-links{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px 22px; margin-top:16px; font-size:0.82rem; font-weight:600; }
 
   @media(max-width:900px){
     .nav-links{ display:none; }
@@ -700,6 +722,7 @@
     <a href="#timeline">Timeline</a>
     <a href="#tracks">Tracks</a>
     <a href="#community">Women in Engineering</a>
+    <a href="#portals">Portals</a>
   </div>
   <div class="nav-right">
     <button type="button" class="blueprint-toggle" id="blueprintToggle" aria-pressed="false">
@@ -966,6 +989,40 @@
   </div>
 </section>
 
+<section id="portals">
+  <div class="section-head">
+    <div class="section-tag">For Participants</div>
+    <h2>Your Portals</h2>
+    <p>Everything a team needs, in the order you will need it.</p>
+  </div>
+  <div class="links-grid">
+    <a class="link-card" href="index.html">
+      <div class="link-step">Step 01</div>
+      <div class="link-title">Registration Portal</div>
+      <div class="link-desc">Register your team and check your Round 1 status.</div>
+      <div class="link-go">Open portal &rarr;</div>
+    </a>
+    <a class="link-card" href="submit-round1.html">
+      <div class="link-step">Step 02</div>
+      <div class="link-title">Round 1 Submission</div>
+      <div class="link-desc">Submit your Round 1 solution document for screening.</div>
+      <div class="link-go">Open portal &rarr;</div>
+    </a>
+    <a class="link-card" href="submit-round2.html">
+      <div class="link-step">Step 03</div>
+      <div class="link-title">Round 2 Submission</div>
+      <div class="link-desc">Check your Round 2 selection and submit your deck and demo video.</div>
+      <div class="link-go">Open portal &rarr;</div>
+    </a>
+    <a class="link-card" href="https://wieils.ieee.org/2026-suratindia/">
+      <div class="link-step">The Summit</div>
+      <div class="link-title">IEEE WIE ILS 2026</div>
+      <div class="link-desc">The full summit site: program, VentureVerse, and summit registration.</div>
+      <div class="link-go">Visit site &rarr;</div>
+    </a>
+  </div>
+</section>
+
 <section id="tracks">
   <div class="section-head">
     <div class="section-tag">HackX 2026 &middot; Problem Tracks</div>
@@ -1002,7 +1059,14 @@
 
 <footer>
   HackX 2026 &middot; IEEE Women in Engineering International Leadership Summit &middot; National Hackathon<br>
-  Surat, India &middot; <a href="https://wieils.ieee.org/2026-suratindia/">Register</a> &middot; <a href="submit-round2.html">Check Team Status</a>
+  Surat, India &middot; 24&ndash;25 October 2026
+  <div class="footer-links">
+    <a href="https://wieils.ieee.org/2026-suratindia/">IEEE WIE ILS 2026</a>
+    <a href="index.html">Registration Portal</a>
+    <a href="submit-round1.html">Round 1 Submission</a>
+    <a href="submit-round2.html">Round 2 Submission</a>
+    <a href="submit-round2.html">Check Team Status</a>
+  </div>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1801,6 +1865,11 @@ createSpinnableScene(document.getElementById('venueWebGL'), {
     gsap.from('.track-card', {
       opacity: 0, rotateY: 90, y: 20, duration: 0.9, stagger: 0.12, ease: 'power3.out', clearProps: 'all',
       scrollTrigger: { trigger: '.tracks-grid', start: 'top 80%' },
+    });
+
+    gsap.from('.link-card', {
+      opacity: 0, y: 24, duration: 0.8, stagger: 0.1, ease: 'power3.out', clearProps: 'all',
+      scrollTrigger: { trigger: '.links-grid', start: 'top 82%' },
     });
 
     gsap.utils.toArray('.t-item').forEach((el) => {
