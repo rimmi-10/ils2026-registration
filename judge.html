@@ -172,6 +172,7 @@
   <div class="stats" id="stats"></div>
   <div class="tabs">
     <button class="tab-btn active" id="queueTabBtn" onclick="showQueueTab()">My Queue</button>
+    <button class="tab-btn" id="round2TabBtn" onclick="showRound2Tab()">Round 2 Evaluation</button>
     <button class="tab-btn" id="leaderboardTabBtn" onclick="showLeaderboardTab()">Track Leaderboard</button>
   </div>
 
@@ -188,6 +189,13 @@
       </select>
     </div>
     <div id="listHost"><div class="loading">Loading…</div></div>
+  </div>
+
+  <div id="round2View" style="display:none;">
+    <p style="font-size:12px; color:#9b7ab0; margin-bottom:12px;">
+      Only teams from your Round 1 queue that were selected for Round 2 AND have actually submitted their deck appear here. Score their PPT and prototype video across the criteria below.
+    </p>
+    <div id="round2ListHost"><div class="loading">Loading…</div></div>
   </div>
 
   <div id="leaderboardView" style="display:none;">
@@ -244,6 +252,57 @@
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="closeScoreModal()">Cancel</button>
           <button class="btn" onclick="saveScore()">Save Score</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROUND 2 SCORE MODAL -->
+<div class="modal-overlay" id="r2ScoreModal">
+  <div class="modal-box score-modal-box">
+    <h3 id="r2ScoreModalTitle">Score Round 2 Submission</h3>
+    <div class="sub" id="r2ScoreModalTrack"></div>
+    <div class="msg error" id="r2ScoreError"></div>
+    <div class="msg success" id="r2ScoreSuccess"></div>
+
+    <div class="score-modal-grid">
+      <div class="pdf-pane">
+        <div id="r2ScoreModalPdf"></div>
+        <div id="r2ScoreModalVideo" style="margin-top:10px;"></div>
+      </div>
+
+      <div>
+        <div class="score-row">
+          <label for="r2WorkingPrototype">Working Prototype / Functionality <span class="max">(out of 30)</span></label>
+          <input type="number" id="r2WorkingPrototype" min="0" max="30" step="0.5">
+        </div>
+        <div class="score-row">
+          <label for="r2ProblemFit">Problem-Solution Fit &amp; Impact <span class="max">(out of 20)</span></label>
+          <input type="number" id="r2ProblemFit" min="0" max="20" step="0.5">
+        </div>
+        <div class="score-row">
+          <label for="r2TechExecution">Technical Execution &amp; Quality <span class="max">(out of 20)</span></label>
+          <input type="number" id="r2TechExecution" min="0" max="20" step="0.5">
+        </div>
+        <div class="score-row">
+          <label for="r2Presentation">Presentation &amp; Communication <span class="max">(out of 15)</span></label>
+          <input type="number" id="r2Presentation" min="0" max="15" step="0.5">
+        </div>
+        <div class="score-row">
+          <label for="r2Innovation">Innovation &amp; Differentiation <span class="max">(out of 15)</span></label>
+          <input type="number" id="r2Innovation" min="0" max="15" step="0.5">
+        </div>
+        <div style="text-align:right; font-size:13px; font-weight:700; color:#6a1794; margin:8px 0 14px;" id="r2ScoreTotal">Total: 0 / 100</div>
+
+        <div class="field-row">
+          <label for="r2Comments">Comments (optional)</label>
+          <textarea id="r2Comments" placeholder="Notes for your own reference or for the panel..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeR2ScoreModal()">Cancel</button>
+          <button class="btn" onclick="saveR2Score()">Save Score</button>
         </div>
       </div>
     </div>
@@ -466,19 +525,157 @@
     }, 900);
   }
 
+  // ── ROUND 2 EVALUATION ──
+  let round2Submissions = [];
+  let myR2Scores = {};
+  let activeR2SubmissionId = null;
+
+  async function loadRound2Queue() {
+    const host = document.getElementById('round2ListHost');
+    host.innerHTML = '<div class="loading">Loading…</div>';
+    const { data: subs, error: subsErr } = await sb.from('judge_round2_queue_view').select('*').order('team_name', { ascending: true });
+    if (subsErr) {
+      host.innerHTML = '<div class="empty-state">Failed to load: ' + subsErr.message + '</div>';
+      return;
+    }
+    round2Submissions = subs || [];
+
+    const { data: scores, error: scoresErr } = await sb.from('round2_scores').select('*').eq('judge_id', judgeId);
+    if (scoresErr) console.error('Failed to load my round 2 scores:', scoresErr.message);
+    myR2Scores = {};
+    (scores || []).forEach(s =>{ myR2Scores[s.registration_id] = s; });
+
+    if (round2Submissions.length === 0) {
+      host.innerHTML = '<div class="empty-state">No Round 2 submissions from your assigned teams yet.</div>';
+      return;
+    }
+    host.innerHTML = round2Submissions.map(r =>{
+      const scored = myR2Scores[r.registration_id];
+      return (
+        '<div class="sub-card">' +
+          '<div class="info">' +
+            '<b>' + escapeHtml(r.team_name) + '</b>' +
+            (scored ? '<span class="pill pill-scored">Scored</span>' : '<span class="pill pill-unscored">Not scored</span>') +
+            '<div class="track">' + escapeHtml(r.track) + '</div>' +
+          '</div>' +
+          '<button class="btn btn-small" onclick="openR2ScoreModal(\'' + r.registration_id + '\')">' + (scored ? 'Edit Score' : 'Score Now') + '</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function computeR2Total() {
+    const vals = ['r2WorkingPrototype','r2ProblemFit','r2TechExecution','r2Presentation','r2Innovation'].map(id =>parseFloat(document.getElementById(id).value) || 0);
+    const total = vals.reduce((a,b) =>a+b, 0);
+    document.getElementById('r2ScoreTotal').textContent = 'Total: ' + total + ' / 100';
+  }
+
+  function openR2ScoreModal(id) {
+    const sub = round2Submissions.find(s =>s.registration_id === id);
+    if (!sub) return;
+    activeR2SubmissionId = id;
+    document.getElementById('r2ScoreError').style.display = 'none';
+    document.getElementById('r2ScoreSuccess').style.display = 'none';
+    document.getElementById('r2ScoreModalTitle').textContent = sub.team_name;
+    document.getElementById('r2ScoreModalTrack').textContent = sub.track || '';
+    document.getElementById('r2ScoreModalPdf').innerHTML = sub.round2_doc_url
+      ? '<iframe src="' + sub.round2_doc_url + '" title="Round 2 Deck"></iframe>' +
+        '<div class="pdf-fallback">Not loading? <a class="filelink" href="' + sub.round2_doc_url + '" target="_blank" rel="noopener">Open in a new tab</a></div>'
+      : '<span style="color:#c0a8d8;">No deck on file</span>';
+    document.getElementById('r2ScoreModalVideo').innerHTML = sub.round2_video_url
+      ? '<a class="btn btn-secondary btn-small" style="display:inline-block; width:auto;" href="' + sub.round2_video_url + '" target="_blank" rel="noopener">Watch Prototype Video</a>'
+      : '<span style="color:#c0a8d8; font-size:12px;">No video link on file</span>';
+
+    const existing = myR2Scores[id];
+    document.getElementById('r2WorkingPrototype').value = existing?.working_prototype ?? '';
+    document.getElementById('r2ProblemFit').value = existing?.problem_solution_fit ?? '';
+    document.getElementById('r2TechExecution').value = existing?.technical_execution ?? '';
+    document.getElementById('r2Presentation').value = existing?.presentation_communication ?? '';
+    document.getElementById('r2Innovation').value = existing?.innovation_differentiation ?? '';
+    document.getElementById('r2Comments').value = existing?.comments || '';
+    computeR2Total();
+
+    document.getElementById('r2ScoreModal').classList.add('open');
+  }
+
+  function closeR2ScoreModal() {
+    document.getElementById('r2ScoreModal').classList.remove('open');
+    activeR2SubmissionId = null;
+  }
+
+  async function saveR2Score() {
+    if (!activeR2SubmissionId) return;
+    const errEl = document.getElementById('r2ScoreError');
+    const okEl = document.getElementById('r2ScoreSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+
+    const val = (id, max) =>{
+      const v = document.getElementById(id).value;
+      if (v === '') return null;
+      const n = parseFloat(v);
+      if (isNaN(n) || n < 0 || n > max) return undefined;
+      return n;
+    };
+    const fields = {
+      working_prototype: val('r2WorkingPrototype', 30),
+      problem_solution_fit: val('r2ProblemFit', 20),
+      technical_execution: val('r2TechExecution', 20),
+      presentation_communication: val('r2Presentation', 15),
+      innovation_differentiation: val('r2Innovation', 15),
+    };
+    if (Object.values(fields).some(v =>v === undefined)) {
+      errEl.textContent = 'One or more scores are out of range. Check the max for each field.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const payload = {
+      registration_id: activeR2SubmissionId,
+      judge_id: judgeId,
+      ...fields,
+      comments: document.getElementById('r2Comments').value.trim(),
+      submitted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await sb.from('round2_scores')
+      .upsert(payload, { onConflict: 'registration_id,judge_id' })
+      .select()
+      .maybeSingle();
+
+    if (error) { errEl.textContent = 'Failed to save: ' + error.message; errEl.style.display = 'block'; return; }
+
+    const nextUnscored = round2Submissions.find(s =>s.registration_id !== activeR2SubmissionId && !myR2Scores[s.registration_id]);
+
+    myR2Scores[activeR2SubmissionId] = data;
+    okEl.textContent = nextUnscored ? 'Score saved. Opening next…' : 'Score saved. You\'re all caught up here!';
+    okEl.style.display = 'block';
+    loadRound2Queue();
+    setTimeout(() =>{
+      closeR2ScoreModal();
+      if (nextUnscored) openR2ScoreModal(nextUnscored.registration_id);
+    }, 900);
+  }
+
   // ── TABS / TRACK LEADERBOARD ──
+  function setActiveTab(tab) {
+    ['queue', 'round2', 'leaderboard'].forEach(t =>{
+      document.getElementById(t + 'TabBtn').classList.toggle('active', t === tab);
+      document.getElementById(t + 'View').style.display = t === tab ? 'block' : 'none';
+    });
+  }
+
   function showQueueTab() {
-    document.getElementById('queueTabBtn').classList.add('active');
-    document.getElementById('leaderboardTabBtn').classList.remove('active');
-    document.getElementById('queueView').style.display = 'block';
-    document.getElementById('leaderboardView').style.display = 'none';
+    setActiveTab('queue');
+  }
+
+  function showRound2Tab() {
+    setActiveTab('round2');
+    loadRound2Queue();
   }
 
   function showLeaderboardTab() {
-    document.getElementById('leaderboardTabBtn').classList.add('active');
-    document.getElementById('queueTabBtn').classList.remove('active');
-    document.getElementById('queueView').style.display = 'none';
-    document.getElementById('leaderboardView').style.display = 'block';
+    setActiveTab('leaderboard');
     loadLeaderboard();
   }
 
@@ -538,6 +735,9 @@
   window.addEventListener('DOMContentLoaded', async () =>{
     ['scProblem','scSolution','scFeasibility','scImpact','scTech','scTeam'].forEach(id =>{
       document.getElementById(id).addEventListener('input', computeTotal);
+    });
+    ['r2WorkingPrototype','r2ProblemFit','r2TechExecution','r2Presentation','r2Innovation'].forEach(id =>{
+      document.getElementById(id).addEventListener('input', computeR2Total);
     });
     const { data } = await sb.auth.getSession();
     if (data.session) {
