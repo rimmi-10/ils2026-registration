@@ -417,6 +417,18 @@
         <button class="btn btn-small" onclick="saveJudge()">Save Judge</button>
       </div>
     </div>
+    <div class="detail-section" style="border-top:1.5px solid #f0d5fa; padding-top:14px;">
+      <h4>Bulk Import (CSV — no header row)</h4>
+      <p style="font-size:11.5px; color:#9b7ab0; margin-bottom:8px;">
+        One judge per line: <code>username,password</code>. Each username becomes a login email automatically (e.g. <code>judge07</code> → <code>judge07@ils2026-judge.local</code>) — you'll get the full list back to distribute individually.
+      </p>
+      <textarea id="judgeCsvInput" style="min-height:110px; font-family:monospace; font-size:12px;" placeholder="judge01,SomePass123
+judge02,AnotherPass456"></textarea>
+      <div class="modal-actions" style="margin-top:10px;">
+        <button class="btn btn-small" onclick="bulkImportJudges()">Import All</button>
+      </div>
+      <div id="judgeBulkResult" style="margin-top:10px; font-size:12px;"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeJudgesModal()">Close</button>
     </div>
@@ -2017,6 +2029,43 @@ screener02,AnotherPass456"></textarea>
 
       document.getElementById('screenerCsvInput').value = '';
       loadScreenersList();
+    } catch (err) {
+      resultEl.innerHTML = '<span style="color:#b8005e;">Failed: ' + escapeHtml(err.message) + '</span>';
+    }
+  }
+
+  async function bulkImportJudges() {
+    const resultEl = document.getElementById('judgeBulkResult');
+    const raw = document.getElementById('judgeCsvInput').value.trim();
+    if (!raw) { resultEl.innerHTML = '<span style="color:#b8005e;">Paste some rows first.</span>'; return; }
+    const rows = raw.split('\n').map(line =>line.trim()).filter(Boolean).map(line =>{
+      const [username, password] = line.split(',').map(s =>(s || '').trim());
+      return { username, password };
+    });
+    resultEl.innerHTML = 'Importing ' + rows.length + '…';
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(SUPABASE_URL + '/functions/v1/bulk-create-judges', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows })
+      });
+      const result = await res.json().catch(() =>null);
+      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+
+      const pwByUsername = {};
+      rows.forEach(r =>{ pwByUsername[r.username] = r.password; });
+      const createdLines = (result.created || []).map(c =>c.username + ' | ' + c.email + ' | ' + (pwByUsername[c.username] || ''));
+      const failedLines = (result.failed || []).map(f =>f.username + ' — FAILED: ' + f.error);
+
+      resultEl.innerHTML =
+        '<div style="color:#1a6b3a; font-weight:600; margin-bottom:6px;">' + (result.created || []).length + ' created, ' + (result.failed || []).length + 'failed.</div>' +
+        (createdLines.length ? '<div style="font-size:11px; color:#7c5a9b; margin-bottom:4px;">username | login email | password — copy this to distribute:</div><textarea readonly style="min-height:100px; font-family:monospace; font-size:11px;" onclick="this.select()">' + escapeHtml(createdLines.join('\n')) + '</textarea>' : '') +
+        (failedLines.length ? '<div style="color:#b8005e; font-size:11px; margin-top:6px; white-space:pre-wrap;">' + escapeHtml(failedLines.join('\n')) + '</div>' : '');
+
+      document.getElementById('judgeCsvInput').value = '';
+      loadJudgesList();
     } catch (err) {
       resultEl.innerHTML = '<span style="color:#b8005e;">Failed: ' + escapeHtml(err.message) + '</span>';
     }
