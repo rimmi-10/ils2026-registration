@@ -725,10 +725,19 @@ function animateCount(el, target, duration) {
 const STATS_URL = "https://gfoclvqlkylujopcvuht.supabase.co/functions/v1/public-event-stats";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2NsdnFsa3lsdWpvcGN2dWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDY0MzAsImV4cCI6MjEwMDYyMjQzMH0.NjzuL10jUM3HJQaEu2rkZwuqyx0JCGgqlD-HDVunhwE";
 
+let statsRetryTimer = null;
+let statsRetryDelay = 5000; // backs off: 5s, 10s, 20s, capped at 30s, until a call succeeds
+
 async function loadStats() {
   const updatedEl = document.getElementById('statsUpdated');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
-    const res = await fetch(STATS_URL, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
+    const res = await fetch(STATS_URL, {
+      headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Failed to load stats');
     animateCount(document.getElementById('statRegistrations'), data.totalRegistrations, 1400);
@@ -738,9 +747,15 @@ async function loadStats() {
     animateCount(document.getElementById('statJudges'), data.judgeCount, 1400);
     animateCount(document.getElementById('statScreeners'), data.screenerCount, 1400);
     updatedEl.textContent = 'last synced ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    if (statsRetryTimer) { clearTimeout(statsRetryTimer); statsRetryTimer = null; }
+    statsRetryDelay = 5000;
   } catch (err) {
-    updatedEl.textContent = 'stats temporarily unavailable';
+    clearTimeout(timeoutId);
+    updatedEl.textContent = 'stats temporarily unavailable — retrying';
     console.error('stats fetch failed:', err);
+    if (statsRetryTimer) clearTimeout(statsRetryTimer);
+    statsRetryTimer = setTimeout(loadStats, statsRetryDelay);
+    statsRetryDelay = Math.min(statsRetryDelay * 2, 30000);
   }
 }
 loadStats();
