@@ -2163,13 +2163,14 @@ screener02,AnotherPass456"></textarea>
     const okEl = document.getElementById('screeningSuccess');
     errEl.style.display = 'none'; okEl.style.display = 'none';
     const topN = parseInt(document.getElementById('round2TopNInput').value, 10) || 20;
+    const topNByTrack = { 'Track 4: Open Industry Problems': 10 };
     try {
       const { data: sessionData } = await sb.auth.getSession();
       const token = sessionData?.session?.access_token;
       const res = await fetch(SUPABASE_URL + '/functions/v1/finalize-round2-selection', {
         method: 'POST',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topN })
+        body: JSON.stringify({ topN, topNByTrack })
       });
       const result = await res.json().catch(() =>null);
       if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
@@ -2484,6 +2485,7 @@ screener02,AnotherPass456"></textarea>
   // ── ROUND 1 SCORES / RANKING ──
   let round1ScoresRows = [];
   let judgeProfiles = {}; // judge_id ->judge_name
+  let assignedCountByJudge = {}; // judge_id ->number of teams assigned to them
   let rankingByTrack = {}; // track ->sorted [{regId, row, avg, judgeCount, entries}]
 
   async function openScores() {
@@ -2491,9 +2493,10 @@ screener02,AnotherPass456"></textarea>
     document.getElementById('scoresList').innerHTML = '<div class="loading">Loading…</div>';
     document.getElementById('scoresModal').classList.add('open');
 
-    const [{ data: scores, error: scoresErr }, { data: judges, error: judgesErr }] = await Promise.all([
+    const [{ data: scores, error: scoresErr }, { data: judges, error: judgesErr }, { data: assignments, error: assignmentsErr }] = await Promise.all([
       sb.from('round1_scores').select('*'),
       sb.from('judge_profiles').select('*'),
+      sb.from('judge_assignments').select('judge_id'),
     ]);
     if (scoresErr) {
       document.getElementById('scoresError').textContent = 'Failed to load scores: ' + scoresErr.message;
@@ -2502,10 +2505,13 @@ screener02,AnotherPass456"></textarea>
       return;
     }
     if (judgesErr) console.error('Failed to load judge profiles:', judgesErr.message);
+    if (assignmentsErr) console.error('Failed to load judge assignments:', assignmentsErr.message);
 
     round1ScoresRows = scores || [];
     judgeProfiles = {};
     (judges || []).forEach(j =>{ judgeProfiles[j.user_id] = j.judge_name; });
+    assignedCountByJudge = {};
+    (assignments || []).forEach(a =>{ assignedCountByJudge[a.judge_id] = (assignedCountByJudge[a.judge_id] || 0) + 1; });
 
     renderJudgeCoverage();
     renderScores();
@@ -2520,7 +2526,6 @@ screener02,AnotherPass456"></textarea>
   }
 
   function renderJudgeCoverage() {
-    const totalEligible = allRows.filter(r =>round1StatusOf(r) === 'submitted').length;
     const byJudge = {};
     round1ScoresRows.forEach(s =>{ byJudge[s.judge_id] = (byJudge[s.judge_id] || 0) + 1; });
     const host = document.getElementById('judgeCoverage');
@@ -2530,12 +2535,13 @@ screener02,AnotherPass456"></textarea>
       return;
     }
     host.innerHTML = '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
-      judgeIds.map(jid =>(
-        '<div class="stat-box" style="flex:1; min-width:140px;">' +
-          '<div class="num" style="font-size:16px;">' + (byJudge[jid] || 0) + ' / ' + totalEligible + '</div>' +
+      judgeIds.map(jid =>{
+        const assigned = assignedCountByJudge[jid] || 0;
+        return '<div class="stat-box" style="flex:1; min-width:140px;">' +
+          '<div class="num" style="font-size:16px;">' + (byJudge[jid] || 0) + ' / ' + assigned + '</div>' +
           '<div class="lbl">' + escapeHtml(judgeProfiles[jid]) + '</div>' +
-        '</div>'
-      )).join('') +
+        '</div>';
+      }).join('') +
       '</div>';
   }
 
