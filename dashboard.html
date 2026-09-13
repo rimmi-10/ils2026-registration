@@ -411,6 +411,8 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   .venue-inner{ position:relative; z-index:2; }
+  .venue-medallion{ width:170px; height:170px; margin:0 auto 12px; touch-action:none; }
+  .venue-medallion canvas{ width:100%; height:100%; display:block; cursor:grab; }
   .venue-card h3{ font-family:var(--font-display); font-size:clamp(1.5rem,3vw,2.1rem); font-weight:800; margin-bottom:14px; }
   .venue-card p{ color:var(--ink-dim); font-size:1rem; margin-bottom:30px; line-height:1.6; }
 
@@ -666,6 +668,7 @@
 <section id="venue">
   <div class="venue-card">
     <div class="venue-inner">
+      <div class="venue-medallion"><canvas id="venueWebGL"></canvas></div>
       <h3>See You in Surat</h3>
       <p>Sarvajanik University &amp; SVNIT Surat host the national finale of IEEE WIE ILS 2026 on 24&ndash;25 October 2026 &mdash; two days of building, mentorship, and celebrating women-led engineering.</p>
       <a class="btn-primary" href="https://wieils.ieee.org/2026-suratindia/">Register Now &rarr;</a>
@@ -833,30 +836,112 @@ setInterval(loadStats, 60000);
   resize(); initParticles(); step();
 })();
 
-// ---------- hero WebGL 3D network globe (three.js) ----------
-(function initHeroWebGL(){
-  if (typeof THREE === 'undefined') return;
+// ---------- reusable draggable three.js scene (grab-and-spin, like a product viewer) ----------
+// dragPointerTypes limits which input types can grab-rotate it -- the hero
+// globe is mouse-only so touch scrolling on mobile is never hijacked; the
+// small venue medallion allows touch too, since it's a deliberate, isolated
+// object (its CSS sets touch-action:none precisely so that's safe there).
+function createSpinnableScene(canvas, opts) {
+  if (typeof THREE === 'undefined' || !canvas) return null;
+  const container = canvas.parentElement;
   try {
-    const heroEl = document.querySelector('header.hero');
-    const canvas = document.getElementById('heroWebGL');
-    if (!heroEl || !canvas) return;
-
-    let w = heroEl.clientWidth, h = heroEl.clientHeight;
+    let w = container.clientWidth, h = container.clientHeight;
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-    camera.position.z = 6.5;
+    camera.position.z = opts.cameraZ || 6;
 
     const group = new THREE.Group();
     scene.add(group);
+    opts.buildScene(group, THREE, w, h);
 
+    const dragTypes = opts.dragPointerTypes || ['mouse', 'touch', 'pen'];
+    let manualRotY = 0, inertia = 0, isDragging = false, lastX = 0, autoPaused = false, resumeTimer;
+    let mx = 0, my = 0;
+
+    function onPointerDown(e) {
+      if (!dragTypes.includes(e.pointerType || 'mouse')) return;
+      isDragging = true; autoPaused = true;
+      lastX = e.clientX;
+      inertia = 0;
+      clearTimeout(resumeTimer);
+      canvas.style.cursor = 'grabbing';
+    }
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      manualRotY += dx * 0.006;
+      inertia = dx * 0.006;
+    }
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      canvas.style.cursor = 'grab';
+      resumeTimer = setTimeout(() => { autoPaused = false; }, 1000);
+    }
+    container.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp);
+
+    if (opts.parallax) {
+      window.addEventListener('mousemove', (e) => {
+        mx = (e.clientX / window.innerWidth) - 0.5;
+        my = (e.clientY / window.innerHeight) - 0.5;
+      }, { passive: true });
+    }
+
+    function animate() {
+      if (!isDragging) {
+        inertia *= 0.95;
+        manualRotY += inertia;
+        if (!autoPaused) manualRotY += (opts.autoSpeed || 0.0022);
+      }
+      group.rotation.y = manualRotY;
+      if (opts.parallax) {
+        group.rotation.x += ((-my * 0.4) - group.rotation.x) * 0.04;
+        group.rotation.z += ((mx * 0.15) - group.rotation.z) * 0.04;
+      } else if (typeof opts.tilt === 'number') {
+        group.rotation.x = opts.tilt;
+      }
+      if (opts.onFrame) opts.onFrame(group);
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const w2 = container.clientWidth, h2 = container.clientHeight;
+        if (!w2 || !h2) return;
+        camera.aspect = w2 / h2;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w2, h2);
+      }, 200);
+    });
+
+    return { scene, camera, group, renderer };
+  } catch (err) {
+    console.error('spinnable 3D scene failed to init:', err);
+    return null;
+  }
+}
+
+// ---------- hero WebGL 3D network globe (drag to spin, mouse-parallax otherwise) ----------
+createSpinnableScene(document.getElementById('heroWebGL'), {
+  cameraZ: 6.5,
+  parallax: true,
+  autoSpeed: 0.0022,
+  dragPointerTypes: ['mouse'],
+  buildScene: (group, THREE, w) => {
     const icoGeo = new THREE.IcosahedronGeometry(2.3, 1);
     const wireGeo = new THREE.WireframeGeometry(icoGeo);
-    const wireMat = new THREE.LineBasicMaterial({ color: 0xc060f0, transparent: true, opacity: 0.5 });
-    group.add(new THREE.LineSegments(wireGeo, wireMat));
+    group.add(new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({ color: 0xc060f0, transparent: true, opacity: 0.5 })));
 
     const isNarrow = w < 700;
     const particleCount = isNarrow ? 240 : 500;
@@ -871,41 +956,28 @@ setInterval(loadStats, 60000);
     }
     const ptsGeo = new THREE.BufferGeometry();
     ptsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const ptsMat = new THREE.PointsMaterial({ color: 0xd6247e, size: 0.045, transparent: true, opacity: 0.85, sizeAttenuation: true });
-    const points = new THREE.Points(ptsGeo, ptsMat);
+    const points = new THREE.Points(ptsGeo, new THREE.PointsMaterial({ color: 0xd6247e, size: 0.045, transparent: true, opacity: 0.85, sizeAttenuation: true }));
     group.add(points);
+    group.userData.points = points;
+  },
+  onFrame: (group) => {
+    if (group.userData.points) group.userData.points.rotation.y -= 0.0009;
+  },
+});
 
-    let mx = 0, my = 0;
-    window.addEventListener('mousemove', (e) => {
-      mx = (e.clientX / window.innerWidth) - 0.5;
-      my = (e.clientY / window.innerHeight) - 0.5;
-    }, { passive: true });
-
-    let rafId;
-    function animate() {
-      group.rotation.y += 0.0022;
-      group.rotation.x += ((-my * 0.4) - group.rotation.x) * 0.04;
-      group.rotation.z += ((mx * 0.15) - group.rotation.z) * 0.04;
-      points.rotation.y -= 0.0009;
-      renderer.render(scene, camera);
-      rafId = requestAnimationFrame(animate);
-    }
-    animate();
-
-    let resizeTimer2;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer2);
-      resizeTimer2 = setTimeout(() => {
-        const w2 = heroEl.clientWidth, h2 = heroEl.clientHeight;
-        camera.aspect = w2 / h2;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w2, h2);
-      }, 200);
-    });
-  } catch (err) {
-    console.error('hero WebGL scene failed to init:', err);
-  }
-})();
+// ---------- venue medallion (small draggable badge, touch allowed) ----------
+createSpinnableScene(document.getElementById('venueWebGL'), {
+  cameraZ: 5,
+  autoSpeed: 0.004,
+  tilt: 0.35,
+  buildScene: (group, THREE) => {
+    const torusGeo = new THREE.TorusGeometry(1.55, 0.1, 12, 56);
+    group.add(new THREE.Mesh(torusGeo, new THREE.MeshBasicMaterial({ color: 0xd6247e, wireframe: true, transparent: true, opacity: 0.75 })));
+    const icoGeo = new THREE.IcosahedronGeometry(0.95, 0);
+    const wireGeo = new THREE.WireframeGeometry(icoGeo);
+    group.add(new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({ color: 0xc060f0, transparent: true, opacity: 0.85 })));
+  },
+});
 
 // ---------- scroll-triggered 3D reveal animations (GSAP) ----------
 (function initScrollAnimations(){
