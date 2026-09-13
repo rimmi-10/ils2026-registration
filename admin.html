@@ -408,6 +408,15 @@
       <input type="hidden" id="judgeEditingId">
       <div class="field-row"><label for="judgeNameInput">Name</label><input type="text" id="judgeNameInput" placeholder="Judge's full name"></div>
       <div class="field-row"><label for="judgeEmailInput">Email</label><input type="email" id="judgeEmailInput" placeholder="judge@example.com"></div>
+      <div class="field-row"><label for="judgeTrackInput">Preferred Track</label>
+        <select id="judgeTrackInput">
+          <option value="">— Not set —</option>
+          <option value="Track 1: Bharat Rising (Rural India & EdTech)">Track 1: Bharat Rising (Rural India & EdTech)</option>
+          <option value="Track 2: HealthTech">Track 2: HealthTech</option>
+          <option value="Track 3: SheLeads (WIE Special Track)">Track 3: SheLeads (WIE Special Track)</option>
+          <option value="Track 4: Open Industry Problems">Track 4: Open Industry Problems</option>
+        </select>
+      </div>
       <div class="field-row">
         <label for="judgePasswordInput">Password <span style="font-weight:400; color:#9b7ab0;">— leave blank to keep unchanged when editing</span></label>
         <input type="password" id="judgePasswordInput" placeholder="min 8 characters">
@@ -499,6 +508,7 @@ screener02,AnotherPass456"></textarea>
     <p style="font-size:11px; color:#9b7ab0; margin-bottom:14px;">
       Selects the top N teams per track by judge average score. Safe to re-run any time scores change -- it always recomputes from scratch. Results are NOT shown to teams until the results reveal date set in the Round 2 portal, so re-running this early never gives any team a head start.
     </p>
+    <div id="trackJudgeBreakdown" style="margin-bottom:14px;"></div>
     <div id="screeningStats" style="margin-bottom:14px;"></div>
     <div id="screeningList"></div>
     <div class="modal-actions">
@@ -1825,7 +1835,7 @@ screener02,AnotherPass456"></textarea>
       if (judgesCache.length === 0) { host.innerHTML = '<div class="empty-state">No judges added yet.</div>'; return; }
       host.innerHTML = judgesCache.map(j =>(
         '<div class="cleanup-item">' +
-          '<div class="info"><b>' + escapeHtml(j.judgeName) + '</b><br>' + escapeHtml(j.email || '—') + '</div>' +
+          '<div class="info"><b>' + escapeHtml(j.judgeName) + '</b><br>' + escapeHtml(j.email || '—') + '<br><span style="color:#9b7ab0;">' + escapeHtml(j.preferredTrack || 'No track set') + '</span></div>' +
           '<div class="row-actions">' +
             '<button class="btn btn-secondary btn-small" onclick="editJudge(\'' + j.userId + '\')">Edit</button>' +
             '<button class="btn btn-danger btn-small" onclick="deleteJudge(\'' + j.userId + '\', ' + JSON.stringify(j.judgeName) + ')">Remove</button>' +
@@ -1843,6 +1853,7 @@ screener02,AnotherPass456"></textarea>
     document.getElementById('judgeNameInput').value = '';
     document.getElementById('judgeEmailInput').value = '';
     document.getElementById('judgePasswordInput').value = '';
+    document.getElementById('judgeTrackInput').value = '';
   }
 
   function editJudge(userId) {
@@ -1853,6 +1864,7 @@ screener02,AnotherPass456"></textarea>
     document.getElementById('judgeNameInput').value = j.judgeName || '';
     document.getElementById('judgeEmailInput').value = j.email || '';
     document.getElementById('judgePasswordInput').value = '';
+    document.getElementById('judgeTrackInput').value = j.preferredTrack || '';
   }
 
   async function saveJudge() {
@@ -1864,6 +1876,7 @@ screener02,AnotherPass456"></textarea>
     const judgeName = document.getElementById('judgeNameInput').value.trim();
     const email = document.getElementById('judgeEmailInput').value.trim();
     const password = document.getElementById('judgePasswordInput').value;
+    const preferredTrack = document.getElementById('judgeTrackInput').value;
 
     if (!judgeName) { errEl.textContent = 'Name is required.'; errEl.style.display = 'block'; return; }
     if (!editingId && (!email || !password)) { errEl.textContent = 'Email and password are required for a new judge.'; errEl.style.display = 'block'; return; }
@@ -1871,10 +1884,10 @@ screener02,AnotherPass456"></textarea>
 
     try {
       if (editingId) {
-        await callManageJudge({ action: 'update', judgeUserId: editingId, judgeName, email: email || undefined, password: password || undefined });
+        await callManageJudge({ action: 'update', judgeUserId: editingId, judgeName, email: email || undefined, password: password || undefined, preferredTrack });
         okEl.textContent = 'Judge updated.';
       } else {
-        await callManageJudge({ action: 'create', judgeName, email, password });
+        await callManageJudge({ action: 'create', judgeName, email, password, preferredTrack: preferredTrack || undefined });
         okEl.textContent = 'Judge added.';
       }
       okEl.style.display = 'block';
@@ -2131,9 +2144,14 @@ screener02,AnotherPass456"></textarea>
       });
       const result = await res.json().catch(() =>null);
       if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
-      okEl.textContent = result.newAssignments + ' new judge assignment(s) across ' + result.totalShortlistedTeams + ' shortlisted team(s).' +
-        (result.shortfallTeams >0 ? '  ' + result.shortfallTeams + ' team(s) couldn\'t get both judges — add more judge accounts or raise the cap.' : '');
+      const trackLines = Object.entries(result.perTrackSummary || {}).map(([t, s]) =>
+        t + ': ' + s.newAssignments + ' new, ' + s.shortfallTeams + ' short'
+      ).join('<br>');
+      okEl.innerHTML = result.newAssignments + ' new judge assignment(s) across ' + result.totalShortlistedTeams + ' shortlisted team(s).' +
+        (result.judgesSkippedNoTrack >0 ? ' ' + result.judgesSkippedNoTrack + ' judge(s) skipped (no track set).' : '') +
+        (trackLines ? '<br>' + trackLines : '');
       okEl.style.display = 'block';
+      loadScreeningOverview();
     } catch (err) {
       errEl.textContent = 'Failed: ' + err.message;
       errEl.style.display = 'block';
@@ -2190,20 +2208,51 @@ screener02,AnotherPass456"></textarea>
     loadScreeningOverview();
   }
 
+  function renderTrackJudgeBreakdown(rows, outcomeByReg, judgesForTrack) {
+    const host = document.getElementById('trackJudgeBreakdown');
+    const shortlistedByTrack = {};
+    rows.forEach(r =>{
+      if (outcomeByReg[r.registration_id] === 'shortlist') {
+        shortlistedByTrack[r.track] = (shortlistedByTrack[r.track] || 0) + 1;
+      }
+    });
+    const judgesByTrack = {};
+    let noTrackCount = 0;
+    judgesForTrack.forEach(j =>{
+      if (j.preferred_track) judgesByTrack[j.preferred_track] = (judgesByTrack[j.preferred_track] || 0) + 1;
+      else noTrackCount++;
+    });
+    const tracks = Array.from(new Set([...Object.keys(shortlistedByTrack), ...Object.keys(judgesByTrack)])).sort();
+    if (tracks.length === 0 && noTrackCount === 0) { host.innerHTML = ''; return; }
+    host.innerHTML =
+      '<div style="font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:#9b7ab0; font-weight:700; margin-bottom:8px;">Judges &amp; Shortlisted Teams by Track</div>' +
+      '<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px;">' +
+      tracks.map(t =>(
+        '<div class="stat-box" style="flex:1; min-width:180px;">' +
+          '<div style="font-size:12.5px; font-weight:600; color:#6a1794; margin-bottom:4px;">' + escapeHtml(t) + '</div>' +
+          '<div style="font-size:13px; color:#4a1b6e;">' + (shortlistedByTrack[t] || 0) + ' shortlisted &middot; ' + (judgesByTrack[t] || 0) + ' judge(s)</div>' +
+        '</div>'
+      )).join('') +
+      '</div>' +
+      (noTrackCount > 0 ? '<div style="font-size:11.5px; color:#b8005e;">' + noTrackCount + ' judge(s) have no preferred track set — they will be skipped by allocation until assigned one in the Judges panel.</div>' : '');
+  }
+
   async function loadScreeningOverview() {
     const host = document.getElementById('screeningList');
     const statsHost = document.getElementById('screeningStats');
     host.innerHTML = '<div class="loading">Loading…</div>';
-    const [{ data: rows, error: rowsErr }, { data: screeners, error: screenersErr }, { data: decisions, error: decisionsErr }, { data: outcomes, error: outcomesErr }] = await Promise.all([
+    const [{ data: rows, error: rowsErr }, { data: screeners, error: screenersErr }, { data: decisions, error: decisionsErr }, { data: outcomes, error: outcomesErr }, { data: judgesForTrack }] = await Promise.all([
       sb.from('screening_admin_view').select('*'),
       sb.from('screener_profiles').select('*'),
       sb.from('screening_decisions').select('*'),
       sb.from('screening_outcomes').select('*'),
+      sb.from('judge_profiles').select('preferred_track'),
     ]);
     if (rowsErr) { host.innerHTML = '<div class="empty-state">Failed to load: ' + rowsErr.message + '</div>'; return; }
     if (screenersErr) console.error('Failed to load screener profiles:', screenersErr.message);
     if (decisionsErr) console.error('Failed to load screening decisions:', decisionsErr.message);
     if (outcomesErr) console.error('Failed to load screening outcomes:', outcomesErr.message);
+
 
     const nameByScreener = {};
     (screeners || []).forEach(s =>{ nameByScreener[s.user_id] = s.screener_name; });
@@ -2211,6 +2260,8 @@ screener02,AnotherPass456"></textarea>
     (decisions || []).forEach(d =>{ (decisionsByReg[d.registration_id] = decisionsByReg[d.registration_id] || []).push(d); });
     const outcomeByReg = {};
     (outcomes || []).forEach(o =>{ outcomeByReg[o.registration_id] = o.outcome; });
+
+    renderTrackJudgeBreakdown(rows || [], outcomeByReg, judgesForTrack || []);
 
     const totalTeams = (rows || []).length;
     // Under the current rule (finalize on the FIRST decision either way),
