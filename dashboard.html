@@ -36,7 +36,7 @@
   ::selection{background:var(--magenta-soft);color:#fff;}
   .ic-svg{ width:16px; height:16px; vertical-align:-3px; flex-shrink:0; }
 
-  /* ---------- preloader: the particle portrait fading up behind the loader ---------- */
+  /* ---------- preloader: an "engineering system initializing" moment, not a generic spinner ---------- */
   #preloader{
     position:fixed; inset:0; z-index:9999;
     background:var(--bg-deep);
@@ -45,6 +45,15 @@
     transition:opacity 0.7s ease, visibility 0.7s ease;
   }
   #preloader.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  .preloader-grid{
+    position:absolute; inset:0; z-index:0; opacity:0;
+    background-image:
+      linear-gradient(rgba(200,120,240,0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,120,240,0.5) 1px, transparent 1px);
+    background-size:38px 38px;
+    transition:opacity 1s ease;
+  }
+  #preloader.image-ready .preloader-grid{ opacity:0.06; }
   .preloader-frame{
     position:absolute; inset:0; z-index:1;
     display:flex; align-items:center; justify-content:center;
@@ -53,39 +62,57 @@
   }
   #preloader.image-ready .preloader-frame{ opacity:1; transform:scale(1); }
   .preloader-portrait{
-    max-width:88%; max-height:75%; object-fit:contain;
+    max-width:88%; max-height:72%; object-fit:contain;
     filter:drop-shadow(0 0 70px rgba(184,0,94,0.3));
   }
   .preloader-frame::after{
     content:''; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse at center, transparent 35%, var(--bg-deep) 100%);
+    background:radial-gradient(ellipse at center, transparent 30%, var(--bg-deep) 100%);
   }
+  .preloader-hud{
+    position:absolute; z-index:2; top:28px;
+    font-family:var(--font-display); font-weight:700; font-size:0.66rem;
+    letter-spacing:2.5px; text-transform:uppercase; color:rgba(210,160,240,0.55);
+    opacity:0; transition:opacity 0.9s ease 0.2s;
+  }
+  #preloader.image-ready .preloader-hud{ opacity:1; }
+  .hud-tl{ left:28px; }
+  .hud-tr{ right:28px; text-align:right; }
+  .preloader-greet{
+    position:absolute; z-index:2; bottom:118px;
+    font-family:var(--font-display); font-style:italic; font-size:0.85rem;
+    color:var(--ink-dim); opacity:0; letter-spacing:0.5px;
+    transition:opacity 0.9s ease 0.35s;
+  }
+  #preloader.image-ready .preloader-greet{ opacity:0.6; }
+  .greet-bl{ left:28px; }
+  .greet-br{ right:28px; text-align:right; }
   .loader-content{
     position:relative; z-index:2; margin-top:auto; align-self:center;
-    padding-bottom:64px;
-    display:flex; flex-direction:column; align-items:center; gap:14px;
+    padding-bottom:60px;
+    display:flex; flex-direction:column; align-items:center; gap:16px;
   }
-  .loader-text{
-    font-family:var(--font-display); font-weight:800; font-size:1.05rem;
-    letter-spacing:3px; color:#fff;
+  .loader-word{
+    font-family:var(--font-display); font-weight:800; letter-spacing:1px;
+    font-size:clamp(1.7rem,5vw,2.4rem); color:#fff; line-height:1;
   }
-  .loader-bar{ width:180px; height:2px; border-radius:2px; background:rgba(255,255,255,0.12); overflow:hidden; }
-  .loader-bar::after{ content:''; display:block; height:100%; width:40%; background:linear-gradient(90deg,var(--violet),var(--magenta),var(--glow)); animation:loaderBar 1.1s ease-in-out infinite; }
-  @keyframes loaderBar{ 0%{ transform:translateX(-120%); } 100%{ transform:translateX(350%); } }
-  .loader-sub{ font-size:0.66rem; letter-spacing:2px; text-transform:uppercase; color:var(--ink-dim); }
-  .preloader-greet{
-    position:absolute; z-index:2; top:26px;
-    font-family:var(--font-display); font-style:italic; font-size:0.9rem;
-    color:var(--ink-dim); opacity:0; letter-spacing:0.5px;
-    transition:opacity 0.8s ease 0.3s;
+  .loader-word .grad{
+    background:linear-gradient(120deg,#fff 0%,#e8c9ff 30%,var(--glow) 55%,var(--magenta-soft) 80%,#fff 100%);
+    background-size:280% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:shine 4s linear infinite;
   }
-  #preloader.image-ready .preloader-greet{ opacity:0.65; }
-  .greet-tl{ left:28px; }
-  .greet-tr{ right:28px; }
+  .loader-meter{ display:flex; align-items:center; gap:12px; }
+  .loader-bar{ width:170px; height:2px; border-radius:2px; background:rgba(255,255,255,0.12); overflow:hidden; }
+  .loader-bar-fill{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--violet),var(--magenta),var(--glow)); transition:width 0.25s ease-out; }
+  .loader-pct{ font-family:var(--font-display); font-weight:700; font-size:0.72rem; color:var(--ink-dim); min-width:34px; }
+  .loader-sub{ font-size:0.64rem; letter-spacing:2px; text-transform:uppercase; color:var(--ink-dim); opacity:0.8; }
   @media(max-width:520px){
-    .preloader-greet{ font-size:0.75rem; top:18px; }
-    .greet-tl{ left:18px; }
-    .greet-tr{ right:18px; }
+    .preloader-hud{ font-size:0.58rem; top:18px; }
+    .hud-tl{ left:18px; }
+    .hud-tr{ right:18px; }
+    .preloader-greet{ font-size:0.72rem; bottom:108px; }
+    .greet-bl{ left:18px; }
+    .greet-br{ right:18px; }
   }
 
   /* ---------- custom cursor ---------- */
@@ -619,18 +646,24 @@
 <body>
 
 <div id="preloader">
+  <div class="preloader-grid" aria-hidden="true"></div>
   <div class="preloader-frame" aria-hidden="true">
     <picture>
       <source media="(max-width:700px)" srcset="assets/face-source-mobile.jpg">
       <img class="preloader-portrait" id="preloaderPortrait" alt="" src="assets/face-source.jpg">
     </picture>
   </div>
-  <div class="preloader-greet greet-tl" aria-hidden="true">નમસ્તે</div>
-  <div class="preloader-greet greet-tr" aria-hidden="true">नमस्ते</div>
+  <div class="preloader-hud hud-tl" aria-hidden="true">SYS.HACKX-2026</div>
+  <div class="preloader-hud hud-tr" aria-hidden="true">SURAT, INDIA</div>
+  <div class="preloader-greet greet-bl" aria-hidden="true">નમસ્તે</div>
+  <div class="preloader-greet greet-br" aria-hidden="true">नमस्ते</div>
   <div class="loader-content">
-    <div class="loader-text">HACKX 2026</div>
-    <div class="loader-bar"></div>
-    <div class="loader-sub">Loading ILS 2026</div>
+    <div class="loader-word"><span class="grad">HACKX</span> 2026</div>
+    <div class="loader-meter">
+      <div class="loader-bar"><span class="loader-bar-fill" id="loaderBarFill"></span></div>
+      <div class="loader-pct" id="loaderPct">0%</div>
+    </div>
+    <div class="loader-sub">IEEE WIE International Leadership Summit</div>
   </div>
 </div>
 
@@ -1021,9 +1054,16 @@ const VIDEO_IS_IFRAME = false; // set true if VIDEO_SRC is a YouTube/Drive embed
 // briefly), then the whole preloader fades to show the real page --
 // guarded against double-firing since both the load event and the
 // fallback timer call this.
+let preloaderPctTimer = null;
 function hidePreloader() {
   const pre = document.getElementById('preloader');
-  if (pre) pre.classList.add('hide');
+  if (!pre) return;
+  clearInterval(preloaderPctTimer);
+  const fill = document.getElementById('loaderBarFill');
+  const pct = document.getElementById('loaderPct');
+  if (fill) fill.style.width = '100%';
+  if (pct) pct.textContent = '100%';
+  pre.classList.add('hide');
 }
 window.addEventListener('load', () => setTimeout(hidePreloader, 500));
 setTimeout(hidePreloader, 3500); // fallback in case a CDN asset stalls
@@ -1038,6 +1078,21 @@ setTimeout(hidePreloader, 3500); // fallback in case a CDN asset stalls
   const reveal = () => pre.classList.add('image-ready');
   if (img.complete && img.naturalWidth > 0) reveal();
   else img.addEventListener('load', reveal);
+})();
+
+// A real-looking (if not strictly real) progress readout -- eases toward
+// 92% on its own so it never sits at a dead 0%, then hidePreloader snaps
+// it to 100% the moment the page is actually ready.
+(function initPreloaderMeter(){
+  const fill = document.getElementById('loaderBarFill');
+  const pct = document.getElementById('loaderPct');
+  if (!fill || !pct) return;
+  let value = 0;
+  preloaderPctTimer = setInterval(() => {
+    value = Math.min(92, value + Math.random() * 10);
+    fill.style.width = value + '%';
+    pct.textContent = Math.round(value) + '%';
+  }, 150);
 })();
 
 // ---------- nav scroll state ----------
