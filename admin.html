@@ -2534,7 +2534,13 @@ screener02,AnotherPass456"></textarea>
       host.innerHTML = '';
       return;
     }
-    host.innerHTML = '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
+    // An RLS denial comes back as an empty result with no error, which
+    // previously rendered as a silent "0 / 0" for every judge. Surface it.
+    const totalAssigned = Object.values(assignedCountByJudge).reduce((a, b) => a + b, 0);
+    const warning = totalAssigned === 0
+      ? '<div style="font-size:12px; color:#b8005e; margin-bottom:8px;">No judge assignments are visible to this account. If judges have been allocated, this is a database permission (RLS) issue on judge_assignments, not a display bug.</div>'
+      : '';
+    host.innerHTML = warning + '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
       judgeIds.map(jid =>{
         const assigned = assignedCountByJudge[jid] || 0;
         return '<div class="stat-box" style="flex:1; min-width:140px;">' +
