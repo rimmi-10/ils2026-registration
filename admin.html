@@ -256,6 +256,7 @@
       <button class="btn" style="width:auto;" onclick="openBroadcast()">Broadcast Email</button>
       <button class="btn btn-secondary" style="width:auto;" onclick="openSelection()">Selection</button>
       <button class="btn btn-secondary" style="width:auto;" onclick="remindPendingRound1()">Remind Pending Round 1</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="openMailJudges()">Mail to Judges</button>
     </div>
   </div>
 
@@ -519,8 +520,29 @@ screener02,AnotherPass456"></textarea>
 
 <!-- ANALYTICS MODAL -->
 <div class="modal-overlay" id="analyticsModal">
-  <div class="modal-box" style="max-width:960px;">
+  <div class="modal-box" style="max-width:1040px;">
     <h3>Registration Analytics</h3>
+
+    <div class="stat-box-row" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="anStatAll">—</div><div class="lbl">Total registrations</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="anStatR1">—</div><div class="lbl">Round 1 submitted</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="anStatShortlisted">—</div><div class="lbl">Shortlisted (Round 2)</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="anStatR2Sub">—</div><div class="lbl">Round 2 submitted</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="anStatFinale">—</div><div class="lbl">Grand Finale selected</div></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <label for="analyticsStageFilter" style="font-size:12.5px; color:#7c2ab0; font-weight:600;">Charts for stage:</label>
+      <select id="analyticsStageFilter" onchange="renderAnalytics()">
+        <option value="all">All registrations</option>
+        <option value="round1">Round 1 Submitted</option>
+        <option value="shortlisted">Shortlisted (Round 2 Selected — ~145 teams)</option>
+        <option value="round2sub">Round 2 Submitted</option>
+        <option value="finale">Grand Finale Selected</option>
+      </select>
+      <span id="analyticsStageCount" style="font-size:12px; color:#9b7ab0;"></span>
+    </div>
+
     <div class="analytics-grid">
       <div class="chart-card wide">
         <h4>Registrations Over Time</h4>
@@ -537,6 +559,14 @@ screener02,AnotherPass456"></textarea>
         <canvas id="chartTrack"></canvas>
       </div>
       <div class="chart-card">
+        <h4>Region <span style="font-weight:400; color:#9b7ab0; font-size:10.5px;">(inferred from college name — no state field is collected)</span></h4>
+        <canvas id="chartRegion"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>By Problem Statement</h4>
+        <canvas id="chartProblem"></canvas>
+      </div>
+      <div class="chart-card">
         <h4>By Round</h4>
         <canvas id="chartRound"></canvas>
       </div>
@@ -547,6 +577,45 @@ screener02,AnotherPass456"></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeAnalytics()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIL TO JUDGES MODAL -->
+<div class="modal-overlay" id="mailJudgesModal">
+  <div class="modal-box" style="max-width:920px;">
+    <h3>Mail to Judges — Round 1 Evaluation</h3>
+    <div class="msg error" id="mailJudgesError"></div>
+    <div class="msg success" id="mailJudgesSuccess"></div>
+
+    <div class="stat-box-row" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="mjStatAssigned">—</div><div class="lbl">Total judges</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="mjStatPending">—</div><div class="lbl">With pending evaluations</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="mjStatDone">—</div><div class="lbl">Fully done</div></div>
+      <div class="stat-box" style="flex:1; min-width:120px;"><div class="num" id="mjStatNoEmail">—</div><div class="lbl">No deliverable email</div></div>
+    </div>
+
+    <div style="background:#fdf8ff; border:1px solid #e2c8f5; border-radius:8px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; color:#4a1b6e; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+      <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#2c1a40; cursor:pointer;">
+        <input type="checkbox" id="mjAutomationToggle" onchange="toggleAutomation(this.checked)"> Daily 9:00 AM automation active
+      </label>
+      <span>Reminder window ends: <b id="mjDeadlineText">18 September 2026</b></span>
+      <span id="mjLastRun" style="color:#9b7ab0;"></span>
+      <button class="btn-icon" style="width:auto; padding:4px 10px; font-size:11px;" onclick="loadMailJudgesStatus()">Refresh Status</button>
+      <button class="btn-icon" style="width:auto; padding:4px 10px; font-size:11px;" onclick="sendJudgeTestEmail()">Send test to me</button>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+      <button class="btn btn-secondary btn-small" onclick="bulkSendJudges('reminders')">Send reminders to all pending (<span id="mjPendingCount">0</span>)</button>
+      <button class="btn btn-secondary btn-small" onclick="bulkSendJudges('thankyou')">Send thank-you to all completed (<span id="mjDoneCount">0</span>)</button>
+    </div>
+
+    <p style="font-size:11.5px; color:#9b7ab0; margin:0 0 10px;">Thank-you emails are sent once per judge automatically (dedup via the email log); use the per-row button to resend one anyway.</p>
+
+    <div id="mailJudgesList" style="max-height:44vh; overflow-y:auto;"><div class="loading">Loading…</div></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeMailJudges()">Close</button>
     </div>
   </div>
 </div>
@@ -1587,7 +1656,9 @@ screener02,AnotherPass456"></textarea>
   const EMAIL_TYPE_LABELS = {
     broadcast: 'Broadcast',
     registration_confirmation: 'Registration Confirmation',
-    round1_confirmation: 'Round 1 Confirmation'
+    round1_confirmation: 'Round 1 Confirmation',
+    judge_reminder: 'Judge Reminder',
+    judge_thankyou: 'Judge Thank-You'
   };
 
   async function openSentLog() {
@@ -1654,7 +1725,7 @@ screener02,AnotherPass456"></textarea>
   }
 
   // ── ANALYTICS ──
-  const CHART_COLORS = ['#8b2fc9', '#d6247e', '#0e9488', '#d97706'];
+  const CHART_COLORS = ['#0e9488', '#8b2fc9', '#d6247e', '#d97706']; // validated order (dataviz skill: CVD-safe pairwise)
   const charts = {};
   let collegeAliases = {}; // normalized raw college ->canonical name
 
@@ -1679,10 +1750,65 @@ screener02,AnotherPass456"></textarea>
     (data || []).forEach(row =>{ collegeAliases[row.raw_key] = row.canonical_name; });
   }
 
+  // Region is inferred from the free-text college name -- there is no
+  // state/city column in registrations. Keyword-matched, first hit wins;
+  // anything unmatched buckets into "Unknown" rather than guessed.
+  const REGION_KEYWORDS = [
+    ['Gujarat', /gujarat|surat|ahmedabad|vadodara|baroda|rajkot|gandhinagar|bhavnagar|anand|nadiad|mehsana|bharuch|junagadh|jamnagar|navsari|vapi|morbi|valsad|\bsvnit\b|\bnit\s*surat\b/i],
+    ['Maharashtra', /maharashtra|mumbai|pune|nagpur|nashik|thane|aurangabad|kolhapur|navi mumbai|sangli|solapur|amravati/i],
+    ['Delhi NCR', /\bdelhi\b|new delhi|noida|gurugram|gurgaon|faridabad|ghaziabad|\bncr\b/i],
+    ['Karnataka', /karnataka|bangalore|bengaluru|mysore|mysuru|mangalore|hubli|belgaum/i],
+    ['Tamil Nadu', /tamil nadu|chennai|coimbatore|madurai|trichy|tiruchirappalli|salem|vellore/i],
+    ['Telangana', /telangana|hyderabad|warangal/i],
+    ['Andhra Pradesh', /andhra pradesh|vijayawada|visakhapatnam|vizag|guntur|tirupati/i],
+    ['Rajasthan', /rajasthan|jaipur|udaipur|jodhpur|kota|ajmer|bikaner/i],
+    ['Uttar Pradesh', /uttar pradesh|\bup\b|lucknow|kanpur|varanasi|banaras|agra|allahabad|prayagraj|meerut|noida|greater noida|aligarh|gorakhpur/i],
+    ['Madhya Pradesh', /madhya pradesh|\bmp\b|bhopal|indore|gwalior|jabalpur/i],
+    ['West Bengal', /west bengal|kolkata|calcutta|durgapur|siliguri/i],
+    ['Bihar', /\bbihar\b|patna|gaya|muzaffarpur/i],
+    ['Punjab', /\bpunjab\b|chandigarh|ludhiana|amritsar|patiala|jalandhar/i],
+    ['Haryana', /\bharyana\b|hisar|rohtak|kurukshetra|panipat|karnal/i],
+    ['Kerala', /\bkerala\b|kochi|cochin|trivandrum|thiruvananthapuram|kozhikode|calicut/i],
+    ['Odisha', /\bodisha\b|orissa|bhubaneswar|rourkela|cuttack/i],
+    ['Assam', /\bassam\b|guwahati|dibrugarh/i],
+    ['Jharkhand', /jharkhand|ranchi|jamshedpur|dhanbad/i],
+    ['Chhattisgarh', /chhattisgarh|raipur|bhilai|bilaspur/i],
+    ['Uttarakhand', /uttarakhand|dehradun|roorkee|haridwar/i],
+    ['Goa', /\bgoa\b|panaji|margao/i],
+    ['Jammu & Kashmir', /jammu|kashmir|srinagar/i],
+  ];
+  function inferRegion(collegeRaw) {
+    const s = (collegeRaw || '');
+    if (!s.trim()) return 'Unknown';
+    for (const [region, re] of REGION_KEYWORDS) { if (re.test(s)) return region; }
+    return 'Unknown';
+  }
+
+  function analyticsStageRows() {
+    const stage = document.getElementById('analyticsStageFilter')?.value || 'all';
+    if (stage === 'round1') return allRows.filter(r => !!r.round1_submitted_at || !!r.round1_doc_url);
+    if (stage === 'shortlisted') return allRows.filter(r => !!r.round2_selected);
+    if (stage === 'round2sub') return allRows.filter(r => !!r.round2_submitted_at);
+    if (stage === 'finale') return allRows.filter(r => !!r.round3_selected);
+    return allRows;
+  }
+
+  function renderAnalyticsFunnel() {
+    document.getElementById('anStatAll').textContent = allRows.length;
+    document.getElementById('anStatR1').textContent = allRows.filter(r => !!r.round1_submitted_at || !!r.round1_doc_url).length;
+    document.getElementById('anStatShortlisted').textContent = allRows.filter(r => !!r.round2_selected).length;
+    document.getElementById('anStatR2Sub').textContent = allRows.filter(r => !!r.round2_submitted_at).length;
+    document.getElementById('anStatFinale').textContent = allRows.filter(r => !!r.round3_selected).length;
+  }
+
   function renderAnalytics() {
+    renderAnalyticsFunnel();
+    const rows = analyticsStageRows();
+    document.getElementById('analyticsStageCount').textContent = rows.length + ' registration(s) in this view';
+
     // By college (top 15), merged through saved aliases
     const collegeCounts = {};
-    allRows.forEach(r =>{
+    rows.forEach(r =>{
       const c = canonicalCollege(r.college) || 'Unknown';
       collegeCounts[c] = (collegeCounts[c] || 0) + 1;
     });
@@ -1690,29 +1816,46 @@ screener02,AnotherPass456"></textarea>
 
     // By track
     const trackCounts = {};
-    allRows.forEach(r =>{
+    rows.forEach(r =>{
       const t = (r.track || '').trim() || 'Unknown';
       trackCounts[t] = (trackCounts[t] || 0) + 1;
     });
     const topTracks = Object.entries(trackCounts).sort((a, b) =>b[1] - a[1]);
 
+    // Region (inferred from college name)
+    const regionCounts = {};
+    rows.forEach(r =>{
+      const g = inferRegion(canonicalCollege(r.college) || r.college);
+      regionCounts[g] = (regionCounts[g] || 0) + 1;
+    });
+    const topRegions = Object.entries(regionCounts).sort((a, b) =>b[1] - a[1]);
+
+    // By problem statement (industry track uses track4_choice instead)
+    const problemCounts = {};
+    rows.forEach(r =>{
+      const p = (r.problem_statement || '').trim() || (r.track4_choice || '').trim() || 'Unknown';
+      const label = p.length > 40 ? p.slice(0, 40) + '…' : p;
+      problemCounts[label] = (problemCounts[label] || 0) + 1;
+    });
+    const topProblems = Object.entries(problemCounts).sort((a, b) =>b[1] - a[1]).slice(0, 15);
+
     // By round
     const roundCounts = {};
-    allRows.forEach(r =>{
+    rows.forEach(r =>{
       const rd = (r.round || '').trim() || 'Unknown';
       roundCounts[rd] = (roundCounts[rd] || 0) + 1;
     });
 
     // Gender split (leader)
     const genderCounts = {};
-    allRows.forEach(r =>{
+    rows.forEach(r =>{
       const g = (r.leader_gender || '').trim() || 'Unknown';
       genderCounts[g] = (genderCounts[g] || 0) + 1;
     });
 
     // Over time (by date)
     const dateCounts = {};
-    allRows.forEach(r =>{
+    rows.forEach(r =>{
       const d = new Date(r.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
       dateCounts[d] = (dateCounts[d] || 0) + 1;
     });
@@ -1761,6 +1904,32 @@ screener02,AnotherPass456"></textarea>
       data: {
         labels: topTracks.map(t =>t[0]),
         datasets: [{ label: 'Registrations', data: topTracks.map(t =>t[1]), backgroundColor: '#0e9488', borderRadius: 4 }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    charts.region = new Chart(document.getElementById('chartRegion'), {
+      type: 'bar',
+      data: {
+        labels: topRegions.map(r =>r[0]),
+        datasets: [{ label: 'Registrations', data: topRegions.map(r =>r[1]), backgroundColor: '#8b2fc9', borderRadius: 4 }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    charts.problem = new Chart(document.getElementById('chartProblem'), {
+      type: 'bar',
+      data: {
+        labels: topProblems.map(p =>p[0]),
+        datasets: [{ label: 'Teams', data: topProblems.map(p =>p[1]), backgroundColor: '#d6247e', borderRadius: 4 }]
       },
       options: {
         indexAxis: 'y',
@@ -2419,6 +2588,173 @@ screener02,AnotherPass456"></textarea>
     renderAnalytics();
     okEl.textContent = 'Saved. Top Colleges chart now reflects the merged names.';
     okEl.style.display = 'block';
+  }
+
+  // ── MAIL TO JUDGES (Round 1 reminders / thank-you, via judge-reminders function) ──
+  let mailJudgesRows = [];
+
+  async function callJudgeReminders(payload) {
+    const { data: sessionData } = await sb.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const res = await fetch(SUPABASE_URL + '/functions/v1/judge-reminders', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+    return result;
+  }
+
+  async function openMailJudges() {
+    document.getElementById('mailJudgesError').style.display = 'none';
+    document.getElementById('mailJudgesSuccess').style.display = 'none';
+    document.getElementById('mailJudgesModal').classList.add('open');
+    await loadMailJudgesStatus();
+  }
+
+  function closeMailJudges() {
+    document.getElementById('mailJudgesModal').classList.remove('open');
+  }
+
+  function mjShowError(msg) {
+    const el = document.getElementById('mailJudgesError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function mjShowSuccess(msg) {
+    const el = document.getElementById('mailJudgesSuccess');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 6000);
+  }
+
+  async function loadMailJudgesStatus() {
+    const host = document.getElementById('mailJudgesList');
+    host.innerHTML = '<div class="loading">Loading…</div>';
+    document.getElementById('mailJudgesError').style.display = 'none';
+    try {
+      const result = await callJudgeReminders({ action: 'status' });
+      mailJudgesRows = result.judges || [];
+      document.getElementById('mjDeadlineText').textContent = result.deadline || '18 September 2026';
+
+      const settings = result.settings || {};
+      document.getElementById('mjAutomationToggle').checked = settings.judge_reminders_enabled === 'true';
+      const lastRun = settings.judge_reminders_last_run;
+      document.getElementById('mjLastRun').textContent = lastRun ? ('Last automated run: ' + lastRun) : 'Automation has not run yet.';
+
+      renderMailJudgesList();
+    } catch (err) {
+      host.innerHTML = '';
+      mjShowError('Failed to load judge status: ' + err.message);
+    }
+  }
+
+  function renderMailJudgesList() {
+    const host = document.getElementById('mailJudgesList');
+    const total = mailJudgesRows.length;
+    const withPending = mailJudgesRows.filter(j => j.pending > 0 && j.email).length;
+    const fullyDone = mailJudgesRows.filter(j => j.assigned > 0 && j.pending === 0 && j.email).length;
+    const noEmail = mailJudgesRows.filter(j => !j.email).length;
+    document.getElementById('mjStatAssigned').textContent = total;
+    document.getElementById('mjStatPending').textContent = withPending;
+    document.getElementById('mjStatDone').textContent = fullyDone;
+    document.getElementById('mjStatNoEmail').textContent = noEmail;
+    document.getElementById('mjPendingCount').textContent = withPending;
+    document.getElementById('mjDoneCount').textContent = fullyDone;
+
+    if (total === 0) {
+      host.innerHTML = '<div class="empty-state">No judges found.</div>';
+      return;
+    }
+
+    host.innerHTML = mailJudgesRows.map(j => {
+      const canRemind = !!j.email && j.pending > 0;
+      const canThank = !!j.email && j.assigned > 0 && j.pending === 0;
+      const lastRem = j.lastRemindedAt ? new Date(j.lastRemindedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'never';
+      const thanked = j.thankedAt ? new Date(j.thankedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'not yet';
+      return (
+        '<div class="cleanup-item">' +
+          '<div class="info">' +
+            '<b>' + escapeHtml(j.name) + '</b>' +
+            (j.email ? '' : ' <span class="pill pill-late">no deliverable email</span>') + '<br>' +
+            escapeHtml(j.email || '—') + '<br>' +
+            '<span style="color:#9b7ab0;">' + j.scored + ' / ' + j.assigned + ' scored · ' + j.pending + ' pending</span><br>' +
+            '<span style="color:#9b7ab0; font-size:11px;">Last reminded: ' + escapeHtml(lastRem) + ' · Thanked: ' + escapeHtml(thanked) + '</span>' +
+          '</div>' +
+          '<div class="row-actions">' +
+            '<button class="btn btn-secondary btn-small" ' + (canRemind ? '' : 'disabled') + ' onclick="remindOneJudge(\'' + j.judge_id + '\')">Remind</button>' +
+            '<button class="btn btn-secondary btn-small" ' + (canThank ? '' : 'disabled') + ' onclick="thankOneJudge(\'' + j.judge_id + '\')">Thank</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  async function toggleAutomation(enabled) {
+    try {
+      const { data: sessionData } = await sb.auth.getSession();
+      const { error } = await sb.from('app_settings').upsert({
+        key: 'judge_reminders_enabled', value: enabled ? 'true' : 'false', updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      mjShowSuccess('Automation ' + (enabled ? 'enabled' : 'paused') + '.');
+    } catch (err) {
+      document.getElementById('mjAutomationToggle').checked = !enabled;
+      mjShowError('Failed to update automation setting: ' + err.message);
+    }
+  }
+
+  async function remindOneJudge(judgeId) {
+    try {
+      const result = await callJudgeReminders({ action: 'send', mode: 'reminders', judgeIds: [judgeId] });
+      const ok = (result.reminders || []).filter(r => r.ok).length;
+      mjShowSuccess(ok ? 'Reminder sent.' : 'No reminder sent (check the judge has a deliverable email and pending teams).');
+      await loadMailJudgesStatus();
+    } catch (err) {
+      mjShowError('Failed to send reminder: ' + err.message);
+    }
+  }
+
+  async function thankOneJudge(judgeId) {
+    try {
+      const result = await callJudgeReminders({ action: 'send', mode: 'thankyou', judgeIds: [judgeId], force: true });
+      const ok = (result.thankyou || []).filter(r => r.ok).length;
+      mjShowSuccess(ok ? 'Thank-you sent.' : 'No thank-you sent (check the judge has completed all assigned teams).');
+      await loadMailJudgesStatus();
+    } catch (err) {
+      mjShowError('Failed to send thank-you: ' + err.message);
+    }
+  }
+
+  async function bulkSendJudges(mode) {
+    const label = mode === 'reminders' ? 'pending-evaluation reminders' : 'Round 1 thank-you notes';
+    const count = mode === 'reminders'
+      ? mailJudgesRows.filter(j => j.pending > 0 && j.email).length
+      : mailJudgesRows.filter(j => j.assigned > 0 && j.pending === 0 && j.email).length;
+    if (count === 0) { alert('Nobody currently qualifies for this batch.'); return; }
+    if (!confirm('Send ' + label + ' to ' + count + ' judge(s) now?')) return;
+    try {
+      const result = await callJudgeReminders({ action: 'send', mode });
+      const sent = (result[mode] || []).filter(r => r.ok).length;
+      const failed = (result[mode] || []).filter(r => !r.ok);
+      mjShowSuccess('Sent ' + sent + ' ' + label + (failed.length ? (' · ' + failed.length + ' failed') : '') + '.');
+      await loadMailJudgesStatus();
+    } catch (err) {
+      mjShowError('Bulk send failed: ' + err.message);
+    }
+  }
+
+  async function sendJudgeTestEmail() {
+    try {
+      const { data: userData } = await sb.auth.getUser();
+      const to = userData?.user?.email;
+      if (!to) { mjShowError('Could not determine your own admin email for a test send.'); return; }
+      await callJudgeReminders({ action: 'test', to });
+      mjShowSuccess('Sample reminder + thank-you sent to ' + to + '.');
+    } catch (err) {
+      mjShowError('Test send failed: ' + err.message);
+    }
   }
 
   // ── ROUND 2 / GRAND FINALE SELECTION ──
