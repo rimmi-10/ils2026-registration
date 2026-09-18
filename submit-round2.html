@@ -56,6 +56,33 @@
   .upload-box { border: 1.5px dashed #ddc4f0; border-radius: 12px; padding: 18px; text-align: center; background: #fdf8ff; }
   .upload-box input[type="file"] { margin-top: 10px; }
   .file-locked { background: #f0fff7; border: 1px solid #6fcf97; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #1a6b3a; }
+
+  .deadline-banner {
+    background: #fff0f5; border-bottom: 1px solid #f0a0c0; color: #8b0038;
+    text-align: center; padding: 10px 16px; font-size: 13px; font-weight: 600;
+  }
+  .guidelines-link-wrap { text-align: center; margin: -0.5rem 0 1.25rem; }
+  .guidelines-link {
+    background: none; border: none; color: #6a1794; font-size: 12.5px; font-weight: 600;
+    text-decoration: underline; cursor: pointer; font-family: inherit; padding: 4px;
+  }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(30,10,45,0.55);
+    align-items: center; justify-content: center; z-index: 50; padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 16px; padding: 1.75rem; max-width: 520px; width: 100%;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal-box h3 { font-size: 16px; color: #6a1794; margin-bottom: 6px; }
+  .modal-box .sub { font-size: 12px; color: #9b7ab0; margin-bottom: 16px; }
+  .rubric-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0e3fa; }
+  .rubric-row:last-of-type { border-bottom: none; }
+  .rubric-row .rname { font-size: 13.5px; font-weight: 600; color: #2c1a40; }
+  .rubric-row .rdesc { font-size: 11.5px; color: #9b7ab0; margin-top: 2px; }
+  .rubric-row .rmax { font-size: 13px; font-weight: 700; color: #6a1794; white-space: nowrap; }
+  .rubric-total { display: flex; justify-content: space-between; padding-top: 12px; margin-top: 4px; border-top: 2px solid #e2c8f5; font-size: 13.5px; font-weight: 700; color: #6a1794; }
 </style>
 </head>
 <body>
@@ -65,7 +92,13 @@
   <div class="tagline">Track your progress and submit your Round 2 deck and prototype video</div>
 </div>
 
+<div class="deadline-banner">Round 2 submission deadline: 30 September 2026, 11:59 PM IST</div>
+
 <div class="wrap">
+  <div class="guidelines-link-wrap" style="margin-top:1.25rem;">
+    <button class="guidelines-link" onclick="document.getElementById('guidelinesModal').classList.add('open')">View Round 2 Judging Guidelines</button>
+  </div>
+
   <div class="card" id="loginCard">
     <h2>Find Your Team</h2>
     <div class="msg error" id="loginError"></div>
@@ -98,6 +131,35 @@
 
   <div style="text-align:center;">
     <button class="btn-secondary" style="width:auto; padding:8px 16px; border-radius:8px; font-size:12.5px; cursor:pointer;" onclick="resetForm()">Check a different team</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="guidelinesModal">
+  <div class="modal-box">
+    <h3>Round 2 Judging Guidelines</h3>
+    <div class="sub">Your PPT and prototype video will be scored by judges out of 100, across these 5 criteria. Build your submission with these in mind.</div>
+    <div class="rubric-row">
+      <div><div class="rname">Working Prototype / Functionality</div><div class="rdesc">Does it actually work? Show it running, not just slides.</div></div>
+      <div class="rmax">30</div>
+    </div>
+    <div class="rubric-row">
+      <div><div class="rname">Problem-Solution Fit &amp; Impact</div><div class="rdesc">How well the solution addresses the real problem, and its potential impact.</div></div>
+      <div class="rmax">20</div>
+    </div>
+    <div class="rubric-row">
+      <div><div class="rname">Technical Execution &amp; Quality</div><div class="rdesc">Soundness and quality of the implementation.</div></div>
+      <div class="rmax">20</div>
+    </div>
+    <div class="rubric-row">
+      <div><div class="rname">Presentation &amp; Communication</div><div class="rdesc">Clarity of your PPT and how well you explain the idea in your video.</div></div>
+      <div class="rmax">15</div>
+    </div>
+    <div class="rubric-row">
+      <div><div class="rname">Innovation &amp; Differentiation</div><div class="rdesc">What makes your approach original or different from existing solutions.</div></div>
+      <div class="rmax">15</div>
+    </div>
+    <div class="rubric-total"><span>Total</span><span>100</span></div>
+    <button class="btn" style="margin-top:18px;" onclick="document.getElementById('guidelinesModal').classList.remove('open')">Close</button>
   </div>
 </div>
 
