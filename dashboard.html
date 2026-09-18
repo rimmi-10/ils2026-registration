@@ -414,6 +414,38 @@
   .stat-label{ font-size:0.92rem; font-weight:700; color:var(--ink); margin-bottom:4px; }
   .stat-sub{ font-size:0.8rem; color:var(--ink-dim); }
   .stats-note{ text-align:center; margin-top:28px; color:var(--ink-dim); font-size:0.82rem; }
+
+  /* ---------- results section ---------- */
+  .results-countdown{
+    max-width:560px; margin:0 auto; text-align:center; padding:36px 28px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(200,120,240,0.25); border-radius:18px;
+  }
+  .results-countdown-title{ font-family:var(--font-display); font-weight:800; font-size:1.15rem; color:var(--ink); margin-bottom:8px; }
+  .results-countdown-sub{ color:var(--ink-dim); font-size:0.9rem; }
+  .results-live{ max-width:880px; margin:0 auto; }
+  .results-summary{ text-align:center; color:var(--ink-dim); font-size:0.95rem; margin-bottom:22px; }
+  .results-summary b{ color:var(--ink); }
+  .results-search{
+    display:block; width:100%; margin:0 auto 24px; padding:13px 18px; font-size:0.95rem;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(200,120,240,0.25); border-radius:12px;
+    color:var(--ink); font-family:inherit;
+  }
+  .results-search::placeholder{ color:var(--ink-dim); }
+  .results-search:focus{ outline:none; border-color:var(--glow); }
+  .results-list{ display:flex; flex-direction:column; gap:8px; }
+  .result-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    padding:14px 18px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px;
+  }
+  .result-row .r-name{ font-weight:700; color:var(--ink); font-size:0.95rem; }
+  .result-row .r-track{ color:var(--ink-dim); font-size:0.78rem; margin-top:2px; }
+  .result-pill{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px;
+    font-size:0.78rem; font-weight:700; white-space:nowrap;
+  }
+  .result-pill.selected{ background:rgba(30,180,120,0.14); color:#4fe3a5; border:1px solid rgba(30,180,120,0.35); }
+  .result-pill.rejected{ background:rgba(255,255,255,0.05); color:var(--ink-dim); border:1px solid rgba(255,255,255,0.12); }
+  .results-empty{ text-align:center; color:var(--ink-dim); padding:32px; }
   .live-badge{ display:inline-flex; align-items:center; gap:6px; font-weight:700; color:#7ee787; }
   .live-badge .dot{ width:7px; height:7px; border-radius:50%; background:#7ee787; box-shadow:0 0 8px #7ee787; animation:pulse 1.6s infinite; }
 
@@ -720,6 +752,7 @@
   <div class="nav-links">
     <a href="#stats">Live Stats</a>
     <a href="#timeline">Timeline</a>
+    <a href="#results">Results</a>
     <a href="#tracks">Tracks</a>
     <a href="#community">Women in Engineering</a>
     <a href="#portals">Portals</a>
@@ -989,6 +1022,26 @@
   </div>
 </section>
 
+<section id="results">
+  <div class="section-head">
+    <div class="section-tag">Round 1 Outcome</div>
+    <h2>Results</h2>
+    <p>Every team that went through Round 1 screening and judging, and whether they've moved on to Round 2.</p>
+  </div>
+
+  <div id="resultsCountdown" class="results-countdown">
+    <div class="results-countdown-title">Results go live 19 September 2026, 12:00 AM IST</div>
+    <div class="results-countdown-sub" id="resultsCountdownSub">Check back then &mdash; this page updates itself automatically.</div>
+  </div>
+
+  <div id="resultsLive" class="results-live" hidden>
+    <div class="results-summary" id="resultsSummary"></div>
+    <input type="text" id="resultsSearch" class="results-search" placeholder="Search your team name&hellip;" autocomplete="off" oninput="renderResults()">
+    <div id="resultsList" class="results-list"></div>
+    <div id="resultsEmpty" class="results-empty" hidden>No team matches that search.</div>
+  </div>
+</section>
+
 <section id="portals">
   <div class="section-head">
     <div class="section-tag">For Participants</div>
@@ -1242,6 +1295,59 @@ async function loadStats() {
 }
 loadStats();
 setInterval(loadStats, 60000);
+
+// ---------- round 1 results (team-wise, gated server-side by reveal time) ----------
+const RESULTS_URL = "https://gfoclvqlkylujopcvuht.supabase.co/functions/v1/public-round1-results";
+let resultsData = [];
+
+function escapeHtmlDash(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function loadResults() {
+  try {
+    const res = await fetch(RESULTS_URL, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
+    const data = await res.json();
+    if (!data.ready) {
+      const revealAt = data.revealAt ? new Date(data.revealAt) : null;
+      if (revealAt) {
+        document.getElementById('resultsCountdownSub').textContent =
+          'Results open at ' + revealAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + ' IST. This page checks automatically.';
+      }
+      return; // stay in countdown state; a later poll will flip it once ready
+    }
+    resultsData = Array.isArray(data.results) ? data.results : [];
+    document.getElementById('resultsCountdown').hidden = true;
+    document.getElementById('resultsLive').hidden = false;
+    const selectedCount = resultsData.filter(r => r.selected).length;
+    document.getElementById('resultsSummary').innerHTML =
+      '<b>' + selectedCount + '</b> of <b>' + resultsData.length + '</b> teams have been selected for Round 2.';
+    renderResults();
+    if (resultsPollTimer) { clearInterval(resultsPollTimer); resultsPollTimer = null; }
+  } catch (err) {
+    console.error('results fetch failed:', err);
+  }
+}
+
+function renderResults() {
+  const q = (document.getElementById('resultsSearch').value || '').trim().toLowerCase();
+  const list = document.getElementById('resultsList');
+  const empty = document.getElementById('resultsEmpty');
+  const filtered = q ? resultsData.filter(r => r.team.toLowerCase().includes(q)) : resultsData;
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  list.innerHTML = filtered.map(r => (
+    '<div class="result-row"><div><div class="r-name">' + escapeHtmlDash(r.team) + '</div><div class="r-track">' + escapeHtmlDash(r.track) + '</div></div>' +
+    '<span class="result-pill ' + (r.selected ? 'selected' : 'rejected') + '">' + (r.selected ? 'Selected for Round 2' : 'Not Selected') + '</span></div>'
+  )).join('');
+}
+
+loadResults();
+let resultsPollTimer = setInterval(loadResults, 120000); // poll every 2 min until results go live, then this clears itself
 
 // ---------- ambient 2D particle field (full page) ----------
 (function particles(){
