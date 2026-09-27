@@ -1165,6 +1165,7 @@ screener02,AnotherPass456"></textarea>
     try {
       while (remaining > 0 && guard++ < 10) {
         const out = await callFn('round2-reminders', { action: 'send', mode: 'reminders' });
+        if (out.skipped) { flash('r2', 'error', 'Not sent: ' + out.skipped); return; }
         sent += out.sent || 0; failed += (out.failed || []).length; remaining = out.remaining || 0;
         flash('r2', 'success', 'Sending… ' + sent + ' sent so far');
       }
