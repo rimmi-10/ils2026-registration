@@ -170,6 +170,7 @@
     <button class="btn btn-secondary" style="width:auto;" onclick="logout()">Log Out</button>
   </div>
   <div class="stats" id="stats"></div>
+  <div id="roundClosedNotice" style="display:none; background:#fdf8ff; border:1px solid #e2c8f5; border-radius:12px; padding:18px; font-size:14px; color:#4a1b6e; margin-bottom:16px;"></div>
   <div class="tabs">
     <button class="tab-btn active" id="queueTabBtn" onclick="showQueueTab()">My Queue</button>
     <button class="tab-btn" id="round2TabBtn" onclick="showRound2Tab()">Round 2 Evaluation</button>
@@ -193,7 +194,7 @@
 
   <div id="round2View" style="display:none;">
     <p style="font-size:12px; color:#9b7ab0; margin-bottom:12px;">
-      Only teams from your Round 1 queue that were selected for Round 2 AND have actually submitted their deck appear here. Score their PPT and prototype video across the criteria below.
+      Only your assigned teams that were selected for Round 2 AND have actually submitted their deck appear here (more appear as teams submit, until 30 Sept). Score their PPT and prototype video across the criteria below.
     </p>
     <div id="round2ListHost"><div class="loading">Loading…</div></div>
   </div>
@@ -350,10 +351,41 @@
     document.getElementById('loginWrap').style.display = 'block';
   }
 
+  // Active judging round is decided server-side (app_settings.judging_round,
+  // enforced by RLS): judges can only see and score the current round. The UI
+  // just mirrors it so closed rounds show a clear message instead of an empty list.
+  let judgingRound = 'round1';
+
   async function showDashboard() {
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('dash').style.display = 'block';
-    await loadData();
+    const { data: round } = await sb.rpc('current_judging_round');
+    judgingRound = round || 'round1';
+    applyRoundVisibility();
+  }
+
+  function applyRoundVisibility() {
+    const r1 = judgingRound === 'round1';
+    const r2 = judgingRound === 'round2';
+    document.getElementById('queueTabBtn').style.display = r1 ? '' : 'none';
+    document.getElementById('leaderboardTabBtn').style.display = r1 ? '' : 'none';
+    document.getElementById('round2TabBtn').style.display = r2 ? '' : 'none';
+    document.getElementById('stats').style.display = r1 ? '' : 'none';
+    const label = document.getElementById('queueSubLabel');
+    const closed = document.getElementById('roundClosedNotice');
+    if (r1) { loadData(); return; }
+    if (r2) {
+      label.textContent = 'Round 1 is closed. Score the Round 2 submissions (PPT + prototype video) assigned to you below.';
+      closed.style.display = 'none';
+      showRound2Tab();
+      return;
+    }
+    label.textContent = '';
+    ['queue', 'round2', 'leaderboard'].forEach(t => { document.getElementById(t + 'View').style.display = 'none'; });
+    closed.textContent = judgingRound === 'round3'
+      ? 'Online judging is closed. Round 3 (the National Finale) is evaluated on-site at SVNIT Surat. Thank you for your evaluations.'
+      : 'Judging is closed for all rounds. Thank you for your time and evaluations.';
+    closed.style.display = 'block';
   }
 
   function escapeHtml(s) {
