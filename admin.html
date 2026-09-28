@@ -1126,6 +1126,7 @@ screener02,AnotherPass456"></textarea>
   function fmtIST(ts) { return ts ? new Date(ts).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'; }
   function statBox(num, lbl) { return '<div class="stat-box"><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>'; }
   const TEST_TEAM_EMAIL = 'test.dummy.team@example.com';
+  window.allRowsReal = () => allRows.filter(r => !isTestTeam(r));
   function isTestTeam(r) { return (r.leader_email || '').toLowerCase() === TEST_TEAM_EMAIL; }
 
   // ── ROUND SETTINGS (app_settings.judging_round) ──
@@ -1528,6 +1529,7 @@ screener02,AnotherPass456"></textarea>
   }
 
   function renderStats() {
+    const allRows = window.allRowsReal ? window.allRowsReal() : [];
     const byRound = {};
     allRows.forEach(r =>{ byRound[r.round] = (byRound[r.round]||0) + 1; });
     const totalParticipants = allRows.reduce((sum, r) =>sum + 1 + (Array.isArray(r.members) ? r.members.length : 0), 0);
