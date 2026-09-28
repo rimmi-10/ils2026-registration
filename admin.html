@@ -259,6 +259,43 @@
   .round-step.current { border-color: #b8005e; box-shadow: 0 0 0 3px rgba(184,0,94,0.12); }
   .round-step .rs-name { font-size: 13px; font-weight: 700; color: #2c1a40; margin-bottom: 6px; }
   .round-step .rs-desc { font-size: 11.5px; color: #7c2ab0; margin-top: 6px; line-height: 1.5; }
+  .stage-num {
+    display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px;
+    border-radius: 50%; background: rgba(214,36,126,0.35); color: #fff; font-size: 10px; margin-right: 6px;
+  }
+  .next-action {
+    background: linear-gradient(135deg, #6a1794, #b8005e); color: #fff; border-radius: 14px;
+    padding: 16px 20px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .next-action .na-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; opacity: 0.85; }
+  .next-action .na-text { font-size: 15px; font-weight: 600; margin-top: 3px; }
+  .next-action button { background: #fff; color: #6a1794; border: none; border-radius: 8px; padding: 9px 16px; font-weight: 700; font-family: inherit; cursor: pointer; }
+  .pipeline { position: relative; margin-bottom: 1.25rem; }
+  .stage {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 14px;
+  }
+  .stage::before { content: ''; position: absolute; left: 21px; top: 44px; bottom: 0; width: 2px; background: #e2c8f5; }
+  .stage:last-child::before { display: none; }
+  .stage-dot {
+    width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; background: #f0e3fa; color: #9b7ab0; border: 2px solid #e2c8f5; z-index: 1;
+  }
+  .stage.done .stage-dot { background: #1a6b3a; color: #fff; border-color: #1a6b3a; }
+  .stage.live .stage-dot { background: linear-gradient(135deg, #6a1794, #b8005e); color: #fff; border-color: #b8005e; box-shadow: 0 0 0 5px rgba(184,0,94,0.15); }
+  .stage-card { background: white; border: 1px solid #e2c8f5; border-radius: 12px; padding: 14px 16px; }
+  .stage.live .stage-card { border-color: #b8005e; }
+  .stage-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stage-title { font-size: 15px; font-weight: 700; color: #2c1a40; }
+  .stage-desc { font-size: 12px; color: #7c2ab0; margin-top: 3px; }
+  .substeps { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+  .substep { background: #fdf8ff; border: 1px solid #f0e3fa; border-radius: 10px; padding: 9px 11px; cursor: pointer; }
+  .substep:hover { border-color: #8c3ec0; }
+  .substep .ss-num { font-size: 17px; font-weight: 700; color: #6a1794; }
+  .substep .ss-lbl { font-size: 11.5px; color: #7c2ab0; }
+  .substep .ss-bar { height: 4px; background: #f0e3fa; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .substep .ss-bar span { display: block; height: 100%; background: linear-gradient(90deg, #6a1794, #b8005e); }
+  .os-input { width: 90px; padding: 6px 8px; border: 1.5px solid #ddc4f0; border-radius: 6px; font-family: inherit; font-size: 13px; }
+  .os-select { padding: 6px 8px; border: 1.5px solid #ddc4f0; border-radius: 6px; font-family: inherit; font-size: 13px; background: #fff; }
   .track-block { margin-bottom: 1.5rem; }
   .track-block h3 { font-size: 14px; color: #6a1794; margin-bottom: 8px; }
   @media (max-width: 1000px) { .round-cards { grid-template-columns: 1fr; } }
@@ -310,37 +347,38 @@
     <div class="side-round-chip" id="sideRoundChip">Loading round…</div>
 
     <nav class="side-nav">
-      <div class="side-group">Overview</div>
-      <button class="side-item active" data-view="overview" onclick="showView('overview')">Dashboard</button>
-      <button class="side-item" data-view="teams" onclick="showView('teams')">All Teams</button>
+      <button class="side-item active" data-view="overview" onclick="showView('overview')">Event Pipeline</button>
 
-      <div class="side-group">Round 1 · Screening &amp; Judging</div>
+      <div class="side-group"><span class="stage-num">1</span>Registrations</div>
+      <button class="side-item" data-view="teams" onclick="showView('teams')">All Registrations</button>
+      <button class="side-item" onclick="openDuplicates()">Duplicate Entries</button>
+      <button class="side-item" onclick="openAnalytics()">Analytics</button>
+
+      <div class="side-group"><span class="stage-num">2</span>Team Details</div>
+      <button class="side-item" data-view="details" onclick="showView('details')">Team Details Check</button>
+
+      <div class="side-group"><span class="stage-num">3</span>Round 1 · Idea</div>
+      <button class="side-item" onclick="remindPendingRound1()">Remind Pending Submissions</button>
       <button class="side-item" onclick="openScreening()">Screening</button>
       <button class="side-item" onclick="openScreenersModal()">Screeners</button>
       <button class="side-item" onclick="openJudgesModal()">Judges</button>
       <button class="side-item" onclick="openScores()">Round 1 Scores</button>
       <button class="side-item" onclick="openMailJudges()">Mail to Judges</button>
+      <button class="side-item" onclick="openSelection()">Selection (manual)</button>
 
-      <div class="side-group">Round 2 · Prototype</div>
+      <div class="side-group"><span class="stage-num">4</span>Round 2 · Prototype</div>
       <button class="side-item" data-view="round2" onclick="showView('round2')">Submissions &amp; Reminders</button>
       <button class="side-item" data-view="r2scores" onclick="showView('r2scores')">Round 2 Scores</button>
 
-      <div class="side-group">Round 3 · National Finale</div>
-      <button class="side-item" data-view="round3" onclick="showView('round3')">Finalists</button>
+      <div class="side-group"><span class="stage-num">5</span>Round 3 · Finale (On-site)</div>
+      <button class="side-item" data-view="round3" onclick="showView('round3')">Select Finalists</button>
+      <button class="side-item" data-view="onsite" onclick="showView('onsite')">On-site Day</button>
 
-      <div class="side-group">Control</div>
+      <div class="side-group">Control &amp; Communication</div>
       <button class="side-item" data-view="rounds" onclick="showView('rounds')">Rounds &amp; Locks</button>
-
-      <div class="side-group">Communication</div>
       <button class="side-item" onclick="openBroadcast()">Broadcast Email</button>
-      <button class="side-item" onclick="openSelection()">Selection (manual)</button>
-      <button class="side-item" onclick="remindPendingRound1()">Remind Pending Round 1</button>
       <button class="side-item" onclick="openSentLog()">Email Log</button>
-
-      <div class="side-group">Data &amp; Tools</div>
-      <button class="side-item" onclick="openAnalytics()">Analytics</button>
       <button class="side-item" onclick="exportCsv()">Export CSV</button>
-      <button class="side-item" onclick="openDuplicates()">Duplicate Entries</button>
       <button class="side-item" onclick="refreshCurrentView()">Refresh Data</button>
     </nav>
     <button class="side-logout" onclick="logout()">Log Out</button>
@@ -352,14 +390,28 @@
       <span>HackX 2026 Admin</span>
     </div>
 
-    <!-- OVERVIEW -->
+    <!-- OVERVIEW / PIPELINE -->
     <section class="view" id="view-overview">
-      <div class="view-head"><h2>Dashboard</h2><p>Live snapshot of every round.</p></div>
-      <div class="round-cards" id="roundCards"></div>
+      <div class="view-head"><h2>Event Pipeline</h2><p>HackX 2026 runs in five stages, in this order. Each stage shows its progress and what to do next.</p></div>
+      <div class="next-action" id="nextAction"></div>
+      <div class="pipeline" id="pipeline"></div>
       <div class="panel">
         <div class="panel-title">Registration numbers</div>
         <div class="stats" id="stats"></div>
       </div>
+    </section>
+
+    <!-- TEAM DETAILS -->
+    <section class="view" id="view-details" hidden>
+      <div class="view-head"><h2>Stage 2 · Team Details Check</h2><p>A registration is complete when it has a track, leader contact and its team members (solo entries need no members). Incomplete ones are listed first.</p></div>
+      <div class="stats" id="detailsStats"></div>
+      <div class="controls">
+        <select id="detailsFilter" onchange="renderDetailsView()">
+          <option value="incomplete">Incomplete only</option>
+          <option value="">All registrations</option>
+        </select>
+      </div>
+      <div class="table-wrap"><div id="detailsHost"></div></div>
     </section>
 
     <!-- ALL TEAMS -->
@@ -410,6 +462,7 @@
         <div class="panel-row">
           <button class="btn btn-small" onclick="sendR2RemindersNow()">Send reminder to all pending now</button>
           <button class="btn btn-secondary btn-small" onclick="sendR2Test()">Send test to me</button>
+          <button class="btn btn-secondary btn-small" onclick="sendDetailsRequest()">Ask teams to review team details</button>
         </div>
       </div>
 
@@ -433,7 +486,7 @@
 
     <!-- ROUND 3 FINALISTS -->
     <section class="view" id="view-round3" hidden>
-      <div class="view-head"><h2>Round 3 · National Finale Finalists</h2><p>Pick finalists from the Round 2 ranking. Marked teams become "Grand Finale Selected" everywhere (All Teams filter, broadcast, exports).</p></div>
+      <div class="view-head"><h2>Stage 5 · Select Finalists</h2><p>Round 3 is the on-site National Finale at SVNIT Surat (24–25 Oct), judged offline. Pick finalists from the Round 2 ranking here; marked teams become "Grand Finale Selected" everywhere (All Teams filter, broadcast, exports). Then run the day from <b>On-site Day</b>.</p></div>
       <div class="msg error" id="r3Error"></div>
       <div class="msg success" id="r3Success"></div>
       <div class="stats" id="r3Stats"></div>
@@ -449,6 +502,18 @@
         </div>
       </div>
       <div id="r3Host"><div class="loading">Loading…</div></div>
+    </section>
+
+    <!-- ROUND 3 ON-SITE DAY -->
+    <section class="view" id="view-onsite" hidden>
+      <div class="view-head"><h2>Stage 5 · On-site Day</h2><p>Offline finale at the venue. Check teams in as they arrive, type in the panel's final score from the paper sheets, and set the final positions. Everything saves straight to the database.</p></div>
+      <div class="msg error" id="osError"></div>
+      <div class="msg success" id="osSuccess"></div>
+      <div class="stats" id="osStats"></div>
+      <div class="controls">
+        <input type="text" id="osSearch" placeholder="Search finalist team..." oninput="renderOnsite()">
+      </div>
+      <div id="osHost"><div class="loading">Loading…</div></div>
     </section>
 
     <!-- ROUNDS & LOCKS -->
@@ -1032,6 +1097,8 @@ screener02,AnotherPass456"></textarea>
   const VIEW_LOADERS = {
     overview: () => renderOverview(),
     teams: () => {},
+    details: () => renderDetailsView(),
+    onsite: () => renderOnsite(),
     round2: () => loadRound2View(),
     r2scores: () => loadR2Scores(),
     round3: () => loadRound3View(),
@@ -1079,26 +1146,154 @@ screener02,AnotherPass456"></textarea>
     return '<span class="state-pill ' + s + '">' + (s === 'live' ? 'Live' : s === 'locked' ? 'Locked' : 'Upcoming') + '</span>';
   }
 
-  // ── OVERVIEW ──
+  // ── EVENT PIPELINE (overview) ──
+  function detailsComplete(r) {
+    const members = Array.isArray(r.members) ? r.members : [];
+    const solo = (r.entry_type || '').toLowerCase() === 'solo';
+    return !!(r.track && r.track !== 'PENDING RESUBMISSION' && r.leader_email && r.leader_phone && r.college && (solo || members.length > 0));
+  }
   function renderOverview() {
     renderStats();
     const real = allRows.filter(r => !isTestTeam(r));
+    const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+    const complete = real.filter(detailsComplete).length;
     const r1Docs = real.filter(r => r.round1_doc_url).length;
     const screened = Object.keys(screeningOutcomeById).length;
+    const shortlisted = Object.values(screeningOutcomeById).filter(o => o === 'shortlist').length;
     const r2Sel = real.filter(r => r.round2_selected);
     const r2Sub = r2Sel.filter(r => r.round2_doc_url).length;
-    const finalists = real.filter(r => r.round3_selected).length;
-    const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
-    const card = (key, view, name, big, sub, bar) =>
-      '<div class="round-card" onclick="showView(\'' + view + '\')">' +
-        '<div class="rc-top"><span class="rc-name">' + name + '</span>' + statePill(key) + '</div>' +
-        '<div class="rc-big">' + big + '</div><div class="rc-sub">' + sub + '</div>' +
-        (bar != null ? '<div class="rc-bar"><span style="width:' + bar + '%"></span></div>' : '') +
-      '</div>';
-    document.getElementById('roundCards').innerHTML =
-      card('round1', 'teams', 'Round 1', r2Sel.length + ' / ' + screened, r1Docs + ' docs submitted · ' + screened + ' screened · ' + r2Sel.length + ' advanced', pct(r2Sel.length, screened)) +
-      card('round2', 'round2', 'Round 2', r2Sub + ' / ' + r2Sel.length, 'submissions received · deadline 30 Sep, 11:59 PM', pct(r2Sub, r2Sel.length)) +
-      card('round3', 'round3', 'Round 3 · Finale', String(finalists), 'finalists selected for SVNIT Surat · 24–25 Oct', null);
+    const finalists = real.filter(r => r.round3_selected);
+    const checkedIn = finalists.filter(r => r.round3_checked_in).length;
+    const scored3 = finalists.filter(r => r.round3_score != null).length;
+    const placed = finalists.filter(r => r.round3_position).length;
+    const jr = roundSettings.judging_round;
+    const liveStage = ({ round1: 3, round2: 4, round3: 5, closed: 6 })[jr] || 3;
+    const state = n => n < liveStage ? 'done' : n === liveStage ? 'live' : 'upcoming';
+    const pill = n => { const s = state(n); return '<span class="state-pill ' + (s === 'done' ? 'locked' : s) + '">' + (s === 'done' ? 'Completed' : s === 'live' ? 'Live now' : 'Upcoming') + '</span>'; };
+    const sub = (num, lbl, bar, action) =>
+      '<div class="substep" onclick="' + action + '"><div class="ss-num">' + num + '</div><div class="ss-lbl">' + lbl + '</div>' +
+      (bar != null ? '<div class="ss-bar"><span style="width:' + bar + '%"></span></div>' : '') + '</div>';
+    const stage = (n, title, desc, subs) =>
+      '<div class="stage ' + state(n) + '"><div class="stage-dot">' + (state(n) === 'done' ? '&#10003;' : n) + '</div>' +
+      '<div class="stage-card"><div class="stage-head"><div><div class="stage-title">' + n + '. ' + title + '</div><div class="stage-desc">' + desc + '</div></div>' + pill(n) + '</div>' +
+      '<div class="substeps">' + subs + '</div></div></div>';
+    document.getElementById('pipeline').innerHTML =
+      stage(1, 'Registrations', 'Teams sign up for HackX 2026.',
+        sub(real.length, 'teams registered', null, "showView('teams')") +
+        sub(real.reduce((s, r) => s + 1 + (Array.isArray(r.members) ? r.members.length : 0), 0), 'participants', null, "showView('teams')")) +
+      stage(2, 'Team Details', 'Each team completes its track, college and members (Round 2 teams can now edit theirs on the portal).',
+        sub(complete + ' / ' + real.length, 'details complete', pct(complete, real.length), "showView('details')") +
+        sub(real.length - complete, 'incomplete', null, "showView('details')") +
+        sub(real.filter(r => r.team_details_updated_at).length, 'updated by teams', null, "showView('details')")) +
+      stage(3, 'Round 1 · Idea Submission', 'Idea doc → screening → judge scoring → results (19 Sep).',
+        sub(r1Docs + ' / ' + real.length, 'docs submitted', pct(r1Docs, real.length), "showView('teams')") +
+        sub(shortlisted + ' / ' + screened, 'passed screening', pct(shortlisted, screened), 'openScreening()') +
+        sub(r2Sel.length, 'advanced to Round 2', null, 'openScores()')) +
+      stage(4, 'Round 2 · Prototype', 'Deck (max 5 MB) + 3-min video by 30 Sep, 11:59 PM → judge scoring → finalists.',
+        sub(r2Sub + ' / ' + r2Sel.length, 'submissions in', pct(r2Sub, r2Sel.length), "showView('round2')") +
+        sub(r2Sel.length - r2Sub, 'still pending', null, "showView('round2')") +
+        sub('Scores', 'view ranking', null, "showView('r2scores')")) +
+      stage(5, 'Round 3 · National Finale (On-site)', 'Offline at SVNIT Surat, 24–25 Oct: check-in → panel scoring → results.',
+        sub(finalists.length, 'finalists selected', null, "showView('round3')") +
+        sub(checkedIn + ' / ' + finalists.length, 'checked in', pct(checkedIn, finalists.length), "showView('onsite')") +
+        sub(scored3 + ' / ' + finalists.length, 'scored on-site', pct(scored3, finalists.length), "showView('onsite')") +
+        sub(placed, 'positions set', null, "showView('onsite')"));
+    let next, btn, go;
+    if (jr === 'round1') { next = 'Round 1 is live: finish screening and judge scoring, then publish Round 2 selection.'; btn = 'Open Screening'; go = 'openScreening()'; }
+    else if (jr === 'round2' && r2Sub < r2Sel.length) { next = (r2Sel.length - r2Sub) + ' of ' + r2Sel.length + ' Round 2 teams have not submitted yet. Reminders run automatically until 30 Sep.'; btn = 'Track submissions'; go = "showView('round2')"; }
+    else if (jr === 'round2') { next = 'All Round 2 submissions are in. Once judges finish, pick finalists and move to Round 3.'; btn = 'Select finalists'; go = "showView('round3')"; }
+    else if (jr === 'round3' && finalists.length === 0) { next = 'Select the finalists for the on-site finale.'; btn = 'Select finalists'; go = "showView('round3')"; }
+    else if (jr === 'round3') { next = 'Finale day: check teams in, enter panel scores and set positions.'; btn = 'Open On-site Day'; go = "showView('onsite')"; }
+    else { next = 'All rounds are complete.'; btn = 'Export data'; go = 'exportCsv()'; }
+    document.getElementById('nextAction').innerHTML =
+      '<div><div class="na-label">Next step</div><div class="na-text">' + escapeHtml(next) + '</div></div><button onclick="' + go + '">' + btn + '</button>';
+  }
+
+  // ── STAGE 2: TEAM DETAILS ──
+  function missingDetails(r) {
+    const m = [];
+    if (!r.track || r.track === 'PENDING RESUBMISSION') m.push('track');
+    if (!r.college) m.push('college');
+    if (!r.leader_phone) m.push('leader phone');
+    if ((r.entry_type || '').toLowerCase() !== 'solo' && !(Array.isArray(r.members) && r.members.length)) m.push('members');
+    return m;
+  }
+  function renderDetailsView() {
+    const real = allRows.filter(r => !isTestTeam(r));
+    const complete = real.filter(detailsComplete).length;
+    document.getElementById('detailsStats').innerHTML =
+      statBox(complete + ' / ' + real.length, 'Details complete') + statBox(real.length - complete, 'Incomplete') +
+      statBox(real.filter(r => r.team_details_updated_at).length, 'Updated by teams via portal');
+    const onlyIncomplete = document.getElementById('detailsFilter').value === 'incomplete';
+    const rows = real.filter(r => !onlyIncomplete || !detailsComplete(r))
+      .sort((a, b) => detailsComplete(a) - detailsComplete(b) || (a.team_name || '').localeCompare(b.team_name || ''));
+    if (!rows.length) { document.getElementById('detailsHost').innerHTML = '<div class="empty-state">Every registration has complete team details.</div>'; return; }
+    document.getElementById('detailsHost').innerHTML =
+      '<table><thead><tr><th>Team</th><th>Leader</th><th>College</th><th>Members</th><th>Status</th><th>Updated by team</th><th></th></tr></thead><tbody>' +
+      rows.map(r => {
+        const miss = missingDetails(r);
+        return '<tr><td><b>' + escapeHtml(r.team_name) + '</b><br><span class="muted">' + escapeHtml(r.track || '') + (r.round2_selected ? ' · Round 2' : '') + '</span></td>' +
+          '<td>' + escapeHtml(r.leader_name || '') + '<br><span class="muted">' + escapeHtml(r.leader_email || '') + '</span></td>' +
+          '<td>' + escapeHtml(r.college || '—') + '</td><td>' + (Array.isArray(r.members) ? r.members.length : 0) + '</td>' +
+          '<td>' + (miss.length ? '<span class="pill pill-late">missing ' + miss.join(', ') + '</span>' : '<span class="pill pill-submitted">Complete</span>') + '</td>' +
+          '<td>' + fmtIST(r.team_details_updated_at) + '</td>' +
+          '<td><button class="btn btn-secondary btn-small" onclick="openDetail(\'' + r.id + '\')">Open</button></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  // ── STAGE 5: ON-SITE DAY ──
+  const POSITIONS = ['', 'Winner', '1st Runner-up', '2nd Runner-up', 'Special Mention'];
+  function renderOnsite() {
+    const fin = allRows.filter(r => r.round3_selected && !isTestTeam(r));
+    document.getElementById('osStats').innerHTML =
+      statBox(fin.length, 'Finalists') + statBox(fin.filter(r => r.round3_checked_in).length, 'Checked in') +
+      statBox(fin.filter(r => r.round3_score != null).length, 'Scored') + statBox(fin.filter(r => r.round3_position).length, 'Positions set');
+    if (!fin.length) { document.getElementById('osHost').innerHTML = '<div class="empty-state">No finalists yet — pick them in <b>Select Finalists</b> first.</div>'; return; }
+    const q = (document.getElementById('osSearch').value || '').trim().toLowerCase();
+    const rows = fin.filter(r => !q || (r.team_name || '').toLowerCase().includes(q));
+    document.getElementById('osHost').innerHTML = groupByTrack(rows.map(row => ({ row }))).map(([track, list]) => {
+      list.sort((a, b) => (Number(b.row.round3_score ?? -1)) - (Number(a.row.round3_score ?? -1)));
+      return '<div class="track-block"><h3>' + escapeHtml(track) + '</h3><div class="table-wrap"><table><thead><tr><th>Team</th><th>Leader</th><th>Check-in</th><th>Panel score / 100</th><th>Position</th><th></th></tr></thead><tbody>' +
+        list.map(({ row: r }) => '<tr><td><b>' + escapeHtml(r.team_name) + '</b><br><span class="muted">' + (Array.isArray(r.members) ? r.members.length + 1 : 1) + ' people</span></td>' +
+          '<td>' + escapeHtml(r.leader_name || '') + '<br><span class="muted">' + escapeHtml(r.leader_phone || '') + '</span></td>' +
+          '<td><label class="toggle-line"><input type="checkbox" ' + (r.round3_checked_in ? 'checked' : '') + ' onchange="osCheckIn(\'' + r.id + '\', this.checked)"> ' + (r.round3_checked_in ? fmtIST(r.round3_checked_in_at) : 'Arrived?') + '</label></td>' +
+          '<td><input class="os-input" type="number" min="0" max="100" step="0.5" id="osScore-' + r.id + '" value="' + (r.round3_score ?? '') + '"></td>' +
+          '<td><select class="os-select" id="osPos-' + r.id + '">' + POSITIONS.map(p => '<option' + ((r.round3_position || '') === p ? ' selected' : '') + ' value="' + p + '">' + (p || '—') + '</option>').join('') + '</select></td>' +
+          '<td><button class="btn btn-small" onclick="osSave(\'' + r.id + '\')">Save</button></td></tr>').join('') +
+        '</tbody></table></div></div>';
+    }).join('');
+  }
+  async function osUpdate(id, patch, okMsg) {
+    const { error } = await sb.from('registrations').update(patch).eq('id', id);
+    if (error) { flash('os', 'error', error.message); return; }
+    const r = allRows.find(x => x.id === id); if (r) Object.assign(r, patch);
+    flash('os', 'success', okMsg); renderOnsite();
+  }
+  function osCheckIn(id, on) {
+    const r = allRows.find(x => x.id === id);
+    osUpdate(id, { round3_checked_in: on, round3_checked_in_at: on ? new Date().toISOString() : null }, (r?.team_name || 'Team') + (on ? ' checked in.' : ' check-in removed.'));
+  }
+  function osSave(id) {
+    const raw = document.getElementById('osScore-' + id).value;
+    const score = raw === '' ? null : Number(raw);
+    if (score != null && (isNaN(score) || score < 0 || score > 100)) { flash('os', 'error', 'Score must be between 0 and 100.'); return; }
+    const r = allRows.find(x => x.id === id);
+    osUpdate(id, { round3_score: score, round3_position: document.getElementById('osPos-' + id).value || null }, (r?.team_name || 'Team') + ' saved.');
+  }
+
+  // Round 2: ask teams to review their team details (each team once)
+  async function sendDetailsRequest() {
+    if (!confirm('Email every Round 2 team that has not been asked yet to review / update their team details on the portal?')) return;
+    let sent = 0, remaining = 1, guard = 0;
+    try {
+      while (remaining > 0 && guard++ < 10) {
+        const out = await callFn('round2-reminders', { action: 'send', mode: 'details' });
+        if (out.skipped) { flash('r2', 'error', 'Not sent: ' + out.skipped); return; }
+        sent += out.sent || 0; remaining = out.remaining || 0;
+        flash('r2', 'success', 'Sending… ' + sent + ' sent so far');
+      }
+      flash('r2', 'success', sent ? 'Team-details request sent to ' + sent + ' team(s).' : 'Every Round 2 team has already been asked.');
+    } catch (err) { flash('r2', 'error', 'Stopped after ' + sent + ': ' + err.message); }
   }
 
   // ── ROUND 2: SUBMISSIONS & REMINDERS ──
