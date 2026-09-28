@@ -83,6 +83,31 @@
   .rubric-row .rdesc { font-size: 11.5px; color: #9b7ab0; margin-top: 2px; }
   .rubric-row .rmax { font-size: 13px; font-weight: 700; color: #6a1794; white-space: nowrap; }
   .rubric-total { display: flex; justify-content: space-between; padding-top: 12px; margin-top: 4px; border-top: 2px solid #e2c8f5; font-size: 13.5px; font-weight: 700; color: #6a1794; }
+
+  /* ── TEAM DETAILS SIDE PANEL ── */
+  .td-open-btn { display: none; margin-top: 16px; }
+  .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(30,10,45,0.45); z-index: 60; }
+  .drawer-overlay.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100vh; width: min(460px, 100vw); background: #fff; z-index: 61;
+    transform: translateX(100%); transition: transform 0.25s ease; display: flex; flex-direction: column;
+    box-shadow: -8px 0 30px rgba(106,23,148,0.18);
+  }
+  .drawer.open { transform: none; }
+  .drawer-head { padding: 18px 20px; background: linear-gradient(135deg, #6a1794, #b8005e); color: #fff; display: flex; justify-content: space-between; align-items: center; }
+  .drawer-head h3 { font-size: 16px; }
+  .drawer-head button { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+  .drawer-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+  .drawer-foot { padding: 14px 20px; border-top: 1px solid #f0e3fa; }
+  .td-section { font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #9b7ab0; margin: 16px 0 8px; }
+  .td-locked { background: #f7f2fb; border: 1px solid #ecdcf7; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.8; color: #4a1b6e; }
+  .td-locked b { color: #2c1a40; }
+  .td-member { border: 1px solid #e2c8f5; border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #fdf8ff; }
+  .td-member-head { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700; color: #6a1794; margin-bottom: 8px; }
+  .td-member-head button { background: none; border: none; color: #b8005e; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .td-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .td-grid input, .td-grid select, .drawer select { width: 100%; padding: 8px 10px; border: 1.5px solid #ddc4f0; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
+  @media (max-width: 480px) { .td-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -120,6 +145,7 @@
   <div class="card" id="statusCard" style="display:none;">
     <h2 id="statusTeamName">Your Progress</h2>
     <div class="stepper" id="stepperHost"></div>
+    <button class="btn btn-secondary td-open-btn" id="tdOpenBtn" onclick="openTeamDetails()">View / Update Team Details</button>
   </div>
 
   <div class="card" id="uploadCard" style="display:none;">
@@ -133,6 +159,20 @@
     <button class="btn-secondary" style="width:auto; padding:8px 16px; border-radius:8px; font-size:12.5px; cursor:pointer;" onclick="resetForm()">Check a different team</button>
   </div>
 </div>
+
+<div class="drawer-overlay" id="tdOverlay" onclick="closeTeamDetails()"></div>
+<aside class="drawer" id="tdDrawer" aria-label="Team details">
+  <div class="drawer-head"><h3>Team Details</h3><button onclick="closeTeamDetails()" aria-label="Close">&times;</button></div>
+  <div class="drawer-body">
+    <div class="msg error" id="tdError"></div>
+    <div class="msg success" id="tdSuccess"></div>
+    <div id="tdBody"><div style="font-size:13px;color:#9b7ab0;">Loading…</div></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" id="tdSaveBtn" onclick="saveTeamDetails()">Save Changes</button>
+    <div style="font-size:11px; color:#9b7ab0; margin-top:6px;">Changes save directly to your registration. Your leader and every member (old and new) get an email about the change.</div>
+  </div>
+</aside>
 
 <div class="modal-overlay" id="guidelinesModal">
   <div class="modal-box">
@@ -251,6 +291,7 @@
     )).join('');
 
     renderUploadArea(s);
+    document.getElementById('tdOpenBtn').style.display = (s.resultsRevealed && s.selectedForRound2) ? 'block' : 'none';
   }
 
   function renderUploadArea(s) {
@@ -371,6 +412,103 @@
     });
     const result = await res.json().catch(() => null);
     if (res.ok) { currentStatus = result; renderStatus(result); }
+  }
+
+  // ── TEAM DETAILS (side panel) ──
+  // Uses the same 3 answers the team already gave to "Find Your Team"; the
+  // team-details function re-verifies them on every load and save.
+  let tdData = null;
+  const TD_GENDERS = ['Female', 'Male', 'Other'];
+  async function callTeamDetails(payload) {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/team-details', {
+      method: 'POST', headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...currentTeam, ...payload }),
+    });
+    const out = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((out && out.error) || ('Request failed (' + res.status + ')'));
+    return out;
+  }
+  function tdMsg(kind, text) {
+    ['tdError', 'tdSuccess'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+    if (!text) return;
+    const el = document.getElementById(kind === 'error' ? 'tdError' : 'tdSuccess');
+    el.textContent = text; el.style.display = 'block';
+    document.querySelector('.drawer-body').scrollTop = 0;
+  }
+  async function openTeamDetails() {
+    if (!currentTeam) return;
+    document.getElementById('tdOverlay').classList.add('open');
+    document.getElementById('tdDrawer').classList.add('open');
+    tdMsg(null);
+    document.getElementById('tdBody').innerHTML = '<div style="font-size:13px;color:#9b7ab0;">Loading…</div>';
+    try { tdData = await callTeamDetails({ action: 'get' }); renderTeamDetails(); }
+    catch (err) { document.getElementById('tdBody').innerHTML = ''; tdMsg('error', err.message); }
+  }
+  function closeTeamDetails() {
+    document.getElementById('tdOverlay').classList.remove('open');
+    document.getElementById('tdDrawer').classList.remove('open');
+  }
+  function genderSelect(id, val) {
+    return '<select id="' + id + '"><option value="">Gender</option>' + TD_GENDERS.map(g => '<option' + (g === val ? ' selected' : '') + '>' + g + '</option>').join('') + '</select>';
+  }
+  function readMembers() {
+    return [...document.querySelectorAll('.td-member')].map(el => ({
+      name: el.querySelector('[data-f=name]').value, gender: el.querySelector('[data-f=gender] select').value,
+      phone: el.querySelector('[data-f=phone]').value, email: el.querySelector('[data-f=email]').value,
+    }));
+  }
+  function digitsOnly(el) { el.value = el.value.replace(/\D/g, '').slice(0, 10); }
+  function memberBlock(m, i) {
+    return '<div class="td-member"><div class="td-member-head">Member ' + (i + 2) + '<button type="button" onclick="removeMember(' + i + ')">Remove</button></div>' +
+      '<div class="td-grid">' +
+        '<input data-f="name" placeholder="Full name" value="' + escapeHtml(m.name) + '">' +
+        '<span data-f="gender">' + genderSelect('tdMG' + i, m.gender) + '</span>' +
+        '<input data-f="phone" inputmode="numeric" maxlength="10" placeholder="10-digit phone" value="' + escapeHtml(m.phone) + '" oninput="digitsOnly(this)">' +
+        '<input data-f="email" type="email" placeholder="Email" value="' + escapeHtml(m.email) + '">' +
+      '</div></div>';
+  }
+  function renderMembers(members) {
+    document.getElementById('tdMembers').innerHTML = members.length ? members.map(memberBlock).join('') : '<div style="font-size:12.5px;color:#9b7ab0;margin-bottom:10px;">No other members (solo entry).</div>';
+    document.getElementById('tdAddBtn').style.display = members.length >= 5 ? 'none' : 'inline-block';
+  }
+  function addMember() { const m = readMembers(); if (m.length < 5) { m.push({ name: '', gender: '', phone: '', email: '' }); renderMembers(m); } }
+  function removeMember(i) { const m = readMembers(); m.splice(i, 1); renderMembers(m); }
+  function renderTeamDetails() {
+    const L = tdData.locked, E = tdData.editable;
+    document.getElementById('tdBody').innerHTML =
+      '<div class="td-section">Locked (contact organizers to change)</div>' +
+      '<div class="td-locked"><b>Team:</b> ' + escapeHtml(L.teamName) + '<br><b>Track:</b> ' + escapeHtml(L.track) +
+        (L.problemStatement ? '<br><b>Problem:</b> ' + escapeHtml(L.problemStatement) : '') +
+        '<br><b>Leader:</b> ' + escapeHtml(L.leaderName) + '<br><b>Leader email:</b> ' + escapeHtml(L.leaderEmail) + '<br><b>Leader phone:</b> ' + escapeHtml(L.leaderPhone) + '</div>' +
+      '<div class="td-section">College &amp; leader</div>' +
+      '<div class="field-row"><label for="tdCollege">College</label><input id="tdCollege" value="' + escapeHtml(E.college) + '"></div>' +
+      '<div class="td-grid">' +
+        '<div><label for="tdLG">Leader gender</label>' + genderSelect('tdLG', E.leaderGender) + '</div>' +
+        '<div><label for="tdYear">Leader year</label><input id="tdYear" value="' + escapeHtml(E.leaderYear) + '" placeholder="e.g. 3rd Year"></div>' +
+        '<div><label for="tdDept">Department</label><input id="tdDept" value="' + escapeHtml(E.leaderDept) + '"></div>' +
+        '<div><label for="tdIeee">IEEE no. (optional)</label><input id="tdIeee" value="' + escapeHtml(E.leaderIeee) + '"></div>' +
+      '</div>' +
+      '<div class="td-section">Team members (up to 5 besides the leader)</div>' +
+      '<div id="tdMembers"></div>' +
+      '<button type="button" class="btn btn-secondary" id="tdAddBtn" style="width:auto;padding:8px 14px;font-size:12.5px;" onclick="addMember()">+ Add member</button>' +
+      '<div style="font-size:11.5px;color:#9b7ab0;margin-top:10px;">At least one female member is compulsory in a team.' +
+        (tdData.updatedAt ? ' Last updated ' + new Date(tdData.updatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + '.' : '') + '</div>';
+    renderMembers(E.members);
+  }
+  async function saveTeamDetails() {
+    if (!tdData) return;
+    const btn = document.getElementById('tdSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      tdData = await callTeamDetails({ action: 'update', details: {
+        college: document.getElementById('tdCollege').value, leaderGender: document.getElementById('tdLG').value,
+        leaderYear: document.getElementById('tdYear').value, leaderDept: document.getElementById('tdDept').value,
+        leaderIeee: document.getElementById('tdIeee').value, members: readMembers(),
+      } });
+      renderTeamDetails();
+      tdMsg('success', 'Saved. Your team details are updated and a confirmation email has been sent.');
+    } catch (err) { tdMsg('error', err.message); }
+    finally { btn.disabled = false; btn.textContent = 'Save Changes'; }
   }
 
   function resetForm() {
