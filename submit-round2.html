@@ -277,59 +277,89 @@
       '</ol>' +
       '<div class="upload-box">' +
         '<div style="font-size:13px; color:#6a1794;">PPT / Deck <span style="color:#9b7ab0; font-weight:400;">(no fixed template &mdash; max 5 MB)</span></div>' +
-        '<input type="file" id="deckFile" accept=".ppt,.pptx,.pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf">' +
+        '<input type="file" id="deckFile" accept=".ppt,.pptx,.pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf" onchange="showDeckSize(this)">' +
+        '<div id="deckSizeInfo" style="font-size:11.5px; margin-top:6px;"></div>' +
       '</div>' +
       '<div class="field-row" style="margin-top:14px;">' +
-        '<label for="videoUrl">Google Drive Video Link (max 3 min, English, PPT explanation + working demo)</label>' +
-        '<input type="url" id="videoUrl" placeholder="https://drive.google.com/...">' +
-        '<div style="font-size:11px; color:#9b7ab0; margin-top:4px;">Make sure link access is set to "Anyone with the link" — a private link cannot be opened by judges.</div>' +
+        '<label for="videoUrl">Video Link (max 3 min, English, PPT explanation + working demo)</label>' +
+        '<input type="url" id="videoUrl" placeholder="https://drive.google.com/file/d/... or https://youtu.be/...">' +
+        '<div style="font-size:11px; color:#9b7ab0; margin-top:4px;">Google Drive (sharing: "Anyone with the link can view") or an unlisted YouTube link. A private link cannot be opened by judges.</div>' +
       '</div>' +
-      '<button class="btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Round 2</button>' +
+      '<button class="btn" id="submitR2Btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Round 2</button>' +
       '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">Once submitted, this is locked -- double check your file and link before submitting.</div>';
   }
 
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  // Deck goes straight from the browser to Storage via a one-time signed URL
+  // (no base64 blow-up), then the function verifies and locks it in.
+  const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const MAX_DECK_BYTES = 5 * 1024 * 1024;
+
+  function isVideoLink(u) {
+    return /(^|\.)drive\.google\.com$|(^|\.)docs\.google\.com$|(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(u.hostname);
+  }
+
+  async function callSubmit(payload) {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/submit-round2-doc', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
+    const result = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+    return result;
   }
 
   async function uploadDeck() {
     const errEl = document.getElementById('uploadError');
     const okEl = document.getElementById('uploadSuccess');
+    const btn = document.getElementById('submitR2Btn');
+    const fail = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
     errEl.style.display = 'none'; okEl.style.display = 'none';
 
-    const input = document.getElementById('deckFile');
-    const file = input.files[0];
+    const file = document.getElementById('deckFile').files[0];
     const videoUrl = document.getElementById('videoUrl').value.trim();
-    if (!file) { errEl.textContent = 'Choose a file first.'; errEl.style.display = 'block'; return; }
-    if (file.size > 5 * 1024 * 1024) { errEl.textContent = 'File must be under 5 MB.'; errEl.style.display = 'block'; return; }
-    if (!videoUrl) { errEl.textContent = 'Paste your Google Drive video link.'; errEl.style.display = 'block'; return; }
-    try { new URL(videoUrl); } catch { errEl.textContent = 'Enter a valid video link (starting with http:// or https://).'; errEl.style.display = 'block'; return; }
-    if (!videoUrl.includes('drive.google.com')) {
-      if (!confirm('This link doesn\'t look like a Google Drive link. Submit anyway?')) return;
-    }
+    if (!file) return fail('Choose your deck file first (.pptx, .ppt or .pdf).');
+    if (!/\.(pptx|ppt|pdf)$/i.test(file.name)) return fail('The deck must be a .pptx, .ppt or .pdf file.');
+    if (file.size > MAX_DECK_BYTES) return fail('Your deck is ' + (file.size / 1048576).toFixed(1) + ' MB. It must be 5 MB or smaller -- compress images or export as PDF.');
+    if (!videoUrl) return fail('Paste your video link (Google Drive or YouTube).');
+    let parsed;
+    try { parsed = new URL(videoUrl); } catch { return fail('Enter a valid video link starting with https://'); }
+    if (!isVideoLink(parsed) && !confirm('This does not look like a Google Drive or YouTube link. Submit anyway?')) return;
 
+    btn.disabled = true;
+    const setStep = (t) => { btn.textContent = t; };
     try {
-      const fileBase64 = await fileToBase64(file);
-      const res = await fetch(SUPABASE_URL + '/functions/v1/submit-round2-doc', {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...currentTeam, fileName: file.name, fileBase64, videoUrl }),
-      });
-      const result = await res.json().catch(() => null);
-      if (!res.ok) throw new Error((result && result.error) || ('Request failed (' + res.status + ')'));
+      setStep('Preparing upload...');
+      const base = { ...currentTeam, fileName: file.name, videoUrl };
+      const prep = await callSubmit({ ...base, action: 'prepare' });
 
-      okEl.textContent = 'Round 2 submitted successfully.';
+      setStep('Uploading deck (' + (file.size / 1048576).toFixed(1) + ' MB)...');
+      const { error: upErr } = await sbClient.storage.from('registration-files')
+        .uploadToSignedUrl(prep.path, prep.token, file, { contentType: file.type || 'application/octet-stream' });
+      if (upErr) throw new Error('Upload failed: ' + upErr.message + '. Check your connection and try again.');
+
+      setStep('Finalising...');
+      await callSubmit({ ...base, action: 'complete', path: prep.path });
+
+      okEl.textContent = 'Round 2 submitted successfully. A confirmation email is on its way to your team.';
       okEl.style.display = 'block';
       await checkStatusSilently();
     } catch (err) {
-      errEl.textContent = err.message;
-      errEl.style.display = 'block';
+      fail(err.message);
+    } finally {
+      btn.disabled = false;
+      setStep('Submit Round 2');
     }
+  }
+
+  function showDeckSize(input) {
+    const el = document.getElementById('deckSizeInfo');
+    const f = input.files[0];
+    if (!f) { el.textContent = ''; return; }
+    const mb = (f.size / 1048576).toFixed(2);
+    const ok = f.size <= MAX_DECK_BYTES && /\.(pptx|ppt|pdf)$/i.test(f.name);
+    el.style.color = ok ? '#1a6b3a' : '#b8005e';
+    el.textContent = f.name + ' -- ' + mb + ' MB ' + (ok ? '(OK)' : (f.size > MAX_DECK_BYTES ? '(too large, max 5 MB)' : '(must be .pptx, .ppt or .pdf)'));
   }
 
   async function checkStatusSilently() {
