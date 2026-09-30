@@ -117,7 +117,7 @@
   <div class="tagline">Track your progress and submit your Round 2 deck and prototype video</div>
 </div>
 
-<div class="deadline-banner">Round 2 submission deadline: 30 September 2026, 11:59 PM IST</div>
+<div class="deadline-banner">Deadline extended: Round 2 submissions close <b>4 October 2026, 6:00 PM IST</b>. This is the final extension. Already submitted? You can resubmit until then.</div>
 
 <div class="wrap">
   <div class="guidelines-link-wrap" style="margin-top:1.25rem;">
@@ -298,19 +298,31 @@
     const card = document.getElementById('uploadCard');
     const area = document.getElementById('uploadArea');
 
-    if (s.round2Submitted) {
-      card.style.display = 'block';
-      area.innerHTML = '<div class="file-locked">Deck: ' + escapeHtml(s.round2DocName) +
+    const windowOpen = Date.now() <= R2_DEADLINE.getTime() || (currentTeam && currentTeam.leaderEmail.toLowerCase() === 'test.dummy.team@example.com');
+    const submittedBox = s.round2Submitted
+      ? '<div class="file-locked">Current submission<br>Deck: ' + escapeHtml(s.round2DocName) +
         (s.round2VideoUrl ? '<br>Video: <a href="' + escapeHtml(s.round2VideoUrl) + '" target="_blank" rel="noopener">' + escapeHtml(s.round2VideoUrl) + '</a>' : '') +
-        '<br>Contact the organizers if you need to resubmit.</div>';
+        '<br>Submitted: ' + new Date(s.round2SubmittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + '</div>'
+      : '';
+    if (s.round2Submitted && (!windowOpen || !showResubmitForm)) {
+      card.style.display = 'block';
+      area.innerHTML = submittedBox + (windowOpen
+        ? '<p style="font-size:12.5px; color:#4a1b6e; margin:12px 0 10px;">Improved your deck or video? You can replace this submission until <b>4 October 2026, 6:00 PM IST</b>. The latest version at the deadline is the one judged.</p>' +
+          '<button class="btn btn-secondary" onclick="showResubmitForm = true; renderUploadArea(currentStatus)">Resubmit (replace my submission)</button>'
+        : '<p style="font-size:12.5px; color:#9b7ab0; margin-top:10px;">Submissions closed on 4 October 2026, 6:00 PM IST.</p>');
       return;
     }
     if (!s.resultsRevealed || !s.selectedForRound2) {
       card.style.display = 'none';
       return;
     }
+    if (!windowOpen) {
+      card.style.display = 'block';
+      area.innerHTML = '<p style="font-size:13px; color:#8b0038;">Round 2 submissions closed on 4 October 2026, 6:00 PM IST.</p>';
+      return;
+    }
     card.style.display = 'block';
-    area.innerHTML =
+    area.innerHTML = (s.round2Submitted ? submittedBox + '<p style="font-size:12.5px; color:#8b0038; margin:12px 0;"><b>Resubmitting:</b> your new deck and video will replace the submission above.</p>' : '') +
       '<p style="font-size:13px; color:#2c1a40; line-height:1.6; margin-bottom:14px;">You have been selected for Round 2. You need to complete <b>both</b> steps below:</p>' +
       '<ol style="font-size:13px; color:#2c1a40; line-height:1.85; margin:0 0 16px 18px; padding:0;">' +
       '<li><b>Make a PPT</b> of your solution.</li>' +
@@ -327,13 +339,15 @@
         '<div style="font-size:11px; color:#9b7ab0; margin-top:4px;">Google Drive (sharing: "Anyone with the link can view") or an unlisted YouTube link. A private link cannot be opened by judges.</div>' +
       '</div>' +
       '<button class="btn" id="submitR2Btn" style="margin-top:12px;" onclick="uploadDeck()">Submit Round 2</button>' +
-      '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">Once submitted, this is locked -- double check your file and link before submitting.</div>';
+      '<div style="font-size:11px; color:#9b7ab0; margin-top:8px;">You can replace your submission until 4 October 2026, 6:00 PM IST. The latest version at the deadline is the one judged.</div>';
   }
 
   // Deck goes straight from the browser to Storage via a one-time signed URL
   // (no base64 blow-up), then the function verifies and locks it in.
   const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const MAX_DECK_BYTES = 5 * 1024 * 1024;
+  const R2_DEADLINE = new Date('2026-10-04T18:00:00+05:30'); // final extension; server enforces the same
+  let showResubmitForm = false;
 
   function isVideoLink(u) {
     return /(^|\.)drive\.google\.com$|(^|\.)docs\.google\.com$|(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(u.hostname);
@@ -382,7 +396,8 @@
       setStep('Finalising...');
       await callSubmit({ ...base, action: 'complete', path: prep.path });
 
-      okEl.textContent = 'Round 2 submitted successfully. A confirmation email is on its way to your team.';
+      okEl.textContent = (currentStatus && currentStatus.round2Submitted ? 'Resubmitted' : 'Round 2 submitted') + ' successfully. A confirmation email is on its way to your team.';
+      showResubmitForm = false;
       okEl.style.display = 'block';
       await checkStatusSilently();
     } catch (err) {

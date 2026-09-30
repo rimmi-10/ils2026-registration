@@ -447,7 +447,7 @@
 
     <!-- ROUND 2 SUBMISSIONS & REMINDERS -->
     <section class="view" id="view-round2" hidden>
-      <div class="view-head"><h2>Round 2 · Submissions &amp; Reminders</h2><p>Deadline <b>30 September 2026, 11:59 PM IST</b>. Deck (max 5 MB) + one Google Drive video (max 3 min).</p></div>
+      <div class="view-head"><h2>Round 2 · Submissions &amp; Reminders</h2><p>Deadline <b>4 October 2026, 6:00 PM IST</b> (final extension). Deck (max 5 MB) + one video link (max 3 min). Teams can resubmit until the deadline.</p></div>
       <div class="msg error" id="r2Error"></div>
       <div class="msg success" id="r2Success"></div>
       <div class="stats" id="r2Stats"></div>
@@ -458,7 +458,7 @@
           <label class="toggle-line"><input type="checkbox" id="r2RemToggle" onchange="toggleR2Reminders(this.checked)"> Scheduled reminders active</label>
           <span class="muted" id="r2LastRun"></span>
         </div>
-        <div class="muted" style="margin:6px 0 12px;">Schedule (IST): 27 Sep 10 PM · 28 Sep 10 AM, 1 PM · 29 Sep 10 AM, 10 PM · 30 Sep 10 AM, 6 PM, 10 PM. Goes to leader + all members. Teams that submit are dropped automatically and get a confirmation instead.</div>
+        <div class="muted" style="margin:6px 0 12px;">Schedule (IST): 1 Oct 10 AM · 2 Oct 10 AM · 3 Oct 10 AM, 10 PM · 4 Oct 10 AM, 3 PM (earlier slots 27–30 Sep done). Goes to leader + all members. Teams that submit are dropped automatically and get a confirmation instead.</div>
         <div class="panel-row">
           <button class="btn btn-small" onclick="sendR2RemindersNow()">Send reminder to all pending now</button>
           <button class="btn btn-secondary btn-small" onclick="sendR2Test()">Send test to me</button>
@@ -1190,7 +1190,7 @@ screener02,AnotherPass456"></textarea>
         sub(r1Docs + ' / ' + real.length, 'docs submitted', pct(r1Docs, real.length), "showView('teams')") +
         sub(shortlisted + ' / ' + screened, 'passed screening', pct(shortlisted, screened), 'openScreening()') +
         sub(r2Sel.length, 'advanced to Round 2', null, 'openScores()')) +
-      stage(4, 'Round 2 · Prototype', 'Deck (max 5 MB) + 3-min video by 30 Sep, 11:59 PM → judge scoring → finalists.',
+      stage(4, 'Round 2 · Prototype', 'Deck (max 5 MB) + 3-min video by 4 Oct, 6 PM (final extension) → judge scoring → finalists.',
         sub(r2Sub + ' / ' + r2Sel.length, 'submissions in', pct(r2Sub, r2Sel.length), "showView('round2')") +
         sub(r2Sel.length - r2Sub, 'still pending', null, "showView('round2')") +
         sub('Scores', 'view ranking', null, "showView('r2scores')")) +
@@ -1201,7 +1201,7 @@ screener02,AnotherPass456"></textarea>
         sub(placed, 'positions set', null, "showView('onsite')"));
     let next, btn, go;
     if (jr === 'round1') { next = 'Round 1 is live: finish screening and judge scoring, then publish Round 2 selection.'; btn = 'Open Screening'; go = 'openScreening()'; }
-    else if (jr === 'round2' && r2Sub < r2Sel.length) { next = (r2Sel.length - r2Sub) + ' of ' + r2Sel.length + ' Round 2 teams have not submitted yet. Reminders run automatically until 30 Sep.'; btn = 'Track submissions'; go = "showView('round2')"; }
+    else if (jr === 'round2' && r2Sub < r2Sel.length) { next = (r2Sel.length - r2Sub) + ' of ' + r2Sel.length + ' Round 2 teams have not submitted yet. Reminders run automatically until 4 Oct, 6 PM.'; btn = 'Track submissions'; go = "showView('round2')"; }
     else if (jr === 'round2') { next = 'All Round 2 submissions are in. Once judges finish, pick finalists and move to Round 3.'; btn = 'Select finalists'; go = "showView('round3')"; }
     else if (jr === 'round3' && finalists.length === 0) { next = 'Select the finalists for the on-site finale.'; btn = 'Select finalists'; go = "showView('round3')"; }
     else if (jr === 'round3') { next = 'Finale day: check teams in, enter panel scores and set positions.'; btn = 'Open On-site Day'; go = "showView('onsite')"; }
