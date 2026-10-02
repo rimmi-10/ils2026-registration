@@ -384,17 +384,46 @@
     btn.disabled = true;
     const setStep = (t) => { btn.textContent = t; };
     try {
-      setStep('Preparing upload...');
       const base = { ...currentTeam, fileName: file.name, videoUrl };
-      const prep = await callSubmit({ ...base, action: 'prepare' });
-
-      setStep('Uploading deck (' + (file.size / 1048576).toFixed(1) + ' MB)...');
-      const { error: upErr } = await sbClient.storage.from('registration-files')
-        .uploadToSignedUrl(prep.path, prep.token, file, { contentType: file.type || 'application/octet-stream' });
-      if (upErr) throw new Error('Upload failed: ' + upErr.message + '. Check your connection and try again.');
-
-      setStep('Finalising...');
-      await callSubmit({ ...base, action: 'complete', path: prep.path });
+      const mb = (file.size / 1048576).toFixed(1);
+      // Route A: direct upload to Storage (fast). Some college/office networks
+      // drop or block it ("Failed to fetch"), so retry once, then fall back to
+      // Route B: send the file through our own submit function in one POST.
+      let done = false, lastErr = null;
+      for (let attempt = 1; attempt <= 2 && !done; attempt++) {
+        try {
+          setStep('Preparing upload...');
+          const prep = await callSubmit({ ...base, action: 'prepare' });
+          setStep('Uploading deck (' + mb + ' MB)' + (attempt > 1 ? ', retrying' : '') + '...');
+          const { error: upErr } = await sbClient.storage.from('registration-files')
+            .uploadToSignedUrl(prep.path, prep.token, file, { contentType: file.type || 'application/octet-stream' });
+          if (upErr) throw upErr;
+          setStep('Finalising...');
+          await callSubmit({ ...base, action: 'complete', path: prep.path });
+          done = true;
+        } catch (e) {
+          lastErr = e;
+          if (!/fetch|network|load failed|timeout|abort/i.test(e.message || '')) throw e; // real error (deadline, size, not selected...)
+        }
+      }
+      if (!done) {
+        setStep('Trying another route (' + mb + ' MB)...');
+        try {
+          const fileBase64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          await callSubmit({ ...base, fileBase64 });
+          done = true;
+        } catch (e) {
+          if (!/fetch|network|load failed|timeout|abort/i.test(e.message || '')) throw e;
+          throw new Error('Your internet connection dropped while uploading (' + (lastErr && lastErr.message || e.message) + '). ' +
+            'Please try: switching to mobile data or a hotspot instead of college Wi-Fi, turning off any VPN / ad-blocker, using Chrome, ' +
+            'or compressing the deck / saving it as PDF to make it smaller. If it still fails, WhatsApp +91 95888 74415 with a screenshot.');
+        }
+      }
 
       okEl.textContent = (currentStatus && currentStatus.round2Submitted ? 'Resubmitted' : 'Round 2 submitted') + ' successfully. A confirmation email is on its way to your team.';
       showResubmitForm = false;
