@@ -158,6 +158,15 @@
       <input type="password" id="password" placeholder="••••••••">
     </div>
     <button class="btn" id="loginBtn" onclick="login()">Sign In</button>
+    <div style="text-align:center; margin-top:14px;">
+      <a href="#" onclick="toggleReset(); return false;" style="font-size:13px; color:#6a1794; font-weight:600;">Forgot password / can't log in?</a>
+    </div>
+    <div id="resetBox" style="display:none; margin-top:14px; padding:14px; border:1px solid #e2c8f5; border-radius:10px; background:#fdf8ff;">
+      <div style="font-size:12.5px; color:#4a1b6e; line-height:1.6; margin-bottom:10px;">Enter the email you use for the Judge Portal. We'll email you a <b>new password</b> within a minute (your old one will stop working).</div>
+      <div class="msg" id="resetMsg" style="display:none;"></div>
+      <input type="email" id="resetEmail" placeholder="you@example.com" style="margin-bottom:10px;">
+      <button class="btn" id="resetBtn" onclick="requestReset()">Email me a new password</button>
+    </div>
   </div>
 </div>
 
@@ -328,10 +337,22 @@
     if (!email || !password) { errEl.textContent = 'Enter email and password.'; errEl.style.display = 'block'; return; }
     document.getElementById('loginBtn').disabled = true;
     document.getElementById('loginBtn').textContent = 'Signing in…';
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    // Passwords copied from the email often carry an invisible space; retry trimmed.
+    let { data, error } = await sb.auth.signInWithPassword({ email: email.toLowerCase(), password });
+    if (error && password !== password.trim()) {
+      ({ data, error } = await sb.auth.signInWithPassword({ email: email.toLowerCase(), password: password.trim() }));
+    }
     document.getElementById('loginBtn').disabled = false;
     document.getElementById('loginBtn').textContent = 'Sign In';
-    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    if (error) {
+      errEl.innerHTML = /invalid login credentials/i.test(error.message)
+        ? 'Email or password is incorrect. Use the same email and password as Round 1 (passwords are case-sensitive). Still stuck? Click <b>"Forgot password / can\'t log in?"</b> below to get a new password by email.'
+        : /fetch|network/i.test(error.message)
+          ? 'Could not reach the server. Check your internet connection (college Wi-Fi sometimes blocks it; try mobile data) and try again.'
+          : escapeHtml(error.message);
+      errEl.style.display = 'block';
+      return;
+    }
 
     const { data: profile, error: profileErr } = await sb.from('judge_profiles').select('*').eq('user_id', data.user.id).maybeSingle();
     if (profileErr || !profile) {
@@ -343,6 +364,31 @@
     judgeId = data.user.id;
     document.getElementById('judgeNameLabel').textContent = 'Welcome, ' + profile.judge_name;
     showDashboard();
+  }
+
+  function toggleReset() {
+    const box = document.getElementById('resetBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    document.getElementById('resetEmail').value = document.getElementById('email').value.trim();
+  }
+
+  async function requestReset() {
+    const email = document.getElementById('resetEmail').value.trim();
+    const msg = document.getElementById('resetMsg');
+    const btn = document.getElementById('resetBtn');
+    const show = (cls, text) => { msg.className = 'msg ' + cls; msg.textContent = text; msg.style.display = 'block'; };
+    if (!email) { show('error', 'Enter your email first.'); return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/judge-password-reset', {
+        method: 'POST', headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const out = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((out && out.error) || 'Request failed');
+      show('success', out.message);
+    } catch (e) { show('error', e.message || 'Something went wrong. WhatsApp +91 95888 74415.'); }
+    finally { btn.disabled = false; btn.textContent = 'Email me a new password'; }
   }
 
   async function logout() {
