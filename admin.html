@@ -1247,22 +1247,32 @@ screener02,AnotherPass456"></textarea>
   function renderOnsite() {
     const fin = allRows.filter(r => r.round3_selected && !isTestTeam(r));
     document.getElementById('osStats').innerHTML =
-      statBox(fin.length, 'Finalists') + statBox(fin.filter(r => r.round3_checked_in).length, 'Checked in') +
+      statBox(fin.length, 'Finalists') + statBox(fin.filter(r => r.finale_details_submitted_at).length + ' / ' + fin.length, 'Finale details submitted') + statBox(fin.reduce((s, r) => s + ((r.finale_details && r.finale_details.attending) ? r.finale_details.attending.length : 0), 0), 'People coming') + statBox(fin.filter(r => r.round3_checked_in).length, 'Checked in') +
       statBox(fin.filter(r => r.round3_score != null).length, 'Scored') + statBox(fin.filter(r => r.round3_position).length, 'Positions set');
     if (!fin.length) { document.getElementById('osHost').innerHTML = '<div class="empty-state">No finalists yet — pick them in <b>Select Finalists</b> first.</div>'; return; }
     const q = (document.getElementById('osSearch').value || '').trim().toLowerCase();
     const rows = fin.filter(r => !q || (r.team_name || '').toLowerCase().includes(q));
     document.getElementById('osHost').innerHTML = groupByTrack(rows.map(row => ({ row }))).map(([track, list]) => {
       list.sort((a, b) => (Number(b.row.round3_score ?? -1)) - (Number(a.row.round3_score ?? -1)));
-      return '<div class="track-block"><h3>' + escapeHtml(track) + '</h3><div class="table-wrap"><table><thead><tr><th>Team</th><th>Leader</th><th>Check-in</th><th>Panel score / 100</th><th>Position</th><th></th></tr></thead><tbody>' +
+      return '<div class="track-block"><h3>' + escapeHtml(track) + '</h3><div class="table-wrap"><table><thead><tr><th>Team</th><th>Leader</th><th>Finale registration (by 15 Oct)</th><th>Check-in</th><th>Panel score / 100</th><th>Position</th><th></th></tr></thead><tbody>' +
         list.map(({ row: r }) => '<tr><td><b>' + escapeHtml(r.team_name) + '</b><br><span class="muted">' + (Array.isArray(r.members) ? r.members.length + 1 : 1) + ' people</span></td>' +
           '<td>' + escapeHtml(r.leader_name || '') + '<br><span class="muted">' + escapeHtml(r.leader_phone || '') + '</span></td>' +
+          '<td>' + finaleCell(r) + '</td>' +
           '<td><label class="toggle-line"><input type="checkbox" ' + (r.round3_checked_in ? 'checked' : '') + ' onchange="osCheckIn(\'' + r.id + '\', this.checked)"> ' + (r.round3_checked_in ? fmtIST(r.round3_checked_in_at) : 'Arrived?') + '</label></td>' +
           '<td><input class="os-input" type="number" min="0" max="100" step="0.5" id="osScore-' + r.id + '" value="' + (r.round3_score ?? '') + '"></td>' +
           '<td><select class="os-select" id="osPos-' + r.id + '">' + POSITIONS.map(p => '<option' + ((r.round3_position || '') === p ? ' selected' : '') + ' value="' + p + '">' + (p || '—') + '</option>').join('') + '</select></td>' +
           '<td><button class="btn btn-small" onclick="osSave(\'' + r.id + '\')">Save</button></td></tr>').join('') +
         '</tbody></table></div></div>';
     }).join('');
+  }
+  function finaleCell(r) {
+    const d = r.finale_details && !Array.isArray(r.finale_details) ? r.finale_details : null;
+    if (!d) return '<span class="pill pill-late">Not submitted</span>';
+    const shot = d.screenshot_path ? SUPABASE_URL + '/storage/v1/object/public/registration-files/' + d.screenshot_path : '';
+    return '<span class="pill pill-submitted">Submitted</span> <span class="muted">' + fmtIST(r.finale_details_submitted_at) + '</span><br>' +
+      '<b>Coming (' + (d.attending || []).length + '):</b> ' + (d.attending || []).map(a => escapeHtml(a.name)).join(', ') + '<br>' +
+      '<b>ILS ID:</b> ' + escapeHtml(d.ils_reg_id || '') + ' &middot; <b>Txn:</b> ' + escapeHtml(d.transaction_id || '') +
+      (shot ? ' &middot; <a class="filelink" href="' + escapeHtml(shot) + '" target="_blank" rel="noopener">Payment screenshot</a>' : '');
   }
   async function osUpdate(id, patch, okMsg) {
     const { error } = await sb.from('registrations').update(patch).eq('id', id);

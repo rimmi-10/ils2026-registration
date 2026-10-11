@@ -148,6 +148,23 @@
     <button class="btn btn-secondary td-open-btn" id="tdOpenBtn" onclick="openTeamDetails()">View / Update Team Details</button>
   </div>
 
+  <div class="card" id="finaleCard" style="display:none; border:2px solid #b8005e;">
+    <h2>Grand Finale Registration</h2>
+    <div style="background:linear-gradient(135deg,#6a1794,#b8005e); color:#fff; border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.6; margin-bottom:14px;">
+      Congratulations! Your team is selected for the <b>Grand Finale at SVNIT Surat</b>. Join on <b>25 October 2026</b> with your team members.
+    </div>
+    <ol style="font-size:13px; color:#2c1a40; line-height:1.85; margin:0 0 14px 18px; padding:0;">
+      <li><b>Register your team by 15 October 2026</b> on the official form. Only <b>one</b> submission per team: one member fills it for the whole team.<br><a href="https://forms.gle/pDy3R9ZtkDtY1pAe9" target="_blank" rel="noopener" style="color:#6a1794; font-weight:600;">https://forms.gle/pDy3R9ZtkDtY1pAe9</a></li>
+      <li>Then, <b>also by 15 October</b>, fill in below: which members are coming, your team's <b>ILS Registration ID</b>, the payment <b>Transaction ID</b> and the <b>payment screenshot</b> (JPG/PNG/PDF, max 5 MB).</li>
+      <li>See the schedule: <a href="https://wieils.ieee.org/2026-suratindia/program/" target="_blank" rel="noopener" style="color:#6a1794; font-weight:600;">ILS 2026 program</a>.</li>
+    </ol>
+    <div class="msg error" id="finError"></div>
+    <div class="msg success" id="finSuccess"></div>
+    <div id="finHost"></div>
+    <button class="btn" id="finSaveBtn" onclick="saveFinale()" style="margin-top:6px;">Save Grand Finale Details</button>
+    <div id="finMeta" style="font-size:11px; color:#9b7ab0; margin-top:8px;"></div>
+  </div>
+
   <div class="card" id="uploadCard" style="display:none;">
     <h2>Round 2 Deck Submission</h2>
     <div class="msg error" id="uploadError"></div>
@@ -292,6 +309,7 @@
 
     renderUploadArea(s);
     document.getElementById('tdOpenBtn').style.display = (s.resultsRevealed && s.selectedForRound2) ? 'block' : 'none';
+    loadFinale();
   }
 
   function renderUploadArea(s) {
@@ -555,11 +573,83 @@
     finally { btn.disabled = false; btn.textContent = 'Save Changes'; }
   }
 
+  // ── GRAND FINALE REGISTRATION (finalists only) ──
+  let finData = null;
+  async function callFinale(payload) {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/finale-details', {
+      method: 'POST', headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...currentTeam, ...payload }),
+    });
+    const out = await res.json().catch(() => null);
+    if (!res.ok) { const e = new Error((out && out.error) || ('Request failed (' + res.status + ')')); e.status = res.status; throw e; }
+    return out;
+  }
+  async function loadFinale() {
+    const card = document.getElementById('finaleCard');
+    if (!currentTeam) return;
+    try { finData = await callFinale({ action: 'get' }); }
+    catch (e) { card.style.display = 'none'; return; } // not a finalist (403) or not reachable
+    card.style.display = 'block';
+    renderFinale();
+  }
+  function renderFinale() {
+    const closed = Date.now() > new Date(finData.deadline).getTime();
+    document.getElementById('finHost').innerHTML =
+      '<div class="td-section">Who is coming to the Grand Finale?</div>' +
+      finData.people.map(p => '<label class="toggle-line" style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:500;color:#2c1a40;">' +
+        '<input type="checkbox" class="fin-att" value="' + p.index + '" ' + (p.attending ? 'checked' : '') + '> ' + escapeHtml(p.name) + ' <span style="color:#9b7ab0;">(' + p.role + ')</span></label>').join('') +
+      '<div style="font-size:11.5px;color:#9b7ab0;margin:-2px 0 6px;">Member list wrong? Fix it with "View / Update Team Details" above, then come back here.</div>' +
+      '<div class="td-section">Team registration &amp; payment</div>' +
+      '<div class="field-row"><label for="finIls">ILS Registration ID (team)</label><input id="finIls" value="' + escapeHtml(finData.ilsRegId) + '" placeholder="From the ILS registration confirmation"></div>' +
+      '<div class="field-row"><label for="finTxn">Payment Transaction ID</label><input id="finTxn" value="' + escapeHtml(finData.transactionId) + '" placeholder="UPI / bank reference number"></div>' +
+      '<div class="field-row"><label for="finFile">Payment screenshot ' + (finData.hasScreenshot ? '<span style="color:#1a6b3a;font-weight:600;">(uploaded, choose a file only to replace it)</span>' : '<span style="color:#b8005e;">(required)</span>') + '</label>' +
+        '<input type="file" id="finFile" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf"></div>';
+    document.getElementById('finMeta').textContent = (finData.submittedAt ? 'Last saved ' + new Date(finData.submittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + '. ' : 'Not submitted yet. ') +
+      (closed ? 'The deadline (15 Oct 2026) has passed.' : 'You can edit these until 15 October 2026, 11:59 PM IST.');
+    document.getElementById('finSaveBtn').style.display = closed ? 'none' : 'block';
+  }
+  async function saveFinale() {
+    const errEl = document.getElementById('finError'), okEl = document.getElementById('finSuccess'), btn = document.getElementById('finSaveBtn');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    const fail = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+    const attending = [...document.querySelectorAll('#finHost .fin-att:checked')].map(c => Number(c.value));
+    const ilsRegId = document.getElementById('finIls').value.trim();
+    const transactionId = document.getElementById('finTxn').value.trim();
+    const file = document.getElementById('finFile').files[0];
+    if (!attending.length) return fail('Tick at least one member who is coming.');
+    if (!ilsRegId) return fail("Enter your team's ILS Registration ID.");
+    if (!transactionId) return fail('Enter the payment Transaction ID.');
+    if (!file && !finData.hasScreenshot) return fail('Choose the payment screenshot.');
+    if (file && file.size > 5 * 1024 * 1024) return fail('The screenshot is larger than 5 MB.');
+    if (file && !/\.(jpe?g|png|webp|pdf)$/i.test(file.name)) return fail('The screenshot must be JPG, PNG, WEBP or PDF.');
+    btn.disabled = true;
+    try {
+      let screenshotPath = '';
+      if (file) {
+        btn.textContent = 'Uploading screenshot…';
+        const prep = await callFinale({ action: 'prepare', fileName: file.name });
+        let lastErr = null;
+        for (let a = 0; a < 2; a++) {
+          const { error } = await sbClient.storage.from('registration-files').uploadToSignedUrl(prep.path, prep.token, file, { contentType: file.type || 'application/octet-stream' });
+          if (!error) { lastErr = null; break; } lastErr = error;
+        }
+        if (lastErr) throw new Error('Screenshot upload failed: ' + lastErr.message + '. Check your connection (try mobile data) and save again.');
+        screenshotPath = prep.path;
+      }
+      btn.textContent = 'Saving…';
+      finData = await callFinale({ action: 'save', attending, ilsRegId, transactionId, screenshotPath });
+      renderFinale();
+      okEl.textContent = 'Saved. A confirmation email has been sent to your team.'; okEl.style.display = 'block';
+    } catch (e) { fail(e.message); }
+    finally { btn.disabled = false; btn.textContent = 'Save Grand Finale Details'; }
+  }
+
   function resetForm() {
     currentTeam = null; currentStatus = null;
     document.getElementById('loginCard').style.display = 'block';
     document.getElementById('statusCard').style.display = 'none';
     document.getElementById('uploadCard').style.display = 'none';
+    document.getElementById('finaleCard').style.display = 'none';
     document.getElementById('teamName').value = '';
     document.getElementById('leaderEmail').value = '';
     document.getElementById('leaderPhone').value = '';
