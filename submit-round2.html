@@ -117,7 +117,7 @@
   <div class="tagline">Check your status and complete your Grand Finale registration</div>
 </div>
 
-<div class="deadline-banner"><b>Grand Finale: 25 October 2026, SVNIT Surat.</b> Finalist teams: register your team on the official form and fill your Grand Finale details here, both by <b>15 October 2026</b>. Round 2 submissions are closed.</div>
+<div class="deadline-banner"><b>Grand Finale: 25 October 2026, SVNIT Surat.</b> Finalists: register your team on the official form by <b>15 October</b>. You will receive your ILS Registration ID by 16-17 October; the Grand Finale details form opens here on <b>18 October</b> and closes <b>19 October, 11:59 PM IST</b>.</div>
 
 <div class="wrap">
   <div class="guidelines-link-wrap" style="margin-top:1.25rem;">
@@ -155,7 +155,9 @@
     </div>
     <ol style="font-size:13px; color:#2c1a40; line-height:1.85; margin:0 0 14px 18px; padding:0;">
       <li><b>Register your team by 15 October 2026</b> on the official form. Only <b>one</b> submission per team: one member fills it for the whole team.<br><a href="https://forms.gle/pDy3R9ZtkDtY1pAe9" target="_blank" rel="noopener" style="color:#6a1794; font-weight:600;">https://forms.gle/pDy3R9ZtkDtY1pAe9</a></li>
-      <li>Then, <b>also by 15 October</b>, fill in below: which members are coming, your team's <b>ILS Registration ID</b>, the payment <b>Transaction ID</b> and the <b>payment screenshot</b> (JPG/PNG/PDF, max 5 MB).</li>
+      <li>You will receive your <b>ILS Registration ID by 16-17 October</b>.</li>
+      <li>On <b>18-19 October</b> (closes 19 Oct, 11:59 PM IST), fill in below: which members are coming, your team's <b>ILS Registration ID</b>, the payment <b>Transaction ID</b> and the <b>payment screenshot</b> (JPG/PNG/PDF, max 5 MB).</li>
+      <li>Meanwhile: book your travel and accommodation, and keep upgrading your prototype.</li>
       <li>See the schedule: <a href="https://wieils.ieee.org/2026-suratindia/program/" target="_blank" rel="noopener" style="color:#6a1794; font-weight:600;">ILS 2026 program</a>.</li>
     </ol>
     <div class="msg error" id="finError"></div>
@@ -594,6 +596,13 @@
   }
   function renderFinale() {
     const closed = Date.now() > new Date(finData.deadline).getTime();
+    const notYet = finData.opensAt && Date.now() < new Date(finData.opensAt).getTime() && currentTeam.leaderEmail.toLowerCase() !== 'test.dummy.team@example.com';
+    if (notYet) {
+      document.getElementById('finHost').innerHTML = '<div class="msg info" style="display:block;">This form opens on <b>18 October 2026</b> and closes on <b>19 October, 11:59 PM IST</b>. You will receive your ILS Registration ID by 16-17 October after registering on the official form (by 15 October). Until then, please book your travel and accommodation and keep improving your prototype.</div>';
+      document.getElementById('finSaveBtn').style.display = 'none';
+      document.getElementById('finMeta').textContent = '';
+      return;
+    }
     document.getElementById('finHost').innerHTML =
       '<div class="td-section">Who is coming to the Grand Finale?</div>' +
       finData.people.map(p => '<label class="toggle-line" style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:500;color:#2c1a40;">' +
@@ -605,7 +614,7 @@
       '<div class="field-row"><label for="finFile">Payment screenshot ' + (finData.hasScreenshot ? '<span style="color:#1a6b3a;font-weight:600;">(uploaded, choose a file only to replace it)</span>' : '<span style="color:#b8005e;">(required)</span>') + '</label>' +
         '<input type="file" id="finFile" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf"></div>';
     document.getElementById('finMeta').textContent = (finData.submittedAt ? 'Last saved ' + new Date(finData.submittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + '. ' : 'Not submitted yet. ') +
-      (closed ? 'The deadline (15 Oct 2026) has passed.' : 'You can edit these until 15 October 2026, 11:59 PM IST.');
+      (closed ? 'This form closed on 19 October 2026.' : 'You can edit these until 19 October 2026, 11:59 PM IST.');
     document.getElementById('finSaveBtn').style.display = closed ? 'none' : 'block';
   }
   async function saveFinale() {
