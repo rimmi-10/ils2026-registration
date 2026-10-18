@@ -156,9 +156,10 @@
     <ol style="font-size:13px; color:#2c1a40; line-height:1.85; margin:0 0 14px 18px; padding:0;">
       <li><b>Register your team by 15 October 2026</b> on the official form. Only <b>one</b> submission per team: one member fills it for the whole team.<br><a href="https://forms.gle/pDy3R9ZtkDtY1pAe9" target="_blank" rel="noopener" style="color:#6a1794; font-weight:600;">https://forms.gle/pDy3R9ZtkDtY1pAe9</a></li>
       <li>You will receive your <b>ILS Registration ID by 16-17 October</b>.</li>
-      <li>On <b>18-19 October</b> (closes 19 Oct, 11:59 PM IST), fill in below: which members are coming, your team's <b>ILS Registration ID</b>, the payment <b>Transaction ID</b> and the <b>payment screenshot</b> (JPG/PNG/PDF, max 5 MB).</li>
+      <li>On <b>18-19 October</b> (closes 19 Oct, 11:59 PM IST), fill in below: which members are coming (<b>at least one female member is compulsory</b>), your team's <b>ILS Registration ID</b>, the payment <b>Transaction ID</b> and the <b>payment screenshot</b> (JPG/PNG/PDF, max 5 MB).</li>
       <li>Meanwhile: book your travel and accommodation, and keep upgrading your prototype.</li>
       <li><b>Every team member</b> must join the Grand Finale WhatsApp group for updates:<br><a href="https://chat.whatsapp.com/Gm32z7wf2YA4sPtWLaLNUV" target="_blank" rel="noopener" style="color:#6a1794; font-weight:600;">Join the WhatsApp group</a></li>
+      <li><b>Dress code:</b> formal attire, well dressed, during the conference and your presentation.</li>
       <li>Prepare an <b>A3 poster</b> of your prototype and track and bring one printed copy on 25 October.
         <details style="margin-top:6px;"><summary style="cursor:pointer; color:#6a1794; font-weight:600;">A3 poster guidelines</summary>
         <div style="font-size:12.5px; line-height:1.75; margin-top:6px; color:#2c1a40;">
@@ -619,7 +620,8 @@
     document.getElementById('finHost').innerHTML =
       '<div class="td-section">Who is coming to the Grand Finale?</div>' +
       finData.people.map(p => '<label class="toggle-line" style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:500;color:#2c1a40;">' +
-        '<input type="checkbox" class="fin-att" value="' + p.index + '" ' + (p.attending ? 'checked' : '') + '> ' + escapeHtml(p.name) + ' <span style="color:#9b7ab0;">(' + p.role + ')</span></label>').join('') +
+        '<input type="checkbox" class="fin-att" data-gender="' + escapeHtml(p.gender || '') + '" value="' + p.index + '" ' + (p.attending ? 'checked' : '') + '> ' + escapeHtml(p.name) + ' <span style="color:#9b7ab0;">(' + p.role + (p.gender ? ', ' + escapeHtml(p.gender) : '') + ')</span></label>').join('') +
+      '<div style="font-size:12px;color:#8b0038;font-weight:600;margin:2px 0 6px;">At least one female team member must attend the Grand Finale.</div>' +
       '<div style="font-size:11.5px;color:#9b7ab0;margin:-2px 0 6px;">Member list wrong? Fix it with "View / Update Team Details" above, then come back here.</div>' +
       '<div class="td-section">Team registration &amp; payment</div>' +
       '<div class="field-row"><label for="finIls">ILS Registration ID (team)</label><input id="finIls" value="' + escapeHtml(finData.ilsRegId) + '" placeholder="From the ILS registration confirmation"></div>' +
@@ -639,6 +641,8 @@
     const transactionId = document.getElementById('finTxn').value.trim();
     const file = document.getElementById('finFile').files[0];
     if (!attending.length) return fail('Tick at least one member who is coming.');
+    if (![...document.querySelectorAll('#finHost .fin-att:checked')].some(c => (c.dataset.gender || '').toLowerCase() === 'female'))
+      return fail('At least one female team member must attend the Grand Finale. Tick a female member who is coming (if a gender is wrong, fix it in View / Update Team Details first).');
     if (!ilsRegId) return fail("Enter your team's ILS Registration ID.");
     if (!transactionId) return fail('Enter the payment Transaction ID.');
     if (!file && !finData.hasScreenshot) return fail('Choose the payment screenshot.');
