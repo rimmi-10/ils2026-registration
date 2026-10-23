@@ -156,7 +156,8 @@
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } },
   };
-  const hashKey = new URLSearchParams(location.hash.slice(1)).get('k');
+  // keys are letters/digits only; drop anything a chat app may have glued on
+  const hashKey = (new URLSearchParams(location.hash.slice(1)).get('k') || '').replace(/[^0-9A-Za-z]/g, '');
   if (hashKey) store.set('hxJudgeKey', hashKey);
   const KEY = hashKey || store.get('hxJudgeKey') || '';
   let judge = store.get('hxJudgeName') || '';

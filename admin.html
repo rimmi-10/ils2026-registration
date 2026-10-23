@@ -518,11 +518,12 @@
       </div>
       <div style="border:1px solid #e2c8f5; background:#fdf8ff; border-radius:10px; padding:12px 14px; margin:0 0 14px;">
         <div style="font-weight:700; color:#4b0f6e; margin-bottom:4px;">Grand Finale judge portal (open link, no login)</div>
-        <div class="muted" style="margin-bottom:8px;">Creates a secret link for the finale judges. Share it only with them. The link is shown once; creating a new one stops the old link working. Judge scores update the panel score below automatically.</div>
-        <button class="btn" onclick="genJudgeLink()">Generate judge link</button>
+        <div class="muted" style="margin-bottom:8px;">Creates a secret link for the finale judges. Share it only with them. The current link always shows here. Creating a new one stops the old link working. Judge scores update the panel score below automatically.</div>
+        <button class="btn" onclick="genJudgeLink()">Generate new judge link</button>
         <div id="judgeLinkBox" style="display:none; margin-top:10px;">
           <input type="text" id="judgeLink" readonly style="width:100%; font-size:12.5px;" onclick="this.select()">
           <button class="btn" style="margin-top:6px;" onclick="navigator.clipboard.writeText(document.getElementById('judgeLink').value).then(() => flash('os','success','Judge link copied.'))">Copy link</button>
+          <button class="btn" style="margin-top:6px;" onclick="window.open(document.getElementById('judgeLink').value, '_blank')">Open link</button>
         </div>
       </div>
       <div class="controls">
@@ -1113,7 +1114,7 @@ screener02,AnotherPass456"></textarea>
     overview: () => renderOverview(),
     teams: () => {},
     details: () => renderDetailsView(),
-    onsite: () => { renderOnsite(); briefStatus(); },
+    onsite: () => { renderOnsite(); briefStatus(); showJudgeLink(); },
     round2: () => loadRound2View(),
     r2scores: () => loadR2Scores(),
     round3: () => loadRound3View(),
@@ -1280,17 +1281,25 @@ screener02,AnotherPass456"></textarea>
         '</tbody></table></div></div>';
     }).join('');
   }
+  const judgeLinkUrl = (k) => location.origin + location.pathname.replace(/[^/]*$/, '') + 'finale-judge.html#k=' + k;
+  async function showJudgeLink() {
+    // the current link key is kept (admins only) so the link can be shown again any time
+    const { data } = await sb.from('app_settings').select('value').eq('key', 'finale_judge_link_key').maybeSingle();
+    if (!data?.value) return;
+    document.getElementById('judgeLink').value = judgeLinkUrl(data.value);
+    document.getElementById('judgeLinkBox').style.display = 'block';
+  }
   async function genJudgeLink() {
     if (!confirm('Create a NEW Grand Finale judge link? Any earlier judge link will stop working.')) return;
-    const bytes = crypto.getRandomValues(new Uint8Array(18));
-    const k = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    // letters + digits only, so WhatsApp / email never cut the end of the link
+    const k = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k));
     const h = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
-    const { error } = await sb.from('app_settings').upsert({ key: 'finale_judge_key_sha256', value: h, updated_at: new Date().toISOString() });
+    const now = new Date().toISOString();
+    const { error } = await sb.from('app_settings').upsert([{ key: 'finale_judge_key_sha256', value: h, updated_at: now }, { key: 'finale_judge_link_key', value: k, updated_at: now }]);
     if (error) { flash('os', 'error', error.message); return; }
-    document.getElementById('judgeLink').value = location.origin + location.pathname.replace(/[^/]*$/, '') + 'finale-judge.html#k=' + k;
-    document.getElementById('judgeLinkBox').style.display = 'block';
-    flash('os', 'success', 'New judge link created. Copy it now; it is not shown again.');
+    await showJudgeLink();
+    flash('os', 'success', 'New judge link created. Share this link with the judges; older links no longer work.');
   }
   async function briefStatus() {
     try {
