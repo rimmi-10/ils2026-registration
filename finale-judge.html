@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>HackX Finale Judging</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #6a1794; --deep: #4b0f6e; --magenta: #b8005e; --ink: #2c1a40; --muted: #6b5a7d;
+    --line: #e2c8f5; --soft: #fdf8ff; --bg: #f7eeff; --card: #ffffff; --ok: #1a6b3a; --okbg: #e7f6ec;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Inter', Arial, sans-serif; -webkit-text-size-adjust: 100%; }
+  button, input, textarea { font: inherit; }
+  .top { position: sticky; top: 0; z-index: 20; background: linear-gradient(90deg, var(--deep), var(--purple) 60%, #8f2bc4); color: #fff; padding: 12px 16px calc(10px); }
+  .top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 1100px; margin: 0 auto; }
+  .brand b { display: block; font-size: 16px; font-weight: 800; letter-spacing: .2px; }
+  .brand span { font-size: 11.5px; opacity: .85; letter-spacing: .4px; }
+  .who { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabs { display: flex; gap: 6px; max-width: 1100px; margin: 10px auto 0; }
+  .tab { flex: 1; border: 0; border-radius: 10px; padding: 9px 0; font-weight: 700; font-size: 13.5px; background: rgba(255,255,255,.14); color: #fff; cursor: pointer; }
+  .tab.on { background: #fff; color: var(--deep); }
+  main { max-width: 1100px; margin: 0 auto; padding: 14px 16px 110px; }
+  .msg { background: #fff0f5; border: 1px solid #f0a0c0; color: #8b0038; border-radius: 12px; padding: 14px 16px; font-size: 14px; line-height: 1.55; }
+  .tools { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .search { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 16px; background: #fff; color: var(--ink); }
+  .search:focus { outline: none; border-color: var(--purple); }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .chip { flex: none; border: 1.5px solid var(--line); background: #fff; color: var(--deep); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .chip.on { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .progress { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .bar { flex: 1; height: 8px; background: #eadcf3; border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), var(--magenta)); border-radius: 99px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 980px) { .grid { grid-template-columns: 1fr 1fr 1fr; } }
+  .tcard { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px; cursor: pointer; color: inherit; }
+  .tcard:active { transform: scale(.99); }
+  .tcard.done { border-color: #9fd7b3; background: #fbfffc; }
+  .tid { flex: none; width: 66px; height: 66px; border-radius: 12px; background: #fff5fa; border: 2px solid #f0a0c8; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tid small { font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--magenta); }
+  .tid b { font-size: 24px; font-weight: 800; color: var(--deep); line-height: 1.05; }
+  .tinfo { flex: 1; min-width: 0; }
+  .tname { font-weight: 800; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ttrack { font-size: 12px; color: var(--purple); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tcol { font-size: 11.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tstat { flex: none; text-align: right; font-size: 11px; color: var(--muted); }
+  .tstat .s { display: inline-block; font-size: 15px; font-weight: 800; color: var(--ok); background: var(--okbg); border-radius: 8px; padding: 4px 8px; }
+  .tstat .n { display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--magenta); background: #fff0f6; border-radius: 8px; padding: 4px 8px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; font-size: 14px; }
+
+  /* team sheet */
+  .sheet { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .sheet-head { position: sticky; top: 0; z-index: 2; background: linear-gradient(90deg, var(--deep), var(--purple)); color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+  .back { border: 0; background: rgba(255,255,255,.18); color: #fff; border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .sheet-head .t { min-width: 0; }
+  .sheet-head .t b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sheet-head .t span { font-size: 11.5px; opacity: .9; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 14px 16px 130px; }
+  .hero { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+  .hero .tid { width: 76px; height: 76px; } .hero .tid b { font-size: 28px; }
+  .hero h2 { margin: 0; font-size: 19px; line-height: 1.2; }
+  .meta { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+  .info { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-top: 10px; font-size: 13.5px; line-height: 1.55; }
+  .info .k { font-size: 10.5px; font-weight: 800; letter-spacing: 1.2px; color: var(--purple); text-transform: uppercase; margin-bottom: 4px; }
+  .links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .lnk { flex: 1; min-width: 140px; text-align: center; text-decoration: none; border: 1.5px solid var(--purple); color: var(--purple); background: #fff; border-radius: 10px; padding: 10px; font-weight: 700; font-size: 13.5px; }
+  .sect { margin: 18px 0 8px; font-size: 12px; font-weight: 800; letter-spacing: 1.4px; color: var(--magenta); text-transform: uppercase; }
+  .crit { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  .crit.set { border-color: #c9a6e4; }
+  .ch { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .ch b { font-size: 14.5px; line-height: 1.3; }
+  .ch span { flex: none; font-size: 12px; font-weight: 800; color: var(--purple); background: #f5ecfb; border-radius: 8px; padding: 3px 8px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 8px; line-height: 1.5; }
+  .bands { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-bottom: 10px; }
+  .bands em { font-style: normal; font-size: 11px; color: var(--deep); background: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+  .ctl { display: flex; align-items: center; gap: 10px; }
+  .step { flex: none; width: 46px; height: 46px; border-radius: 12px; border: 1.5px solid var(--purple); background: #fff; color: var(--purple); font-size: 24px; font-weight: 700; cursor: pointer; line-height: 1; }
+  .val { flex: none; width: 70px; text-align: center; font-size: 26px; font-weight: 800; color: var(--deep); }
+  .val small { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .val.unset { color: #c3b0d3; }
+  input[type=range] { flex: 1; min-width: 0; accent-color: var(--purple); height: 30px; }
+  textarea { width: 100%; min-height: 90px; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; color: var(--ink); resize: vertical; background: #fff; }
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; background: #fff; border-top: 1.5px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .savebar-in { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .tot { flex: none; font-size: 12px; color: var(--muted); line-height: 1.2; }
+  .tot b { display: block; font-size: 24px; color: var(--deep); }
+  .save { flex: 1; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 800; color: #fff; background: linear-gradient(90deg, var(--purple), var(--magenta)); cursor: pointer; }
+  .save:disabled { background: #cdbbdb; cursor: not-allowed; }
+  .err { color: #8b0038; font-size: 13px; margin-top: 8px; display: none; }
+
+  /* leaderboard */
+  .lb-sect { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+  .lb-sect h3 { margin: 0 0 4px; font-size: 15px; color: var(--deep); }
+  .lb-sect p { margin: 0 0 10px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #f0e4f8; }
+  .row:first-of-type { border-top: 0; }
+  .rk { flex: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; background: #f5ecfb; color: var(--deep); }
+  .rk.g { background: #f7e7a8; color: #6b5000; } .rk.s { background: #e3e8ee; color: #3e4852; } .rk.b { background: #f3d3b5; color: #6b3810; }
+  .rn { flex: 1; min-width: 0; }
+  .rn b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rn span { font-size: 11.5px; color: var(--muted); }
+  .rs { flex: none; text-align: right; }
+  .rs b { display: block; font-size: 17px; color: var(--deep); }
+  .rs span { font-size: 11px; color: var(--muted); }
+  .prize { font-size: 11px; font-weight: 800; color: var(--magenta); }
+  .tblwrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { padding: 7px 8px; border-bottom: 1px solid #f0e4f8; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { font-size: 10.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--purple); }
+
+  .modal { position: fixed; inset: 0; z-index: 60; background: rgba(44,26,64,.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .box { background: #fff; border-radius: 16px; padding: 20px; width: 100%; max-width: 420px; }
+  .box h3 { margin: 0 0 6px; color: var(--deep); }
+  .box p { margin: 0 0 12px; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+  .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 80; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; display: none; max-width: 90vw; text-align: center; }
+  .loading { text-align: center; color: var(--muted); padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="top-row">
+    <div class="brand"><b>HackX Grand Finale · Judging</b><span>IEEE WIE ILS 2026 · SVNIT Surat · 25 Oct 2026</span></div>
+    <button class="who" id="whoBtn" onclick="askName(true)" hidden></button>
+  </div>
+  <div class="tabs" id="tabs" hidden>
+    <button class="tab on" id="tabTeams" onclick="showTab('teams')">Teams</button>
+    <button class="tab" id="tabBoard" onclick="showTab('board')">Leaderboard</button>
+  </div>
+</div>
+
+<main>
+  <div id="teamsView"><div class="loading">Loading…</div></div>
+  <div id="boardView" hidden></div>
+</main>
+
+<div class="sheet" id="sheet" hidden></div>
+<div class="modal" id="nameModal" hidden>
+  <div class="box">
+    <h3>Welcome, Judge</h3>
+    <p>Enter your name. Your scores are saved under this name, so please use the same name on every device.</p>
+    <input class="search" id="nameInput" placeholder="Your full name" autocomplete="name">
+    <button class="save" style="width:100%; margin-top:12px;" onclick="saveName()">Continue</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const FN = 'https://gfoclvqlkylujopcvuht.supabase.co/functions/v1/finale-judge';
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } },
+  };
+  const hashKey = new URLSearchParams(location.hash.slice(1)).get('k');
+  if (hashKey) store.set('hxJudgeKey', hashKey);
+  const KEY = hashKey || store.get('hxJudgeKey') || '';
+  let judge = store.get('hxJudgeName') || '';
+  let criteria = [], teams = [], scores = [], track = 'All', query = '', openTeam = null, draft = {};
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const jk = (n) => String(n || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const short = (t) => String(t || '').replace(/\s*\(.*\)\s*$/, '');
+  const trackNo = (t) => (String(t).match(/Track\s*(\d)/) || [])[1] || '';
+  function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => (t.style.display = 'none'), 2600); }
+
+  async function call(payload) {
+    const res = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ k: KEY, ...payload }) });
+    const out = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((out && out.error) || 'Request failed (' + res.status + ')');
+    return out;
+  }
+
+  function myScore(id) { return scores.find((s) => s.registration_id === id && s.judge_key === jk(judge)); }
+  function countFor(id) { return scores.filter((s) => s.registration_id === id).length; }
+
+  function askName(change) {
+    const m = document.getElementById('nameModal');
+    document.getElementById('nameInput').value = change ? judge : '';
+    m.hidden = false; setTimeout(() => document.getElementById('nameInput').focus(), 50);
+  }
+  function saveName() {
+    const n = document.getElementById('nameInput').value.replace(/\s+/g, ' ').trim();
+    if (n.length < 2) { toast('Please enter your name'); return; }
+    judge = n; store.set('hxJudgeName', n);
+    document.getElementById('nameModal').hidden = true;
+    renderWho(); renderTeams();
+  }
+  function renderWho() { const b = document.getElementById('whoBtn'); b.hidden = !judge; b.textContent = judge ? judge + ' · change' : ''; }
+
+  function showTab(t) {
+    document.getElementById('tabTeams').classList.toggle('on', t === 'teams');
+    document.getElementById('tabBoard').classList.toggle('on', t === 'board');
+    document.getElementById('teamsView').hidden = t !== 'teams';
+    document.getElementById('boardView').hidden = t !== 'board';
+    if (t === 'board') renderBoard();
+  }
+
+  function renderTeams() {
+    const host = document.getElementById('teamsView');
+    const tracks = ['All', ...new Set(teams.map((t) => 'Track ' + trackNo(t.track)))].sort();
+    const q = query.trim().toLowerCase().replace(/^hx-?/, '');
+    const list = teams.filter((t) => (track === 'All' || 'Track ' + trackNo(t.track) === track) &&
+      (!q || t.teamId.toLowerCase().replace('hx-', '').includes(q) || t.team.toLowerCase().includes(q) || (t.college || '').toLowerCase().includes(q)));
+    const done = teams.filter((t) => myScore(t.id)).length;
+    host.innerHTML =
+      '<div class="tools">' +
+        '<input class="search" id="q" inputmode="search" placeholder="Search Team ID (e.g. 07) or team name" value="' + esc(query) + '">' +
+        '<div class="chips">' + tracks.map((x) => '<button class="chip' + (x === track ? ' on' : '') + '" data-track="' + esc(x) + '">' + esc(x === 'All' ? 'All tracks' : x) + '</button>').join('') + '</div>' +
+        '<div class="progress"><span>You have scored <b>' + done + ' / ' + teams.length + '</b></span><div class="bar"><i style="width:' + (teams.length ? (done / teams.length * 100) : 0) + '%"></i></div></div>' +
+      '</div>' +
+      (list.length ? '<div class="grid">' + list.map((t) => {
+        const m = myScore(t.id), n = countFor(t.id);
+        return '<button class="tcard' + (m ? ' done' : '') + '" data-id="' + t.id + '">' +
+          '<div class="tid"><small>TEAM</small><b>' + esc(t.teamId.replace('HX-', '')) + '</b></div>' +
+          '<div class="tinfo"><div class="tname">' + esc(t.team) + '</div><div class="ttrack">' + esc(short(t.track)) + '</div><div class="tcol">' + esc(t.college) + '</div></div>' +
+          '<div class="tstat">' + (m ? '<span class="s">' + Number(m.total) + '</span>' : '<span class="n">Score</span>') + '<div style="margin-top:4px;">' + n + ' judge' + (n === 1 ? '' : 's') + '</div></div>' +
+          '</button>';
+      }).join('') + '</div>' : '<div class="empty">No team matches “' + esc(query) + '”.</div>');
+    const qi = document.getElementById('q');
+    qi.oninput = (e) => { query = e.target.value; const pos = e.target.selectionStart; renderTeams(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos, pos); };
+    host.querySelectorAll('.chip').forEach((c) => (c.onclick = () => { track = c.dataset.track; renderTeams(); }));
+    host.querySelectorAll('.tcard').forEach((c) => (c.onclick = () => openSheet(c.dataset.id, true)));
+  }
+
+  function openSheet(id, push) {
+    if (!judge) { askName(false); return; }
+    const t = teams.find((x) => x.id === id); if (!t) return;
+    openTeam = t;
+    const m = myScore(id);
+    draft = {};
+    criteria.forEach((c) => { draft[c.key] = m && m.scores && m.scores[c.key] != null ? Number(m.scores[c.key]) : null; });
+    if (push) history.pushState({ team: id }, '', location.pathname + location.search + location.hash);
+    const s = document.getElementById('sheet');
+    s.innerHTML =
+      '<div class="sheet-head"><button class="back" onclick="history.back()">‹ Teams</button><div class="t"><b>' + esc(t.teamId) + ' · ' + esc(t.team) + '</b><span>' + esc(short(t.track)) + '</span></div></div>' +
+      '<div class="wrap">' +
+        '<div class="hero"><div class="tid"><small>TEAM</small><b>' + esc(t.teamId.replace('HX-', '')) + '</b></div><div><h2>' + esc(t.team) + '</h2><div class="meta">' + esc(t.track) + '<br>' + esc(t.college) + '</div></div></div>' +
+        (t.problem ? '<div class="info"><div class="k">Problem statement</div>' + esc(t.problem) + '</div>' : '') +
+        (t.members.length ? '<div class="info"><div class="k">Members present (' + t.members.length + ')</div>' + t.members.map(esc).join(', ') + '</div>' : '') +
+        '<div class="links">' + (t.deck ? '<a class="lnk" href="' + esc(t.deck) + '" target="_blank" rel="noopener">Round 2 deck</a>' : '') + (t.video ? '<a class="lnk" href="' + esc(t.video) + '" target="_blank" rel="noopener">Round 2 video</a>' : '') + '</div>' +
+        '<div class="sect">Evaluation · 100 marks</div>' +
+        criteria.map((c) => '<div class="crit" id="c-' + c.key + '"><div class="ch"><b>' + esc(c.label) + '</b><span>/ ' + c.max + '</span></div>' +
+          '<div class="hint">' + esc(c.hint) + '</div>' +
+          '<div class="bands">' + c.bands.map((b) => '<em>' + esc(b) + '</em>').join('') + '</div>' +
+          '<div class="ctl"><button class="step" data-k="' + c.key + '" data-d="-1" aria-label="minus">−</button>' +
+          '<div class="val" id="v-' + c.key + '"></div>' +
+          '<button class="step" data-k="' + c.key + '" data-d="1" aria-label="plus">+</button>' +
+          '<input type="range" min="0" max="' + c.max + '" step="1" id="r-' + c.key + '" data-k="' + c.key + '" aria-label="' + esc(c.label) + '"></div></div>').join('') +
+        '<div class="sect">Remarks (optional)</div>' +
+        '<textarea id="remarks" placeholder="Strengths, gaps, what impressed you, questions asked…">' + esc(m ? m.remarks || '' : '') + '</textarea>' +
+        '<div class="err" id="saveErr"></div>' +
+      '</div>' +
+      '<div class="savebar"><div class="savebar-in"><div class="tot">Total<b id="total">0</b>/ 100</div><button class="save" id="saveBtn" onclick="submitScore()">Save score</button></div></div>';
+    s.hidden = false; s.scrollTop = 0; document.body.style.overflow = 'hidden';
+    s.querySelectorAll('.step').forEach((b) => (b.onclick = () => {
+      const c = criteria.find((x) => x.key === b.dataset.k);
+      const cur = draft[c.key] == null ? (Number(b.dataset.d) > 0 ? -1 : 1) : draft[c.key];
+      draft[c.key] = Math.max(0, Math.min(c.max, cur + Number(b.dataset.d))); paint();
+    }));
+    s.querySelectorAll('input[type=range]').forEach((r) => (r.oninput = () => { draft[r.dataset.k] = Number(r.value); paint(); }));
+    paint();
+  }
+  function paint() {
+    let total = 0, all = true;
+    criteria.forEach((c) => {
+      const v = draft[c.key];
+      const el = document.getElementById('v-' + c.key);
+      el.className = 'val' + (v == null ? ' unset' : '');
+      el.innerHTML = (v == null ? '–' : v) + '<small> /' + c.max + '</small>';
+      document.getElementById('r-' + c.key).value = v == null ? Math.round(c.max / 2) : v;
+      document.getElementById('c-' + c.key).classList.toggle('set', v != null);
+      if (v == null) all = false; else total += v;
+    });
+    document.getElementById('total').textContent = total;
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = !all;
+    btn.textContent = all ? (myScore(openTeam.id) ? 'Update score' : 'Save score') : 'Score all ' + criteria.length + ' criteria';
+  }
+  function closeSheet() { document.getElementById('sheet').hidden = true; document.body.style.overflow = ''; openTeam = null; renderTeams(); }
+  window.addEventListener('popstate', () => { if (!document.getElementById('sheet').hidden) closeSheet(); });
+
+  async function submitScore() {
+    const btn = document.getElementById('saveBtn'), err = document.getElementById('saveErr');
+    err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const out = await call({ action: 'save', judge, registrationId: openTeam.id, scores: draft, remarks: document.getElementById('remarks').value });
+      scores = out.scores || scores;
+      toast('Saved ' + openTeam.teamId + ': ' + out.total + ' / 100');
+      history.back();
+    } catch (e) { err.textContent = e.message; err.style.display = 'block'; paint(); }
+  }
+
+  function stats() {
+    return teams.map((t) => {
+      const rows = scores.filter((s) => s.registration_id === t.id);
+      const avg = (k) => rows.length ? rows.reduce((a, s) => a + Number(k ? s.scores[k] : s.total), 0) / rows.length : null;
+      return { ...t, n: rows.length, total: avg(null), design: avg('design'), proto: avg('prototype'), upgrade: avg('upgrade'), rows };
+    });
+  }
+  const r1 = (x) => x == null ? '–' : (Math.round(x * 10) / 10).toString();
+  const cmp = (a, b) => (b.total ?? -1) - (a.total ?? -1) || (b.proto ?? -1) - (a.proto ?? -1) || (b.upgrade ?? -1) - (a.upgrade ?? -1);
+  function rowHtml(s, i, label) {
+    const cls = i === 0 ? ' g' : i === 1 ? ' s' : i === 2 ? ' b' : '';
+    return '<div class="row"><div class="rk' + (label !== false && i < 3 ? cls : '') + '">' + (i + 1) + '</div><div class="rn"><b>' + esc(s.teamId) + ' · ' + esc(s.team) + '</b><span>' + esc(short(s.track)) + (label ? ' · <span class="prize">' + label + '</span>' : '') + '</span></div>' +
+      '<div class="rs"><b>' + r1(s.total) + '</b><span>' + s.n + ' judge' + (s.n === 1 ? '' : 's') + '</span></div></div>';
+  }
+  function renderBoard() {
+    const st = stats(), scored = st.filter((s) => s.n).sort(cmp);
+    const prizes = ['1st Prize · ₹10,000', '2nd Prize · ₹7,000', '3rd Prize · ₹5,000'];
+    const top3 = new Set(scored.slice(0, 3).map((s) => s.id));
+    const design = scored.filter((s) => !top3.has(s.id)).sort((a, b) => b.design - a.design || cmp(a, b));
+    const tracks = [...new Set(teams.map((t) => t.track))].sort();
+    const judges = [...new Map(scores.map((s) => [s.judge_key, s.judge_name])).values()].sort();
+    const host = document.getElementById('boardView');
+    host.innerHTML = !scored.length ? '<div class="empty">No scores yet. Rankings appear here as judges save scores.</div>' :
+      '<div class="lb-sect"><h3>Overall ranking</h3><p>Average of all judges’ totals (out of 100). Ties: higher Working Prototype, then Effort &amp; Upgrade. ' + scored.length + ' of ' + teams.length + ' teams scored.</p>' +
+        scored.map((s, i) => rowHtml(s, i, i < 3 ? prizes[i] : '')).join('') + '</div>' +
+      '<div class="lb-sect"><h3>Best Design Award · ₹3,000</h3><p>Highest average Design &amp; UX score (out of 10), excluding the overall top 3 (one cash prize per team).</p>' +
+        design.slice(0, 3).map((s, i) => '<div class="row"><div class="rk' + (i === 0 ? ' g' : '') + '">' + (i + 1) + '</div><div class="rn"><b>' + esc(s.teamId) + ' · ' + esc(s.team) + '</b><span>' + esc(short(s.track)) + '</span></div><div class="rs"><b>' + r1(s.design) + '</b><span>design /10</span></div></div>').join('') + '</div>' +
+      '<div class="lb-sect"><h3>Track winners · goodies</h3><p>Top team in each track by average total.</p>' +
+        tracks.map((tr) => { const w = scored.filter((s) => s.track === tr)[0]; return w ? rowHtml(w, 0, false).replace('<div class="rk">1</div>', '<div class="rk">T' + trackNo(tr) + '</div>') : ''; }).join('') + '</div>' +
+      '<div class="lb-sect"><h3>All judges’ totals</h3><p>Every judge’s total per team, for discussion.</p><div class="tblwrap"><table><thead><tr><th>ID</th><th>Team</th>' + judges.map((j) => '<th>' + esc(j) + '</th>').join('') + '<th>Avg</th></tr></thead><tbody>' +
+        st.sort((a, b) => a.teamId.localeCompare(b.teamId)).map((s) => '<tr><td><b>' + esc(s.teamId) + '</b></td><td>' + esc(s.team) + '</td>' +
+          judges.map((j) => { const r = s.rows.find((x) => x.judge_name === j); return '<td>' + (r ? Number(r.total) : '–') + '</td>'; }).join('') + '<td><b>' + r1(s.total) + '</b></td></tr>').join('') +
+      '</tbody></table></div></div>';
+  }
+
+  async function load(silent) {
+    try {
+      const out = await call({ action: 'init' });
+      criteria = out.criteria; teams = out.teams; scores = out.scores;
+      document.getElementById('tabs').hidden = false;
+      if (document.getElementById('sheet').hidden) renderTeams();
+      if (!document.getElementById('boardView').hidden) renderBoard();
+    } catch (e) {
+      if (!silent) document.getElementById('teamsView').innerHTML = '<div class="msg">' + esc(e.message) + '</div>';
+    }
+  }
+
+  (async function start() {
+    if (!KEY) { document.getElementById('teamsView').innerHTML = '<div class="msg">Please open this page using the judging link shared by the organizers.</div>'; return; }
+    renderWho();
+    await load(false);
+    if (teams.length && !judge) askName(false);
+    setInterval(() => load(true), 30000);
+  })();
+</script>
+</body>
+</html>
