@@ -1268,8 +1268,9 @@ screener02,AnotherPass456"></textarea>
   function finaleCell(r) {
     const d = r.finale_details && !Array.isArray(r.finale_details) ? r.finale_details : null;
     if (!d) return '<span class="pill pill-late">Not submitted</span>';
+    const tid = r.finale_team_id ? '<b style="color:#b8005e;">Team ID ' + escapeHtml(r.finale_team_id) + '</b> &middot; ' : '';
     const shot = d.screenshot_path ? SUPABASE_URL + '/storage/v1/object/public/registration-files/' + d.screenshot_path : '';
-    return '<span class="pill pill-submitted">Submitted</span> <span class="muted">' + fmtIST(r.finale_details_submitted_at) + '</span><br>' +
+    return tid + '<span class="pill pill-submitted">Submitted</span> <span class="muted">' + fmtIST(r.finale_details_submitted_at) + '</span><br>' +
       '<b>Coming (' + (d.attending || []).length + '):</b> ' + (d.attending || []).map(a => escapeHtml(a.name)).join(', ') + '<br>' +
       '<b>ILS ID:</b> ' + escapeHtml(d.ils_reg_id || '') + ' &middot; <b>Txn:</b> ' + escapeHtml(d.transaction_id || '') +
       (shot ? ' &middot; <a class="filelink" href="' + escapeHtml(shot) + '" target="_blank" rel="noopener">Payment screenshot</a>' : '');

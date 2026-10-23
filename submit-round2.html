@@ -150,6 +150,7 @@
 
   <div class="card" id="finaleCard" style="display:none; border:2px solid #b8005e;">
     <h2>Grand Finale Registration</h2>
+    <div id="finTeamId" style="display:none; text-align:center; border:2px solid #b8005e; background:#fff5fa; border-radius:12px; padding:12px 14px; margin:0 0 14px;"></div>
     <div style="background:linear-gradient(135deg,#6a1794,#b8005e); color:#fff; border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.6; margin-bottom:14px;">
       Congratulations! Your team is selected for the <b>Grand Finale at SVNIT Surat</b>. Join on <b>25 October 2026</b> with your team members.
     </div>
@@ -609,6 +610,13 @@
     renderFinale();
   }
   function renderFinale() {
+    const tidEl = document.getElementById('finTeamId');
+    if (finData.teamId) {
+      tidEl.innerHTML = '<div style="font-size:11px;letter-spacing:2px;font-weight:700;color:#b8005e;">YOUR TEAM ID</div>' +
+        '<div style="font-size:34px;font-weight:800;color:#4b0f6e;letter-spacing:1px;line-height:1.2;">' + escapeHtml(finData.teamId) + '</div>' +
+        '<div style="font-size:12px;color:#6b5a7d;">Use this Team ID at the registration desk and in all communication on 25 October.</div>';
+      tidEl.style.display = 'block';
+    } else tidEl.style.display = 'none';
     const closed = Date.now() > new Date(finData.deadline).getTime();
     const notYet = finData.opensAt && Date.now() < new Date(finData.opensAt).getTime() && currentTeam.leaderEmail.toLowerCase() !== 'test.dummy.team@example.com';
     if (notYet) {
