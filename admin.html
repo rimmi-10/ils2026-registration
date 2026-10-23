@@ -1306,18 +1306,18 @@ screener02,AnotherPass456"></textarea>
   }
   async function briefSendAll() {
     if (!confirm('Send the Team ID + Grand Finale instructions email to ALL confirmed teams (leader + members)? Teams already mailed are skipped.')) return;
-    let sent = 0;
+    let sent = 0, errors = 0, remaining = null;
     const btns = ['briefTestBtn', 'briefSendBtn'].map(id => document.getElementById(id));
     btns.forEach(b => (b.disabled = true));
-    try {
-      for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 40 && remaining !== 0 && errors < 4; i++) {
+      try {
         const o = await callFn('finale-results', { action: 'send', mode: 'brief' });
-        sent += o.sent || 0;
-        if (o.failed && o.failed.length) flash('os', 'error', 'Failed: ' + o.failed.map(f => f.team + ' (' + f.error + ')').join(', '));
-        if (!o.remaining) break;
-      }
-      flash('os', 'success', 'Sent to ' + sent + ' team(s).');
-    } catch (e) { flash('os', 'error', 'Stopped after ' + sent + ': ' + e.message); }
+        sent += o.sent || 0; remaining = o.remaining;
+        if (o.failed && o.failed.length) { errors++; flash('os', 'error', 'Failed: ' + o.failed.map(f => f.team + ' (' + f.error + ')').join(', ')); }
+        document.getElementById('briefStatus').textContent = 'Sending… ' + sent + ' sent, ' + remaining + ' left';
+      } catch (e) { errors++; await new Promise(r => setTimeout(r, 3000)); } // worker limit / timeout: retry, sent teams are skipped
+    }
+    flash('os', remaining === 0 ? 'success' : 'error', remaining === 0 ? 'Done: sent to ' + sent + ' team(s) in this run.' : 'Stopped with ' + (remaining ?? '?') + ' left after ' + errors + ' errors. Press Send again to continue.');
     btns.forEach(b => (b.disabled = false));
     briefStatus();
   }
